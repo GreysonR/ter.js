@@ -1,3 +1,6 @@
+/*
+	vec.js v1.0 by Greyson Rockwell 
+*/
 class vec {
 	constructor(x, y) {
 		if (typeof x === "object") {
