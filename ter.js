@@ -233,8 +233,8 @@ var ter = {
 			const timescale = ter.Performance.delta / 16.667 * ter.World.timescale;
 			const timescaleSqrt = timescale ** 0.5;
 
-			let frictionAir = 1 - body.frictionAir * timescaleSqrt;
-			let frictionAngular = 1 - body.frictionAngular * timescaleSqrt;
+			let frictionAir = (1 - body.frictionAir) ** timescale;
+			let frictionAngular = (1 - body.frictionAngular) ** timescale;
 			let lastVelocity = body.position.sub(body.last.position);
 			
 			body.force.add2(World.gravity.mult(body.mass * timescale));
