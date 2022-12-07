@@ -268,6 +268,7 @@ var ter = {
 				let pair = pairs[i];
 				if (!pair || this.cleansePair(pair)) continue;
 				const { depth, bodyA, bodyB, contacts, normal } = pair;
+				if (bodyA.isSensor || bodyB.isSensor) continue;
 
 				// update body velocities
 				bodyA.velocity = bodyA.position.sub(bodyA.last.position);
@@ -555,6 +556,7 @@ var ter = {
 
 				let { Common: Basic } = ter;
 				const { bodyA, bodyB, contacts, normal, tangent, depth } = pair;
+				if (bodyA.isSensor || bodyB.isSensor) continue;
 
 				// update body velocities
 				bodyA.velocity = bodyA.position.sub(bodyA.last.position);
@@ -634,6 +636,7 @@ var ter = {
 				if (!pair || ter.Bodies.cleansePair(pair)) continue;
 
 				const { bodyA, bodyB, normal, tangent } = pair;
+				if (bodyA.isSensor || bodyB.isSensor) continue;
 				
 				// update body velocities
 				bodyA.velocity = bodyA.position.sub(bodyA.last.position);
