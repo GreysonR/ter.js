@@ -20,24 +20,6 @@ class Body {
 			options.render.background = colors[Math.floor(Math.random() * colors.length)];
 		}
 
-		function merge(obj, options) {
-			Object.keys(options).forEach(option => {
-				let value = options[option];
-				
-				if (Array.isArray(value)) {
-					obj[option] = [ ...value ];
-				}
-				else if (typeof value === "object") {
-					if (typeof obj[option] !== "object") {
-						obj[option] = {};
-					}
-					merge(obj[option], value);
-				}
-				else {
-					obj[option] = value;
-				}
-			});
-		}
 		this.vertices = vertices;
 		this.resetVertices();
 		this.updateBounds();
@@ -45,10 +27,10 @@ class Body {
 		this.updateInertia();
 
 		if (options.angle) {
-			this.setAngle(options.angle);
+			this.setAngle(-options.angle);
 			this.last.angle = options.angle;
 		}
-		merge(this, options);
+		ter.Common.merge(this, options);
 	}
 	updateInertia() {
 		if (this.static) {
@@ -246,7 +228,7 @@ class Body {
 		if (angle !== this.last.angle) {
 			let vertices = this.vertices;
 			let position = this.position;
-			let delta = this.last.angle - angle;
+			let delta = -(this.last.angle - angle);
 			let sin = Math.sin(delta);
 			let cos = Math.cos(delta);
 
