@@ -924,7 +924,9 @@ var ter = {
 		}
 		Render.off = function(event, callback) {
 			event = Render.events[event];
-			event.splice(event.indexOf(callback), 1);
+			if (event.includes(callback)) {
+				event.splice(event.indexOf(callback), 1);
+			}
 		}
 		Render.trigger = function(event) {
 			// Trigger each event
