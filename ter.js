@@ -719,9 +719,6 @@ var ter = {
 			ctx.translate(camera.translation.x, camera.translation.y);
 			ctx.scale(camera.scale, camera.scale);
 			
-			if (Render.showBoundingBox === true) {
-				Render.boundingBox();
-			}
 			if (Render.showBroadphase === true) {
 				Render.broadphase();
 			}
@@ -791,13 +788,6 @@ var ter = {
 							ctx.rotate(-body.angle);
 							ctx.translate(-position.x, -position.y);
 
-							if (Render.showVertices === true) {
-								renderVertices();
-								ctx.lineWidth = 3;
-								ctx.strokeStyle = "#FF832A";
-								ctx.stroke();
-							}
-
 							continue;
 						}
 			
@@ -822,19 +812,18 @@ var ter = {
 							ctx.shadowBlur = 0;
 						}
 						ctx.globalAlpha = 1;
-						
-						if (Render.showVertices === true) {
-							renderVertices();
-							ctx.lineWidth = 3;
-							ctx.strokeStyle = "#FF832A";
-							ctx.stroke();
-						}
 					}
 				}
 			}
 			
 			if (Render.showBoundingBox === true) {
 				Render.boundingBox();
+			}
+			if (Render.showVertices === true) {
+				Render.allVertices();
+			}
+			if (Render.showCenters === true) {
+				Render.allCenters();
 			}
 
 			if (globalPoints.length > 0) { // Render globalPoints
@@ -940,7 +929,6 @@ var ter = {
 		
 		// - Broadphase
 		Render.showBoundingBox = false;
-		Render.showVertices = false;
 		Render.boundingBox = function() {
 			let allBodies = ter.World.bodies;
 
@@ -955,6 +943,43 @@ var ter = {
 
 				ctx.beginPath();
 				ctx.strokeRect(bounds.min.x, bounds.min.y, width, height);
+			}
+		}
+		Render.showVertices = false;
+		Render.allVertices = function() {
+			function renderVertices(vertices) {
+				ctx.moveTo(vertices[0].x, vertices[0].y);
+	
+				for (let j = 0; j < vertices.length; j++) {
+					if (j > 0) {
+						let vertice = vertices[j];
+						ctx.lineTo(vertice.x, vertice.y);
+					}
+				}
+	
+				ctx.closePath();
+			}
+
+			ctx.beginPath();
+			let allBodies = ter.World.bodies;
+			for (let i = 0; i < allBodies.length; i++) {
+				let body = allBodies[i];
+				renderVertices(body.vertices);
+			}
+			ctx.lineWidth = 3;
+			ctx.strokeStyle = "#FF832A";
+			ctx.stroke();
+		}
+		Render.showCenters = false;
+		Render.allCenters = function() {
+			ctx.lineWidth = 3;
+			ctx.strokeStyle = "#FF832A";
+			let allBodies = ter.World.bodies;
+			for (let i = 0; i < allBodies.length; i++) {
+				let body = allBodies[i];
+				ctx.beginPath();
+				ctx.arc(body.position.x, body.position.y, 2, 0, Math.PI*2);
+				ctx.stroke();
 			}
 		}
 
