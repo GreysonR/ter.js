@@ -471,9 +471,6 @@ var ter = {
 				}
 
 				if (collision === true) {
-					// bodyA.render.tempBackground = bodyA.render.border + "40";
-					// bodyB.render.tempBackground = bodyB.render.border + "40";
-
 					// - get collision normal by getting point with minimum depth
 					let minDepth = Infinity;
 					let normal;
@@ -734,7 +731,7 @@ var ter = {
 				Render.trigger("beforeLayer" + layerId);
 				for (let body of layer) {
 					const { position, vertices, render, bounds } = body;
-					const { visible, background, tempBackground, border, borderWidth, borderType, lineDash, bloom, opacity, sprite } = render;
+					const { visible, background, border, borderWidth, borderType, lineDash, bloom, opacity, sprite } = render;
 					const inView = !(bounds.max.x < camera.bounds.min.x || bounds.min.x > camera.bounds.max.x
 								 || bounds.max.y < camera.bounds.min.y || bounds.min.y > camera.bounds.max.y);
 
@@ -749,14 +746,6 @@ var ter = {
 						if (bloom) {
 							ctx.shadowColor = border;
 							ctx.shadowBlur = bloom;
-						}
-			
-						if (tempBackground !== undefined) {
-							ctx.fillStyle = tempBackground;
-			
-							if (body.pairs.length === 0) {
-								delete render.tempBackground;
-							}
 						}
 			
 						if (lineDash) {
