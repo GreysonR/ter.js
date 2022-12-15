@@ -506,7 +506,9 @@ var ter = {
 
 					findNormal(bodyA, bodyB);
 					findNormal(bodyB, bodyA);
-					if (contacts.length === 0) continue;
+					if (contacts.length === 0) {
+						contacts.push({ vertice: new vec(bodyA.position), body: bodyA });
+					}
 
 					// globalVectors.push({ position: normalPoint, vector: normal.inverse() });
 					// globalPoints.push(...contacts.map(v => v.vertice));
