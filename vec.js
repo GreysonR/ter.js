@@ -1,5 +1,5 @@
 /*
-	vec.js v1.0 by Greyson Rockwell 
+	vec.js v1.1 by Greyson Rockwell 
 */
 class vec {
 	constructor(x, y) {
@@ -166,8 +166,8 @@ class vec {
 	}
 	normal2() {
 		let y = this.y;
-		this.x = y;
 		this.y = -this.x;
+		this.x = y;
 		return this;
 	}
 	inverse() {
@@ -192,6 +192,30 @@ class vec {
 	ceil2() {
 		this.x = Math.ceil(this.x);
 		this.y = Math.ceil(this.y);
+		return this;
+	}
+	round() {
+		return new vec(Math.round(this.x), Math.round(this.y));
+	}
+	round2() {
+		this.x = Math.round(this.x);
+		this.y = Math.round(this.y);
+		return this;
+	}
+	min(vec2) {
+		return new vec(Math.min(vec2.x, this.x), Math.min(vec2.y, this.y));
+	}
+	min2(vec2) {
+		this.x = Math.min(this.x, vec2.x);
+		this.y = Math.min(this.y, vec2.y);
+		return this;
+	}
+	max(vec2) {
+		return new vec(Math.max(vec2.x, this.x), Math.max(vec2.y, this.y));
+	}
+	max2(vec2) {
+		this.x = Math.max(this.x, vec2.x);
+		this.y = Math.max(this.y, vec2.y);
 		return this;
 	}
 	clamp(min, max) {
