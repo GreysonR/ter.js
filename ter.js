@@ -747,7 +747,7 @@ var ter = {
 	
 						if (bloom) {
 							ctx.shadowColor = border;
-							ctx.shadowBlur = bloom;
+							ctx.shadowBlur = bloom * camera.scale;
 						}
 			
 						if (lineDash) {
