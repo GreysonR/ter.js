@@ -1,5 +1,6 @@
 "use strict";
 
+// https://easings.net/
 const animation = {
 	running: [],
 	run: function() {
@@ -70,7 +71,7 @@ const animation = {
 		};
 	},
 }
-const ease = { // https://easings.net/
+const ease = {
 	linear: x => x,
 	in: {
 		sine: x => 1 - Math.cos((x * Math.PI) / 2),

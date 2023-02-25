@@ -26,6 +26,13 @@ class Body {
 		this.updateAxes();
 		this.updateInertia();
 
+		if (options.render.sprite && !Render.images[options.render.sprite]) {
+			if (options.render.sprite.indexOf(".") === -1) {
+				options.render.sprite += ".png";
+			}
+			Render.loadImg(options.render.sprite);
+		}
+
 		if (options.angle) {
 			this.setAngle(-options.angle);
 			this.last.angle = options.angle;
@@ -33,7 +40,7 @@ class Body {
 		ter.Common.merge(this, options);
 	}
 	updateInertia() {
-		if (this.static) {
+		if (this.isStatic) {
 			this.mass = Infinity;
 			this.inverseMass = 0;
 		}
@@ -50,6 +57,7 @@ class Body {
 	force = new vec(0, 0);
 	impulse = new vec(0, 0);
 	angle = 0;
+	rotationPoint = new vec(0, 0);
 	angularVelocity = 0;
 	torque = 0;
 
@@ -67,7 +75,7 @@ class Body {
 	inertia = 1;
 	inverseInertia = 0.000015;
 	
-	static = false;
+	isStatic = false;
 	isSensor = false;
 	hasCollisions = true;
 
@@ -243,9 +251,11 @@ class Body {
 		this.axes = axes;
 	}
 	setAngle(angle) {
+		if (isNaN(angle)) return;
 		if (angle !== this.last.angle) {
 			let vertices = this.vertices;
 			let position = this.position;
+			let rotationPoint = this.rotationPoint.rotate(angle);
 			let delta = -(this.last.angle - angle);
 			let sin = Math.sin(delta);
 			let cos = Math.cos(delta);
@@ -257,15 +267,46 @@ class Body {
 				vert.y = position.y + (dist.x * sin + dist.y * cos);
 			}
 
+			let posOffset = this.rotationPoint.rotate(this.last.angle).sub(rotationPoint);
+			this.translate(posOffset);
+
+			this.translateAngle(-this.angularVelocity);
+			
 			this.angle = angle;
 			this.last.angle = angle;
-			this.updateBounds();
-			this.updateAxes();
 		}
 
 		return this;
 	}
-	setPosition(position, silent=false) {
+	translateAngle(angle, silent = false) {
+			if (isNaN(angle)) return;
+			let vertices = this.vertices;
+			let position = this.position;
+			let rotationPoint = this.rotationPoint.rotate(this.angle + angle);
+			let sin = Math.sin(angle);
+			let cos = Math.cos(angle);
+
+			for (let i = vertices.length; i-- > 0;) {
+				let vert = vertices[i];
+				let dist = vert.sub(position);
+				vert.x = position.x + (dist.x * cos - dist.y * sin);
+				vert.y = position.y + (dist.x * sin + dist.y * cos);
+			}
+
+			let posOffset = this.rotationPoint.rotate(this.angle).sub(rotationPoint);
+			this.translate(posOffset);
+			this.last.position.add2(posOffset);
+
+			if (!silent) {
+				this.angle += angle;
+			}
+			this.updateBounds();
+			this.updateAxes();
+
+		return this;
+	}
+	setPosition(position, silent = false) {
+		if (position.isNaN()) return;
 		let last = this.position;
 		if (position.x !== last.x || position.y !== last.y) {
 			let delta = position.sub(last);
@@ -285,13 +326,16 @@ class Body {
 			this.updateBounds();
 		}
 	}
-	translate(delta) {
+	translate(delta, silent = false) {
+		if (delta.isNaN()) return;
 		let vertices = this.vertices;
 		for (let i = 0; i < vertices.length; i++) {
 			vertices[i].add2(delta);
 		}
 
-		this.position.add2(delta);
+		if (!silent) {
+			this.position.add2(delta);
+		}
 		this.updateBounds();
 	}
 	getSupport(vector, position=this.position) {
@@ -322,9 +366,10 @@ class Body {
 		return true;
 	}
 	applyForce(force) {
+		if (force.isNaN()) return;
 		let { Performance: timing, World } = ter;
 		const timescale = World.timescale * (timing.delta / 16.667);
-		if (this.static) return this;
+		if (this.isStatic) return this;
 
 		this.last.position.x -= force.x * timescale;
 		this.last.position.y -= force.y * timescale;
@@ -332,12 +377,12 @@ class Body {
 		return this;
 	}
 	applyTorque(force) {
+		if (isNaN(force)) return;
 		this.last.angle -= force;
 		return this;
 	}
 
 	events = {
-		push: [],
 		collisionStart: [],
 		collisionActive: [],
 		collisionEnd: [],

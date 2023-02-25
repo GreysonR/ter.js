@@ -1,6 +1,3 @@
-/*
-	vec.js v1.1 by Greyson Rockwell 
-*/
 class vec {
 	constructor(x, y) {
 		if (typeof x === "object") {
@@ -91,6 +88,26 @@ class vec {
 		else {
 			this.x /= vec2.x;
 			this.y /= vec2.y;
+			return this;
+		}
+	}
+	pow(vec2) {
+		if (typeof vec2 === "number") {
+			return new vec(this.x ** vec2, this.y ** vec2);
+		}
+		else {
+			return new vec(this.x ** vec2.x, this.y ** vec2.y);
+		}
+	}
+	pow2(vec2) {
+		if (typeof vec2 === "number") {
+			this.x = this.x ** vec2;
+			this.y = this.y ** vec2;
+			return this;
+		}
+		else {
+			this.x = this.x ** vec2.x;
+			this.y = this.y ** vec2.y;
 			return this;
 		}
 	}
@@ -202,22 +219,6 @@ class vec {
 		this.y = Math.round(this.y);
 		return this;
 	}
-	min(vec2) {
-		return new vec(Math.min(vec2.x, this.x), Math.min(vec2.y, this.y));
-	}
-	min2(vec2) {
-		this.x = Math.min(this.x, vec2.x);
-		this.y = Math.min(this.y, vec2.y);
-		return this;
-	}
-	max(vec2) {
-		return new vec(Math.max(vec2.x, this.x), Math.max(vec2.y, this.y));
-	}
-	max2(vec2) {
-		this.x = Math.max(this.x, vec2.x);
-		this.y = Math.max(this.y, vec2.y);
-		return this;
-	}
 	clamp(min, max) {
 		return new vec(Math.max(min.x, Math.min(max.x, this.x)), Math.max(min.y, Math.min(max.y, this.y)));
 	}
@@ -242,5 +243,8 @@ class vec {
 	}
 	toObj() {
 		return { x: this.x, y: this.y };
+	}
+	isNaN() {
+		return isNaN(this.x) || isNaN(this.y);
 	}
 }
