@@ -679,7 +679,7 @@ var ter = {
 					const normalVelocity = relativeVelocity.dot(normal);
 					const tangentVelocity = relativeVelocity.dot(tangent);
 
-					// if (normalVelocity > 0) continue;
+					if (normalVelocity > 0) continue;
 					
 					let normalImpulse = (restitution) * normalVelocity;
 
