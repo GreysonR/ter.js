@@ -353,7 +353,7 @@ class Body {
 		}
 		return true;
 	}
-	applyForce(force, delta = ter.Performance.delta * ter.World.timescale / 16.667) {
+	applyForce(force, delta = ter.Performance.delta * ter.World.timescale / 16.667) { // set delta to 1 if you want to apply a force for only 1 frame
 		if (force.isNaN()) return;
 		if (this.isStatic) return this;
 
@@ -362,7 +362,7 @@ class Body {
 		
 		return this;
 	}
-	applyTorque(force, delta = ter.Performance.delta * ter.World.timescale / 16.667) {
+	applyTorque(force, delta = ter.Performance.delta * ter.World.timescale / 16.667) { // set delta to 1 if you want to apply a force for only 1 frame
 		if (isNaN(force)) return;
 		this.torque += force * delta;
 		return this;
