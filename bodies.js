@@ -35,7 +35,6 @@ class Body {
 
 		if (options.angle) {
 			this.setAngle(-options.angle);
-			this.last.angle = options.angle;
 		}
 		ter.Common.merge(this, options);
 	}
@@ -85,10 +84,6 @@ class Body {
 	lastSeparations = {};
 	numContacts = 0;
 
-	last = {
-		angle: 0,
-		position: new vec(0, 0),
-	}
 	bounds = {
 		min: new vec({ x: 0, y: 0 }),
 		max: new vec({ x: 1, y: 1 })
@@ -252,11 +247,11 @@ class Body {
 	}
 	setAngle(angle) {
 		if (isNaN(angle)) return;
-		if (angle !== this.last.angle) {
+		if (angle !== this.angle) {
 			let vertices = this.vertices;
 			let position = this.position;
 			let rotationPoint = this.rotationPoint.rotate(angle);
-			let delta = -(this.last.angle - angle);
+			let delta = ter.Common.angleDiff(angle, this.angle);
 			let sin = Math.sin(delta);
 			let cos = Math.cos(delta);
 
@@ -267,13 +262,14 @@ class Body {
 				vert.y = position.y + (dist.x * sin + dist.y * cos);
 			}
 
-			let posOffset = this.rotationPoint.rotate(this.last.angle).sub(rotationPoint);
+			let posOffset = this.rotationPoint.rotate(this.angle).sub(rotationPoint);
 			this.translate(posOffset);
 
-			this.translateAngle(-this.angularVelocity);
+			if (this.angularVelocity) {
+				this.translateAngle(-this.angularVelocity);
+			}
 			
 			this.angle = angle;
-			this.last.angle = angle;
 		}
 
 		return this;
@@ -295,36 +291,28 @@ class Body {
 
 			let posOffset = this.rotationPoint.rotate(this.angle).sub(rotationPoint);
 			this.translate(posOffset);
-			this.last.position.add2(posOffset);
-
 			if (!silent) {
 				this.angle += angle;
 			}
+
 			this.updateBounds();
 			this.updateAxes();
 
 		return this;
 	}
-	setPosition(position, silent = false) {
+	setPosition(position) {
 		if (position.isNaN()) return;
 		let last = this.position;
-		if (position.x !== last.x || position.y !== last.y) {
-			let delta = position.sub(last);
-			let vertices = this.vertices;
-			for (let i = 0; i < vertices.length; i++) {
-				vertices[i].add2(delta);
-			}
-
-			if (!silent) {
-				this.last.position.x = position.x;
-				this.last.position.y = position.y;
-			}
-
-			this.position.x = position.x;
-			this.position.y = position.y;
-
-			this.updateBounds();
+		let delta = position.sub(last);
+		let vertices = this.vertices;
+		for (let i = 0; i < vertices.length; i++) {
+			vertices[i].add2(delta);
 		}
+
+		this.position.x = position.x;
+		this.position.y = position.y;
+
+		this.updateBounds();
 	}
 	translate(delta, silent = false) {
 		if (delta.isNaN()) return;
@@ -365,20 +353,18 @@ class Body {
 		}
 		return true;
 	}
-	applyForce(force) {
+	applyForce(force, delta = ter.Performance.delta * ter.World.timescale / 16.667) {
 		if (force.isNaN()) return;
-		let { Performance: timing, World } = ter;
-		const timescale = World.timescale * (timing.delta / 16.667);
 		if (this.isStatic) return this;
 
-		this.last.position.x -= force.x * timescale;
-		this.last.position.y -= force.y * timescale;
-		this.velocity.add2(force.mult(timescale));
+		
+		this.force.add2(force.mult(delta));
+		
 		return this;
 	}
-	applyTorque(force) {
+	applyTorque(force, delta = ter.Performance.delta * ter.World.timescale / 16.667) {
 		if (isNaN(force)) return;
-		this.last.angle -= force;
+		this.torque += force * delta;
 		return this;
 	}
 
@@ -386,6 +372,9 @@ class Body {
 		collisionStart: [],
 		collisionActive: [],
 		collisionEnd: [],
+		beforeUpdate: [], // apply forces to current body
+		duringUpdate: [], // clear forces from current body
+		afterUpdate: [], // apply forces to current + other bodies
 		delete: [],
 	}
 	on(event, callback) {
@@ -452,7 +441,7 @@ class circle extends Body {
 			let numSides = options.numSides || Math.round(Math.pow(radius, 1/3) * 2.8);
 			let angle = Math.PI * 2 / numSides;
 			for (let i = 0; i < numSides; i++) {
-				vertices.push(new vec(Math.cos(angle * i) * radius, Math.sin(angle * i) * radius));
+				vertices.push(new vec(Math.cos(angle * i + angle / 2) * radius, Math.sin(angle * i + angle / 2) * radius));
 			}
 			return vertices;
 		})());
