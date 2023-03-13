@@ -10,7 +10,7 @@ Array.prototype.choose = function() {
 }
 
 class Body {
-	constructor(type, options, vertices) {
+	constructor(type, options, vertices, position) {
 		this.type = type;
 		this.id = ter.Bodies.uniqueId;
 
@@ -20,7 +20,37 @@ class Body {
 			options.render.background = colors[Math.floor(Math.random() * colors.length)];
 		}
 
+		ter.Common.merge(this, options);
+
 		this.vertices = vertices;
+		this.removeDuplicatesVertices();
+		
+		this.resetVertices();
+		if (!this.isConvex() && (!Array.isArray(options.children) || options.children.length === 0)) {
+			options.children = [];
+
+			let concaveVertices = decomp.quickDecomp(vertices.map(v => [v.x, v.y]));
+			let parentCenter = this.getCenterOfMass();
+			for (let i = 0; i < concaveVertices.length; i++) {
+				let vertices = concaveVertices[i].map(v => new vec(v[0], v[1]));
+				let center = this.getCenterOfMass(vertices);
+				let body = new fromVertices(vertices, position.add(center).sub(parentCenter));
+				body.resetVertices(true);
+				options.children.push(body);
+			}
+		}
+
+		let children = options.children;
+		this.children = [];
+		if (Array.isArray(children)) {
+			for (let i = 0; i < children.length; i++) {
+				let child = children[i];
+				child.delete();
+				child.parent = this;
+				this.children.push(child);
+			}
+		}
+
 		this.resetVertices();
 		this.updateBounds();
 		this.updateAxes();
@@ -36,7 +66,66 @@ class Body {
 		if (options.angle) {
 			this.setAngle(-options.angle);
 		}
-		ter.Common.merge(this, options);
+	}
+	removeDuplicatesVertices(minDist = 0.1) { // remove vertices that are the same
+		let vertices = this.vertices;
+		for (let i = 0; i < vertices.length; i++) {
+			let curVert = vertices[i];
+			
+			for (let j = 0; j < vertices.length; j++) {
+				if (j === i) continue;
+				let nextVert = vertices[j];
+				let dist = curVert.sub(nextVert);
+
+				if (Math.abs(dist.x) + Math.abs(dist.y) < minDist) { // just use manhattan dist because it doesn't matter
+					vertices.splice(i, 1);
+					i--;
+					break;
+				}
+			}
+		}
+	}
+	isConvex() {
+		let vertices = this.vertices;
+		let len = vertices.length;
+
+		let last = vertices[0].sub(vertices[1]);
+		for (let i = 1; i < len; i++) {
+			let cur = vertices[i].sub(vertices[(i + 1) % len]);
+
+			if (cur.cross(last) > 0) {
+				return false;
+			}
+			last = cur;
+		}
+
+		return true;
+	}
+	makeConvex() {
+		if (!this.isConvex()) {
+			let removed = this.removed;
+			this.delete();
+			
+			let { vertices, position } = this;
+			this.children = [];
+			let verts = vertices.map(v => [v.x, v.y]);
+			decomp.removeCollinearPoints(verts, 0.4);
+			let concaveVertices = decomp.quickDecomp(verts);
+			let parentCenter = this.getCenterOfMass();
+
+			for (let i = 0; i < concaveVertices.length; i++) {
+				let vertices = concaveVertices[i].map(v => new vec(v[0], v[1]));
+				let center = this.getCenterOfMass(vertices);
+				let body = new fromVertices(vertices, position.add(center).sub(parentCenter));
+				body.delete();
+				body.parent = this;
+				this.children.push(body);
+			}
+
+			if (!removed) {
+				this.add();
+			}
+		}
 	}
 	updateInertia() {
 		if (this.isStatic) {
@@ -44,15 +133,53 @@ class Body {
 			this.inverseMass = 0;
 		}
 		else {
-			this.inertia = ter.Bodies.getInertia(this);
+			this.inertia = this.getInertia();
 			this.inverseInertia = 1 / this.inertia;
 		}
+	}
+	getInertia() {
+		let children = this.children;
+		if (children.length === 0) {
+			const { vertices, mass } = this;
+			
+			let numerator = 0;
+			let denominator = 0;
+	
+			for (var i = 0; i < vertices.length; i++) {
+				let j = (i + 1) % vertices.length;
+				let cross = Math.abs(vertices[j].cross(vertices[i]));
+				numerator += cross * (vertices[j].dot(vertices[j]) + vertices[j].dot(vertices[i]) + vertices[i].dot(vertices[i]));
+				denominator += cross;
+			}
+	
+			return 2 * (mass / 6) * (numerator / denominator);
+		}
+		else {
+			let inertia = 0;
+
+			for (let i = 0; i < children.length; i++) {
+				let child = children[i];
+				inertia += child.inertia;
+			}
+
+			return inertia;
+		}
+	}
+	getArea() {
+		let area = 0;
+		let vertices = this.vertices;
+		let len = vertices.length;
+		for (let i = 0; i < len; i++) {
+			area += vertices[i].cross(vertices[(i + 1) % len]);
+		}
+		return area * 0.5;
 	}
 
 	id = 0;
 
 	velocity = new vec(0, 0);
 	position = new vec(0, 0);
+	center = new vec(0, 0);
 	force = new vec(0, 0);
 	impulse = new vec(0, 0);
 	angle = 0;
@@ -61,6 +188,8 @@ class Body {
 	torque = 0;
 
 	vertices = [];
+	children = [];
+	parent = null;
 	axes = [];
 	buckets = [];
 
@@ -83,6 +212,7 @@ class Body {
 	pairs = [];
 	lastSeparations = {};
 	numContacts = 0;
+	sink = 0.001;
 
 	bounds = {
 		min: new vec({ x: 0, y: 0 }),
@@ -92,11 +222,12 @@ class Body {
 		background: "#1AD465",
 		border: "transparent",
 		borderWidth: 3,
-		borderType: "round",
+		borderType: "miter",
 		lineDash: false,
 		visible: true,
 		opacity: 1,
 		layer: 0,
+		spriteScale: new vec(1, 1),
 	}
 	collisionFilter = {
 		category: 0,
@@ -105,20 +236,25 @@ class Body {
 
 	delete() {
 		let { World, Render } = ter;
+		if (!this.parent) {
+			Render.bodies[this.render.layer].delete(this);
+		}
 		if (World.bodies.includes(this)) {
 			this.trigger("delete");
 			this.removed = true;
 
 			World.bodies.delete(this);
-			Render.bodies[this.render.layer].delete(this);
-			World.tree.removeBody(this);
+			if (this.children.length === 0) {
+				World.tree.removeBody(this);
+			}
 
 			for (let i = 0; i < this.pairs.length; i++) {
 				ter.Bodies.cleansePair(this.pairs[i]);
 			}
 		}
-		else {
-			console.error("Couldn't find body");
+
+		for (let i = 0; i < this.children.length; i++) {
+			this.children[i].delete();
 		}
 
 		return this;
@@ -127,13 +263,23 @@ class Body {
 		let { World, Render} = ter;
 		if (!World.bodies.includes(this)) {
 			this.removed = false;
-			World.bodies.push(this);
-			World.tree.addBody(this);
 			
-			if (!Render.bodies[this.render.layer]) {
-				Render.bodies[this.render.layer] = new Set();
+			World.bodies.push(this);
+
+			if (this.children.length === 0) {
+				World.tree.addBody(this);
 			}
-			Render.bodies[this.render.layer].add(this);
+
+			if (!this.parent) {
+				if (!Render.bodies[this.render.layer]) {
+					Render.bodies[this.render.layer] = new Set();
+				}
+				Render.bodies[this.render.layer].add(this);
+			}
+
+			for (let i = 0; i < this.children.length; i++) {
+				this.children[i].add();
+			}
 		}
 
 		return this;
@@ -159,35 +305,70 @@ class Body {
 			}
 		}
 	}
-	resetVertices() {
+	resetVertices(forceCCW = false) {
+		this.makeCCW(forceCCW);
+		this.area = this.getArea();
 		this.recenterVertices();
 		this.updateBounds();
 		this.updateAxes();
 	}
-	getCenterOfMass() { /* https://bell0bytes.eu/centroid-convex/ */
-		let vertices = this.vertices;
-		let centroid = new vec(0, 0);
-		let det = 0;
-		let tempDet = 0;
-		let numVertices = vertices.length;
-
-		for (let i = 0; i < vertices.length; i++) {
-			let curVert = vertices[i];
-			let nextVert = vertices[(i + 1) % numVertices];
-
-			tempDet = curVert.x * nextVert.y - nextVert.x * curVert.y;
-			det += tempDet;
-
-			centroid.add2({ x: (curVert.x + nextVert.x) * tempDet, y: (curVert.y + nextVert.y) * tempDet });
+	makeCCW(force = false) { // makes vertices go counterclockwise if they're clockwise
+		if (force) { // reorders vertices by angle from center - can change order of vertices
+			let vertices = this.vertices;
+			let center = this.position;
+			let mapped = vertices.map(v => [v, v.sub(center).angle]);
+			mapped.sort((a, b) => a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0);
+			this.vertices = mapped.map(v => v[0]);
 		}
+		else { // reverses vertices if the 1st and 2nd are going wrong direction - never changes order of vertices
+			let vertices = this.vertices;
+			let center = this.position;
+	
+			let mapped = vertices.map(v => v.sub(center).angle);
+			if (mapped[0] > mapped[1]) {
+				this.vertices.reverse();
+			}
+		}
+	}
+	getCenterOfMass(vertices = this.vertices) {
+		let centroid = new vec(0, 0);
+		let children = this.children;
 
-		centroid.div2(3 * det);
+		if (children.length > 0 && false) {
+			let totalArea = 0;
+			for (let i = 0; i < children.length; i++) {
+				let child = children[i];
+				totalArea += child.area;
+				centroid.add2(child.position.mult(child.area));
+			}
+			centroid.div2(totalArea);
+		}
+		else { /* https://bell0bytes.eu/centroid-convex/ */
+			let det = 0;
+			let tempDet = 0;
+			let numVertices = vertices.length;
+	
+			for (let i = 0; i < vertices.length; i++) {
+				let curVert = vertices[i];
+				let nextVert = vertices[(i + 1) % numVertices];
+	
+				tempDet = curVert.x * nextVert.y - nextVert.x * curVert.y;
+				det += tempDet;
+	
+				centroid.add2({ x: (curVert.x + nextVert.x) * tempDet, y: (curVert.y + nextVert.y) * tempDet });
+			}
+	
+			centroid.div2(3 * det);
+		}
 
 		return centroid;
 	}
 	recenterVertices() {
-		let center =  this.getCenterOfMass();
-		center.sub2(this.position);
+		let center = this.getCenterOfMass();
+		let position = this.position;
+		this.center = center;
+		center.sub2(position);
+		
 		for (let i = 0; i < this.vertices.length; i++) {
 			this.vertices[i].sub2(center);
 		}
@@ -245,76 +426,31 @@ class Body {
 
 		this.axes = axes;
 	}
-	setAngle(angle) {
-		if (isNaN(angle)) return;
-		if (angle !== this.angle) {
-			let vertices = this.vertices;
-			let position = this.position;
-			let rotationPoint = this.rotationPoint.rotate(angle);
-			let delta = ter.Common.angleDiff(angle, this.angle);
-			let sin = Math.sin(delta);
-			let cos = Math.cos(delta);
-
-			for (let i = vertices.length; i-- > 0;) {
-				let vert = vertices[i];
-				let dist = vert.sub(position);
-				vert.x = position.x + (dist.x * cos - dist.y * sin);
-				vert.y = position.y + (dist.x * sin + dist.y * cos);
-			}
-
-			let posOffset = this.rotationPoint.rotate(this.angle).sub(rotationPoint);
-			this.translate(posOffset);
-
-			if (this.angularVelocity) {
-				this.translateAngle(-this.angularVelocity);
-			}
-			
-			this.angle = angle;
-		}
-
-		return this;
-	}
-	translateAngle(angle, silent = false) {
-			if (isNaN(angle)) return;
-			let vertices = this.vertices;
-			let position = this.position;
-			let rotationPoint = this.rotationPoint.rotate(this.angle + angle);
-			let sin = Math.sin(angle);
-			let cos = Math.cos(angle);
-
-			for (let i = vertices.length; i-- > 0;) {
-				let vert = vertices[i];
-				let dist = vert.sub(position);
-				vert.x = position.x + (dist.x * cos - dist.y * sin);
-				vert.y = position.y + (dist.x * sin + dist.y * cos);
-			}
-
-			let posOffset = this.rotationPoint.rotate(this.angle).sub(rotationPoint);
-			this.translate(posOffset);
-			if (!silent) {
-				this.angle += angle;
-			}
-
-			this.updateBounds();
-			this.updateAxes();
-
-		return this;
-	}
-	setPosition(position) {
+	setPosition(position, ignoreChildren = false) {
 		if (position.isNaN()) return;
 		let last = this.position;
 		let delta = position.sub(last);
-		let vertices = this.vertices;
-		for (let i = 0; i < vertices.length; i++) {
-			vertices[i].add2(delta);
-		}
+
+		this.translate(delta, true, ignoreChildren);
 
 		this.position.x = position.x;
 		this.position.y = position.y;
 
 		this.updateBounds();
 	}
-	translate(delta, silent = false) {
+	setAngle(angle) {
+		if (isNaN(angle)) return;
+		if (angle !== this.angle) {
+			let delta = ter.Common.angleDiff(angle, this.angle);
+			
+			this.translateAngle(delta, true);
+			
+			this.angle = angle;
+		}
+
+		return this;
+	}
+	translate(delta, silent = false, ignoreChildren = false) {
 		if (delta.isNaN()) return;
 		let vertices = this.vertices;
 		for (let i = 0; i < vertices.length; i++) {
@@ -325,6 +461,54 @@ class Body {
 			this.position.add2(delta);
 		}
 		this.updateBounds();
+
+		let tree = ter.World.tree;
+		if (this._Grids && this._Grids[tree.id]) {
+			tree.updateBody(this);
+		}
+
+		if (!ignoreChildren) {
+			let children = this.children;
+			for (let i = 0; i < children.length; i++) {
+				let child = children[i];
+				child.translate(delta, silent);
+			}
+		}
+	}
+	translateAngle(angle, silent = false) {
+			if (isNaN(angle)) return;
+			let vertices = this.vertices;
+			let position = this.position;
+			let rotationPoint = this.rotationPoint.rotate(this.angle + angle);
+			if (this.parent) {
+				rotationPoint.add2(this.position.sub(this.parent.position));
+			}
+			let sin = Math.sin(angle);
+			let cos = Math.cos(angle);
+
+			for (let i = vertices.length; i-- > 0;) {
+				let vert = vertices[i];
+				let dist = vert.sub(position);
+				vert.x = position.x + (dist.x * cos - dist.y * sin);
+				vert.y = position.y + (dist.x * sin + dist.y * cos);
+			}
+
+			let posOffset = rotationPoint.rotate(angle).sub(rotationPoint);
+			this.translate(posOffset);
+			if (!silent) {
+				this.angle += angle;
+			}
+
+			this.updateBounds();
+			this.updateAxes();
+
+			let children = this.children;
+			for (let i = 0; i < children.length; i++) {
+				let child = children[i];
+				child.translateAngle(angle, silent);
+			}
+
+		return this;
 	}
 	getSupport(vector, position=this.position) {
 		let vertices = this.vertices;
@@ -353,7 +537,7 @@ class Body {
 		}
 		return true;
 	}
-	applyForce(force, delta = ter.Performance.delta * ter.World.timescale / 16.667) { // set delta to 1 if you want to apply a force for only 1 frame
+	applyForce(force, delta = ter.Performance.delta * ter.World.timescale / 16.6667 / ter.Engine.substeps) { // set delta to 1 if you want to apply a force for only 1 frame
 		if (force.isNaN()) return;
 		if (this.isStatic) return this;
 
@@ -362,7 +546,7 @@ class Body {
 		
 		return this;
 	}
-	applyTorque(force, delta = ter.Performance.delta * ter.World.timescale / 16.667) { // set delta to 1 if you want to apply a force for only 1 frame
+	applyTorque(force, delta = ter.Performance.delta * ter.World.timescale / 16.6667 / ter.Engine.substeps) { // set delta to 1 if you want to apply a force for only 1 frame
 		if (isNaN(force)) return;
 		this.torque += force * delta;
 		return this;
@@ -404,13 +588,13 @@ class rectangle extends Body {
 			new vec( width/2, -height/2),
 			new vec( width/2,  height/2),
 			new vec(-width/2,  height/2),
-		]);
+		], position);
 
 		this.width = width;
 		this.height = height;
 		this.centerSprite();
 
-		this.setPosition(position);
+		this.setPosition(position, true);
 		this.add();
 	}
 }
@@ -423,14 +607,14 @@ class polygon extends Body {
 				vertices.push(new vec(Math.cos(angle * i) * radius, Math.sin(angle * i) * radius));
 			}
 			return vertices;
-		})());
+		})(), position);
 
 
 		this.radius = radius;
 		this.numSides = numSides;
 		this.centerSprite();
 
-		this.setPosition(position);
+		this.setPosition(position, true);
 		this.add();
 	}
 }
@@ -444,21 +628,21 @@ class circle extends Body {
 				vertices.push(new vec(Math.cos(angle * i + angle / 2) * radius, Math.sin(angle * i + angle / 2) * radius));
 			}
 			return vertices;
-		})());
+		})(), position);
 
 		this.radius = radius;
 		this.updateInertia();
 		this.centerSprite();
 
-		this.setPosition(position);
+		this.setPosition(position, true);
 		this.add();
 	}
 }
 class fromVertices extends Body {
 	constructor(vertices, position, options={}) {
-		super("polygon", options, vertices);
+		super("polygon", options, vertices, position);
 
-		this.setPosition(position);
+		this.setPosition(position, true);
 		this.centerSprite();
 		this.add();
 	}

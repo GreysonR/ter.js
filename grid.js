@@ -62,11 +62,12 @@ class Grid {
 	removeBody = function(body) {
 		for (let n of body._Grids[this.id]) {
 			let node = this.grid[n];
-			
-			node.delete(body);
-			if (node.length === 0) {
-				delete this.grid[n];
-				this.gridIds.delete(n);
+			if (node) {
+				node.delete(body);
+				if (node.length === 0) {
+					delete this.grid[n];
+					this.gridIds.delete(n);
+				}
 			}
 		}
 	};
@@ -96,6 +97,7 @@ class Grid {
 		for (let n of oldNodes) {
 			let node = this.grid[n];
 			curNodes.delete(n);
+			if (!node) continue;
 			node.delete(body);
 			if (node.length === 0) {
 				delete this.grid[n];

@@ -111,6 +111,14 @@ class vec {
 			return this;
 		}
 	}
+	sign() {
+		return new vec(Math.sign(this.x), Math.sign(this.y));
+	}
+	sign2() {
+		this.x = Math.sign(this.x);
+		this.y = Math.sign(this.y);
+		return this;
+	}
 	mod(vec2) {
 		if (typeof vec2 === "number")
 			return new vec(this.x % vec2, this.y % vec2);
@@ -139,6 +147,13 @@ class vec {
 	}
 	get length() {
 		return Math.sqrt(this.x ** 2 + this.y ** 2);
+	}
+	set length(len) {
+		let scale = len / this.length;
+		this.x *= scale;
+		this.y *= scale;
+
+		return this;
 	}
 	get angle() {
 		return Math.atan2(this.y, this.x);
@@ -217,6 +232,22 @@ class vec {
 	round2() {
 		this.x = Math.round(this.x);
 		this.y = Math.round(this.y);
+		return this;
+	}
+	min(vec2) {
+		return new vec(Math.min(vec2.x, this.x), Math.min(vec2.y, this.y));
+	}
+	min2(vec2) {
+		this.x = Math.min(this.x, vec2.x);
+		this.y = Math.min(this.y, vec2.y);
+		return this;
+	}
+	max(vec2) {
+		return new vec(Math.max(vec2.x, this.x), Math.max(vec2.y, this.y));
+	}
+	max2(vec2) {
+		this.x = Math.max(this.x, vec2.x);
+		this.y = Math.max(this.y, vec2.y);
 		return this;
 	}
 	clamp(min, max) {
