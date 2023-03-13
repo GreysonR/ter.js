@@ -1,6 +1,3 @@
-/*
-	vec.js v1.0 by Greyson Rockwell 
-*/
 class vec {
 	constructor(x, y) {
 		if (typeof x === "object") {
@@ -94,6 +91,34 @@ class vec {
 			return this;
 		}
 	}
+	pow(vec2) {
+		if (typeof vec2 === "number") {
+			return new vec(this.x ** vec2, this.y ** vec2);
+		}
+		else {
+			return new vec(this.x ** vec2.x, this.y ** vec2.y);
+		}
+	}
+	pow2(vec2) {
+		if (typeof vec2 === "number") {
+			this.x = this.x ** vec2;
+			this.y = this.y ** vec2;
+			return this;
+		}
+		else {
+			this.x = this.x ** vec2.x;
+			this.y = this.y ** vec2.y;
+			return this;
+		}
+	}
+	sign() {
+		return new vec(Math.sign(this.x), Math.sign(this.y));
+	}
+	sign2() {
+		this.x = Math.sign(this.x);
+		this.y = Math.sign(this.y);
+		return this;
+	}
 	mod(vec2) {
 		if (typeof vec2 === "number")
 			return new vec(this.x % vec2, this.y % vec2);
@@ -122,6 +147,13 @@ class vec {
 	}
 	get length() {
 		return Math.sqrt(this.x ** 2 + this.y ** 2);
+	}
+	set length(len) {
+		let scale = len / this.length;
+		this.x *= scale;
+		this.y *= scale;
+
+		return this;
 	}
 	get angle() {
 		return Math.atan2(this.y, this.x);
@@ -166,8 +198,8 @@ class vec {
 	}
 	normal2() {
 		let y = this.y;
-		this.x = y;
 		this.y = -this.x;
+		this.x = y;
 		return this;
 	}
 	inverse() {
@@ -194,6 +226,30 @@ class vec {
 		this.y = Math.ceil(this.y);
 		return this;
 	}
+	round() {
+		return new vec(Math.round(this.x), Math.round(this.y));
+	}
+	round2() {
+		this.x = Math.round(this.x);
+		this.y = Math.round(this.y);
+		return this;
+	}
+	min(vec2) {
+		return new vec(Math.min(vec2.x, this.x), Math.min(vec2.y, this.y));
+	}
+	min2(vec2) {
+		this.x = Math.min(this.x, vec2.x);
+		this.y = Math.min(this.y, vec2.y);
+		return this;
+	}
+	max(vec2) {
+		return new vec(Math.max(vec2.x, this.x), Math.max(vec2.y, this.y));
+	}
+	max2(vec2) {
+		this.x = Math.max(this.x, vec2.x);
+		this.y = Math.max(this.y, vec2.y);
+		return this;
+	}
 	clamp(min, max) {
 		return new vec(Math.max(min.x, Math.min(max.x, this.x)), Math.max(min.y, Math.min(max.y, this.y)));
 	}
@@ -218,5 +274,8 @@ class vec {
 	}
 	toObj() {
 		return { x: this.x, y: this.y };
+	}
+	isNaN() {
+		return isNaN(this.x) || isNaN(this.y);
 	}
 }

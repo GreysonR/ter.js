@@ -18,14 +18,17 @@ var ter = {
 		ter.Render.camera.boundSize = Math.sqrt(width * height) || 1; // Math.sqrt(width * height) || 1; // Math.sqrt(width**2 + height**2) / 2;
 	},
 	Performance: {
-		enabled: false,
+		render: true,
+		getAvgs: true,
 		lastUpdate: performance.now(),
 		fps: 60,
 		delta: 16.67,
-		frameNo: 0,
+		frame: 0,
 		aliveTime: 0,
 
 		history: {
+			avgFps: 60,
+			avgDelta: 16.67,
 			fps: [],
 			delta: [],
 		},
@@ -33,36 +36,70 @@ var ter = {
 		update: function() {
 			let Performance = ter.Performance;
 			let curTime = performance.now();
-			Performance.delta = curTime - Performance.lastUpdate;
+			if (curTime - Performance.lastUpdate === 0) {
+				return;
+			}
+
+			Performance.delta = Math.min(200, curTime - Performance.lastUpdate);
 			Performance.fps = 1000 / Performance.delta;
 			Performance.lastUpdate = curTime;
 			Performance.aliveTime += Performance.delta;
+
+			if (!Performance.render && Performance.getAvgs) {
+				Performance.history.fps.push(Performance.fps);
+				Performance.history.delta.push(Performance.delta);
+	
+				if (Performance.history.fps.length > 100) {
+					Performance.history.fps.shift();
+					Performance.history.delta.shift();
+				}
+				let fps = (() => {
+					let v = 0;
+					for (let i = 0; i < Performance.history.fps.length; i++) {
+						v += Performance.history.fps[i] / Performance.history.fps.length;
+					}
+					return v;
+				})();
+				let delta = (() => {
+					let v = 0;
+					for (let i = 0; i < Performance.history.delta.length; i++) {
+						v += Performance.history.delta[i] / Performance.history.delta.length;
+					}
+					return v;
+				})();
+
+				Performance.history.avgFps = fps;
+				Performance.history.avgDelta = delta;
+			}
 		},
 		render: function() {
-			let timing = ter.Performance;
+			let Performance = ter.Performance;
 			let ctx = ter.ctx;
 
-			timing.history.fps.push(timing.fps);
-			timing.history.delta.push(timing.delta);
+			Performance.history.fps.push(Performance.fps);
+			Performance.history.delta.push(Performance.delta);
 
-			if (timing.history.fps.length > 100) {
-				timing.history.fps.shift();
-				timing.history.delta.shift();
+			if (Performance.history.fps.length > 100) {
+				Performance.history.fps.shift();
+				Performance.history.delta.shift();
 			}
 			let fps = (() => {
 				let v = 0;
-				for (let i = 0; i < timing.history.fps.length; i++) {
-					v += timing.history.fps[i] / timing.history.fps.length;
+				for (let i = 0; i < Performance.history.fps.length; i++) {
+					v += Performance.history.fps[i] / Performance.history.fps.length;
 				}
 				return v;
 			})();
 			let delta = (() => {
 				let v = 0;
-				for (let i = 0; i < timing.history.delta.length; i++) {
-					v += timing.history.delta[i] / timing.history.delta.length;
+				for (let i = 0; i < Performance.history.delta.length; i++) {
+					v += Performance.history.delta[i] / Performance.history.delta.length;
 				}
 				return v;
 			})();
+
+			Performance.history.avgFps = fps;
+			Performance.history.avgDelta = delta;
 
 			ctx.fillStyle = "#2D2D2D80";
 			ctx.fillRect(20, 20, 200, 70);
@@ -84,7 +121,7 @@ var ter = {
 		timescale: 1,
 
 		bodies: [],
-		tree: new quadtree(),
+		tree: new Grid(1000),
 		constraints: [],
 		pairs: {},
 		
@@ -92,33 +129,33 @@ var ter = {
 			let pairs = [];
 
 			for (let i = 0; i < bodies.length - 1; i++) {
-				if (bodies[i].removed) {
-					ter.World.tree.removeBody(bodies[i]);
+				let bodyA = bodies[i];
+				if (bodyA.removed) {
+					ter.World.tree.removeBody(bodyA);
 					continue;
 				}
-				if (!bodies[i].hasCollisions)
+				if (!bodyA.hasCollisions || bodyA.children.length > 0)
 					continue;
 				
 				for (let j = i + 1; j < bodies.length; j++) {
 					// Do AABB collision test
-					let bodyA = bodies[i];
 					let bodyB = bodies[j];
 
 					if (bodyB.removed) {
 						ter.World.tree.removeBody(bodyB);
 						continue;
 					}
-					if (!bodyB.hasCollisions)
+					if (!bodyB.hasCollisions || bodyA.isStatic && bodyB.isStatic || bodyA.parent && bodyA.parent === bodyB.parent)
 						continue;
 
 
 					const boundsA = bodyA.bounds;
 					const boundsB = bodyB.bounds;
-					const AABBCollision = !(boundsA.min.x > boundsB.max.x ||
-											boundsA.max.x < boundsB.min.x ||
-											boundsA.min.y > boundsB.max.y ||
-											boundsA.max.y < boundsB.min.y);
-					if (AABBCollision) {
+					
+					if (boundsA.min.x <= boundsB.max.x &&
+						boundsA.max.x >= boundsB.min.x &&
+						boundsA.min.y <= boundsB.max.y &&
+						boundsA.max.y >= boundsB.min.y) {
 						pairs.push([ bodyA, bodyB ]);
 					}
 				}
@@ -127,45 +164,23 @@ var ter = {
 			return pairs;
 		},
 		get collisionPairs() {
-			let bodies = ter.World.tree.tree.nodes;
+			let grid = ter.World.tree;
+			let pair = ter.Common.pairCommon;
+			let getPairs = ter.World.getPairs;
 			let pairs = {};
 
-			function crawl(node) {
-				if (node.bodies.size > 1) {
-					if (node[0]) {
-						for (let i = 4; i--;) {
-							if (!node[i]) break;
-							if (node[i].bodies.size > 1) {
-								crawl(node[i]);
-							}
-						}
+			let buckets = grid.grid;
+			let bucketIds = grid.gridIds;
+
+			for (let id of bucketIds) {
+				let curPairs = getPairs(buckets[id]);
+
+				for (let j = 0; j < curPairs.length; j++) {
+					let curPair = curPairs[j];
+					let n = pair(curPair[0].id, curPair[1].id);
+					if (!pairs[n]) {
+						pairs[n] = curPair;
 					}
-					else {
-						let newPairs = ter.World.getPairs(Array.from(node.bodies));
-						for (let i = 0; i < newPairs.length; i++) {
-							let p = newPairs[i];
-							let id = ter.Common.pairCommon(p[0].id, p[1].id);
-							if (!pairs[id]) pairs[id] = p;
-						}
-					}
-				}
-			}
-			
-			let foundBody = false;
-			for (let id in bodies) {
-				if (!isNaN(Number(id))) {
-					if (bodies[id].bodies.size > 1) {
-						foundBody = true;
-						crawl(bodies[id]);
-					}
-				}
-			}
-			if (!foundBody) {
-				let newPairs = ter.World.getPairs(Array.from(bodies.bodies));
-				for (let i = 0; i < newPairs.length; i++) {
-					let p = newPairs[i];
-					let id = ter.Common.pairCommon(p[0].id, p[1].id);
-					if (!pairs[id]) pairs[id] = p;
 				}
 			}
 
@@ -178,47 +193,36 @@ var ter = {
 			return this.bodies++;
 		},
 
-		rectangle: function(width, height, position, options) {
+		rectangle: function(width, height, position, options = {}) {
 			return new rectangle(width, height, position, options);
 		},
-		polygon: function(radius, numSides, position, options) {
+		polygon: function(radius, numSides, position, options = {}) {
 			return new polygon(radius, numSides, position, options);
 		},
-		circle: function(radius, position, options) {
+		circle: function(radius, position, options = {}) {
 			return new circle(radius, position, options);
 		},
-		fromVertices: function(vertices, position, options) {
+		fromVertices: function(vertices, position, options = {}) {
 			return new fromVertices(vertices, position, options);
 		},
-		getInertia: function(body) {
-			const { vertices, mass } = body;
-			
-			let numerator = 0;
-			let denominator = 0;
-	
-			for (var i = 0; i < vertices.length; i++) {
-				let j = (i + 1) % vertices.length;
-				let cross = Math.abs(vertices[j].cross(vertices[i]));
-				numerator += cross * (vertices[j].dot(vertices[j]) + vertices[j].dot(vertices[i]) + vertices[i].dot(vertices[i]));
-				denominator += cross;
-			}
-	
-			return 4 * (mass / 6) * (numerator / denominator);
-		},
-		update: function(body) {
-			if (!body.static) {
-				this.updateVelocity(body);
-				ter.World.tree.updateBody(body);
+		update: function(body, delta) {
+			if (!body.isStatic) {
+				if (!body.parent) {
+					this.updateVelocity(body, delta);
+				}
+				if (body.children.length === 0) {
+					ter.World.tree.updateBody(body);
+				}
 			}
 		},
 		cleansePair(pair) {
 			const { World, Performance } = ter;
-			if (pair.frame < Performance.frameNo) {
+			if (pair.frame < Performance.frame) {
 				let { bodyA, bodyB } = pair;
 
 				// Remove pair
-				bodyA.pairs.splice(bodyA.pairs.indexOf(pair.id));
-				bodyB.pairs.splice(bodyB.pairs.indexOf(pair.id));
+				bodyA.pairs.splice(bodyA.pairs.indexOf(pair.id), 1);
+				bodyB.pairs.splice(bodyB.pairs.indexOf(pair.id), 1);
 				delete World.pairs[pair.id];
 
 				// Trigger collisionEnd
@@ -229,445 +233,527 @@ var ter = {
 			}
 			return false;
 		},
-		updateVelocity: function(body) {
-			const timescale = ter.Performance.delta / 16.667 * ter.World.timescale;
-			const timescaleSqrt = timescale ** 0.5;
+		updateVelocity: function(body, delta) {
+			const timescale = delta;
 
-			let frictionAir = 1 - body.frictionAir * timescaleSqrt;
-			let frictionAngular = 1 - body.frictionAngular * timescaleSqrt;
-			let lastVelocity = body.position.sub(body.last.position);
-			
-			body.force.add2(World.gravity.mult(body.mass * timescale));
-			body.velocity = lastVelocity.mult2(frictionAir).add2(body.force.div(body.mass)).mult2(timescaleSqrt);
-			
-			body.position.add2(body.velocity);
-			body.last.position.x = body.position.x - body.velocity.x / timescaleSqrt;
-			body.last.position.y = body.position.y - body.velocity.y / timescaleSqrt;
+			let frictionAir = (1 - body.frictionAir) ** timescale;
+			let frictionAngular = (1 - body.frictionAngular) ** timescale;
 
-			body.angularVelocity = ((body.angle - body.last.angle) * frictionAngular) + (body.torque / body.inertia);
-			body.last.angle = body.angle;
+			if (isNaN(timescale) || body.velocity.isNaN() || isNaN(frictionAir + frictionAngular)) {
+				return;
+			}
+			
+			body.velocity.mult2(frictionAir);
+			
+			if (body.velocity.x !== 0 || body.velocity.y !== 0) body.translate(body.velocity.mult(timescale));
+			
+
+			body.angularVelocity = (body.angularVelocity * frictionAngular);
 			if (Math.abs(body.angularVelocity) < 0.0001) body.angularVelocity = 0;
-			body.angle += body.angularVelocity;
 
-			for (let j = 0; j < body.vertices.length; j++) {
-				let vertice = body.vertices[j];
-				vertice.add2(body.velocity);
-				
-				if (body.angularVelocity !== 0) {
-					vertice.sub2(body.position).rotate2(body.angularVelocity).add2(body.position);
-				}
+			if (body.angularVelocity) {
+				body.translateAngle(body.angularVelocity * timescale);
 			}
 
-			body.velocity.div2(timescaleSqrt);
 			body.updateBounds();
 		},
-		solvePositions: function() {
-			let { pairs } = ter.World;
-			
-			for (let i in pairs) {
-				let pair = pairs[i];
-				if (!pair || this.cleansePair(pair)) continue;
-				const { depth, bodyA, bodyB, contacts, normal } = pair;
+		preUpdate: function(body, delta) {
+			if (body.isStatic) return;
 
-				// update body velocities
-				bodyA.velocity = bodyA.position.sub(bodyA.last.position);
-				bodyB.velocity = bodyB.position.sub(bodyB.last.position);
-				bodyA.angularVelocity = bodyA.angle - bodyA.last.angle;
-				bodyB.angularVelocity = bodyB.angle - bodyB.last.angle;
-
-				const contactShare = 0.9 / contacts.length; // 0.9 / body.totalContacts
-
-				for (let j = 0; j < contacts.length; j++) {
-					const { vertice } = contacts[j];
-					const offsetA = vertice.sub(bodyA.position);
-					const offsetB = vertice.sub(bodyB.position);
-					
-					let impulse = (depth - 0.5) * ter.Performance.delta / 16.667;
-					if (impulse <= 0) continue;
-					if (bodyA.static || bodyB.static) impulse *= 2;
-
-					if (!bodyA.static) {
-						bodyA.last.position.sub2(normal.mult(impulse * contactShare * 0.6));
-						bodyA.angle += offsetA.cross(normal) / 50000 * bodyA.inverseMass;
-					}
-					if (!bodyB.static) {
-						bodyB.last.position.add2(normal.mult(impulse * contactShare * 0.6));
-						bodyB.angle -= offsetB.cross(normal) / 50000 * bodyB.inverseMass;
-					}
-				}
-			}
+			// apply forces
+			body.velocity.add2(body.force).add2(World.gravity.mult(delta));
+			body.angularVelocity += body.torque;
 		},
-		solvePositionsBasic: function() {
-			const World = ter.World;
-			let { pairs } = World;
-			
-			for (let i in pairs) {
-				let pair = pairs[i];
-				if (!pair || this.cleansePair(pair)) continue;
-				const { depth, bodyA, bodyB, normal } = pair;
-				
-				let impulse = normal.mult(depth / 5);
-				let totalMass = bodyA.mass + bodyB.mass;
-				let shareA = (bodyB.mass / totalMass) || 0;
-				let shareB = (bodyA.mass / totalMass) || 0;
-				if (bodyA.static) shareB = 1;
-				if (bodyB.static) shareA = 1;
-				// if (bodyA === car || bodyB === car) console.log(shareA, shareB, bodyA === car);
-				if (bodyA.static || bodyB.static) impulse.mult(2);
-
-				if (!bodyA.static) {
-					bodyA.translate(impulse.mult(shareA));
-					// bodyA.last.position.add2(impulse.mult(restitution));
-				}
-				if (!bodyB.static) {
-					bodyB.translate(impulse.inverse().mult(shareB));
-					// bodyB.last.position.sub2(impulse.mult(restitution));
-				}
-			}
-		},
-		postUpdate: function() {
-			const World = ter.World;
-			for (let i = 0; i < World.bodies.length; i++) {
-				let body = World.bodies[i];
-
-				// clear forces
-				body.force.x = 0;
-				body.force.y = 0;
-				body.torque = 0;
-			}
+		postUpdate: function(body) {
+			// clear forces
+			body.force.x = 0;
+			body.force.y = 0;
+			body.torque = 0;
 		}
 	},
+	Constraints: {
+		create: function(bodyA, bodyB, options = {}) {
+			return new Constraint(bodyA, bodyB, options);
+		},
+		rope: function(bodyA, bodyB, numConstraints, constraintOptions = {}, anchorOptions = {}) {
+			let offsetA = constraintOptions.offsetA ?? new vec(0, 0);
+			let offsetB = constraintOptions.offsetA ?? new vec(0, 0);
+			let pointA = bodyA.position.add(offsetA.rotate(bodyA.angle));
+			let pointB = bodyB.position.add(offsetB.rotate(bodyB.angle));
+			let diff = pointB.sub(pointA);
+			let length = constraintOptions.length ?? diff.length;
+			let constraintDist = length / (numConstraints + 2);
+
+			const circle = ter.Bodies.circle;
+			const constraint = ter.Constraints.create;
+			const merge = ter.Common.merge;
+
+			diff.normalize2();
+
+			let anchors = [];
+			for (let i = 0; i < numConstraints; i++) {
+				let position = pointA.add(diff.mult((i + 1) * constraintDist));
+				anchors.push(circle(anchorOptions.radius ?? 2, position, anchorOptions));
+			}
+
+			let constraints = [];
+			for (let i = 0; i < anchors.length + 1; i++) {
+				let curBody = anchors[i - 1] ?? bodyA;
+				let nextBody = anchors[i] ?? bodyB;
+
+				let options = {};
+				merge(options, constraintOptions);
+				options.bodyA = curBody;
+				options.bodyB = nextBody;
+				options.length = constraintDist;
+
+				if (curBody !== bodyA)
+					options.offsetA = new vec(0, 0);
+				if (nextBody !== bodyB)
+					options.offsetB = new vec(0, 0);
+
+				let c = constraint(curBody, nextBody, options);
+				constraints.push(c);
+				// c.delete();
+			}
+
+			return constraints;
+		},
+	},
 	Engine: {
-		velocityIterations: 1,
-		positionIterations: 1,
-		basicSolver: true,
-		update: function() {
-			const { World, Engine, Bodies } = ter;
+		substeps: 4,
+		velocityIterations: 2,
+		positionIterations: 4,
+		constraintIterations: 4,
+		maxShare: 6,
+
+		update: function(delta) {
+			const { World, Engine, Performance } = ter;
 			const { bodies } = World;
+			const { substeps } = Engine;
+
+			// Get delta
+			if (delta === undefined) {
+				delta = Performance.delta * ter.World.timescale / 16.66667 / substeps;
+			}
 
 			// Get timing
 			Performance.update();
-			Performance.frameNo++;
 
-			// Update positions / angles
-			for (let i = 0; i < bodies.length; i++) {
-				ter.Bodies.update(bodies[i]);
-			}
-
-			Bodies.postUpdate();
-			
-			/*
-			globalVectors = [];
-			globalPoints = [];
-			Engine.testCollisions();
-			if (ter.Engine.basicSolver) {
-				Engine.solveVelocitiesBasic();
-				Bodies.solvePositionsBasic();
-			}
-			else {
+			for (let step = 0; step < substeps; step++) {
+				Performance.frame++;
+				
+				// Find collisions
+				globalVectors = [];
+				globalPoints = [];
+				
+				const pairs = World.collisionPairs;
+				for (let i = 0; i < pairs.length; i++) {
+					let bodyA = pairs[i][0];
+					let bodyB = pairs[i][1];	
+					Engine.testCollision(bodyA, bodyB);
+				}
+	
+				// Apply forces
+				for (let i = 0; i < bodies.length; i++) {
+					let body = bodies[i];
+					body.trigger("beforeUpdate");
+					ter.Bodies.preUpdate(body, delta);
+				}
+	
+				// Solve for velocities
 				for (let i = 0; i < this.velocityIterations; i++) {
-					Engine.solveVelocity();
+					Engine.solveVelocity(delta);
 				}
 				for (let i = 0; i < this.positionIterations; i++) {
-					Bodies.solvePositions();
+					Engine.solvePositions();
 				}
-			}/**/
-		},
-		updateCollisions: function() {
-			globalVectors = [];
-			globalPoints = [];
-			Engine.testCollisions();
-			if (ter.Engine.basicSolver) {
-				Engine.solveVelocitiesBasic();
-				Bodies.solvePositionsBasic();
-			}
-			else {
-				for (let i = 0; i < this.velocityIterations; i++) {
-					Engine.solveVelocity();
+				Engine.solveConstraints(delta);
+				
+				// Update positions / angles
+				for (let i = 0; i < bodies.length; i++) {
+					let body = bodies[i];
+					body.trigger("duringUpdate");
+					ter.Bodies.update(body, delta);
 				}
-				for (let i = 0; i < this.positionIterations; i++) {
-					Bodies.solvePositions();
+	
+				// Clear forces
+				for (let i = 0; i < bodies.length; i++) {
+					let body = bodies[i];
+					ter.Bodies.postUpdate(body);
+					body.trigger("afterUpdate");
 				}
 			}
 		},
-		testCollisions: function() {
-			const { World, Common: Basic, Performance } = ter;
-			const { collisionPairs:pairs } = World;
+		testCollision: function(bodyA, bodyB) {
+			if (bodyA.isStatic && bodyB.isStatic) return false;
 
-			// - go through possible collision pairs
-			for (let i = 0; i < pairs.length; i++) {
-				let bodyA = pairs[i][0];
-				let bodyB = pairs[i][1];
-				let collision = true;
+			let collision = true;
 
-				function getAllSupports(body, direction) {
-					let vertices = body.vertices;
-					let maxDist = -Infinity;
-					let minDist = Infinity;
-					// let maxVert, minVert;
+			function getAllSupports(body, direction) {
+				let vertices = body.vertices;
+				let maxDist = -Infinity;
+				let minDist = Infinity;
+				// let maxVert, minVert;
 
-					for (let i = 0; i < vertices.length; i++) {
-						let dist = direction.dot(vertices[i]);
+				for (let i = 0; i < vertices.length; i++) {
+					let dist = direction.dot(vertices[i]);
 
-						if (dist > maxDist) {
-							maxDist = dist;
-							// maxVert = i;
-						}
-						if (dist < minDist) {
-							minDist = dist;
-							// minVert = i;
-						}
+					if (dist > maxDist) {
+						maxDist = dist;
+						// maxVert = i;
 					}
-
-					return { max: maxDist, min: minDist };
+					if (dist < minDist) {
+						minDist = dist;
+						// minVert = i;
+					}
 				}
 
-				// - find if colliding with SAT
-				// ~ reuse last separation axis
-				if (bodyA.lastSeparations[bodyB.id]) {
-					let axis = bodyA.lastSeparations[bodyB.id];
+				return { max: maxDist, min: minDist };
+			}
+
+			// - find if colliding with SAT
+			// ~ reuse last separation axis
+			if (bodyA.lastSeparations[bodyB.id]) {
+				let axis = bodyA.lastSeparations[bodyB.id];
+				let supportsA = getAllSupports(bodyA, axis);
+				let supportsB = getAllSupports(bodyB, axis);
+				let overlap = Math.min(supportsA.max - supportsB.min, supportsB.max - supportsA.min);
+
+				if (overlap < 0) {
+					collision = false;
+				}
+				else {
+					delete bodyA.lastSeparations[bodyB.id];
+					delete bodyB.lastSeparations[bodyA.id];
+				}
+			}
+			if (collision) { // last separation didn't work - try all axes
+				// ~ bodyA axes
+				for (let j = 0; j < bodyA.axes.length; j++) {
+					let axis = bodyA.axes[j];
 					let supportsA = getAllSupports(bodyA, axis);
 					let supportsB = getAllSupports(bodyB, axis);
 					let overlap = Math.min(supportsA.max - supportsB.min, supportsB.max - supportsA.min);
 
 					if (overlap < 0) {
 						collision = false;
-					}
-					else {
-						delete bodyA.lastSeparations[bodyB.id];
-						delete bodyB.lastSeparations[bodyA.id];
-					}
-				}
-				if (collision) { // last separation didn't work - try all axes
-					// ~ bodyA axes
-					for (let j = 0; j < bodyA.axes.length; j++) {
-						let axis = bodyA.axes[j];
-						let supportsA = getAllSupports(bodyA, axis);
-						let supportsB = getAllSupports(bodyB, axis);
-						let overlap = Math.min(supportsA.max - supportsB.min, supportsB.max - supportsA.min);
-
-						if (overlap < 0) {
-							collision = false;
-							bodyA.lastSeparations[bodyB.id] = axis;
-							bodyB.lastSeparations[bodyA.id] = axis;
-							break;
-						}
-					}
-					// ~ bodyB axes
-					for (let j = 0; j < bodyB.axes.length; j++) {
-						let axis = bodyB.axes[j];
-						let supportsA = getAllSupports(bodyB, axis);
-						let supportsB = getAllSupports(bodyA, axis);
-						let overlap = Math.min(supportsA.max - supportsB.min, supportsB.max - supportsA.min);
-						
-						if (overlap < 0) {
-							collision = false;
-							bodyA.lastSeparations[bodyB.id] = axis;
-							bodyB.lastSeparations[bodyA.id] = axis;
-							break;
-						}
+						bodyA.lastSeparations[bodyB.id] = axis;
+						bodyB.lastSeparations[bodyA.id] = axis;
+						break;
 					}
 				}
-
-				if (collision === true) {
-					// bodyA.render.tempBackground = bodyA.render.border + "40";
-					// bodyB.render.tempBackground = bodyB.render.border + "40";
-
-					// - get collision normal by getting point with minimum depth
-					let minDepth = Infinity;
-					let normal;
-					let normalPoint;
-					let contactBody;
-					let normalBody;
-					let contacts = [];
-					let numContacts = 0;
-
-					function findNormal(bodyA, bodyB) {
-						let vertices = bodyA.vertices;
-						for (let i = 0; i < vertices.length; i++) {
-							let curVertice = vertices[i];
-							let nextVertice = vertices[(i + 1) % vertices.length];
-							let curNormal = curVertice.sub(nextVertice).normal().normalize();
-							let support = bodyB.getSupport(curNormal, curVertice);
-
-							if (bodyB.containsPoint(curVertice)) {
-								contacts.push({ vertice: curVertice, body: bodyA });
-								numContacts++;
-							}
-
-							if (support[1] < minDepth) {
-								minDepth = support[1];
-								normal = curNormal.inverse();
-								normalPoint = curVertice.avg(nextVertice);
-
-								normalBody = bodyB;
-								contactBody = bodyA;
-							}
-						}
-					}
-
-					findNormal(bodyA, bodyB);
-					findNormal(bodyB, bodyA);
-					if (contacts.length === 0) continue;
-
-					// globalVectors.push({ position: normalPoint, vector: normal.inverse() });
-					// globalPoints.push(...contacts.map(v => v.vertice));
-
-					normal = normal.inverse();
-
-					let pairId = Basic.pairCommon(bodyA.id, bodyB.id);
-					let pair = {
-						bodyA: contactBody,
-						bodyB: normalBody,
-						depth: minDepth,
-						penetration: normal.mult(minDepth),
-						contacts: contacts,
-						totalContacts: numContacts,
-						normal: normal,
-						tangent: normal.normal(),
-
-						id: pairId,
-						frame: Performance.frameNo,
-					}
-
-					if (World.pairs[pairId]) { // Collision active
-						bodyA.trigger("collisionActive", pair);
-						bodyB.trigger("collisionActive", pair);
-					}
-					else { // Collision start
-						bodyA.trigger("collisionStart", pair);
-						bodyB.trigger("collisionStart", pair);
-						
-						bodyA.pairs.push(pairId);
-						bodyB.pairs.push(pairId);
-					}
-
-					World.pairs[pairId] = pair;
-				}
-			}
-		},
-		solveVelocity: function() {
-			let { pairs } = ter.World;
-			
-			for (let i in pairs) {
-				let pair = pairs[i];
-				if (!pair) continue;
-
-				let { Common: Basic } = ter;
-				const { bodyA, bodyB, contacts, normal, tangent, depth } = pair;
-
-				// update body velocities
-				bodyA.velocity = bodyA.position.sub(bodyA.last.position);
-				bodyB.velocity = bodyB.position.sub(bodyB.last.position);
-				bodyA.angularVelocity = bodyA.angle - bodyA.last.angle;
-				bodyB.angularVelocity = bodyB.angle - bodyB.last.angle;
-
-				const restitution = Math.max(bodyA.restitution, bodyB.restitution);
-				const friction = Math.max(bodyA.friction, bodyB.friction);
-				const contactShare = 1 / pair.totalContacts;
-
-				for (let j = 0; j < contacts.length; j++) {
-					const { vertice } = contacts[j];
-					const offsetA = vertice.sub(bodyA.position).sub(bodyA.velocity);
-					const offsetB = vertice.sub(bodyB.position).sub(bodyB.velocity);
-					const vpA = bodyA.velocity.add(offsetA.normal().mult(-bodyA.angularVelocity));
-					const vpB = bodyB.velocity.add(offsetB.normal().mult(-bodyB.angularVelocity));
-					const relativeVelocity = vpA.sub(vpB);
-					const normalVelocity = relativeVelocity.dot(normal);
-
-					if (Math.abs(normalVelocity) < 0.1) {
-						// console.log(normalVelocity);
-						// debugger;
-					};
-
-					const tangentVelocity = relativeVelocity.dot(tangent);
-					const tangentSpeed = Math.abs(tangentVelocity);
-
-					if (normalVelocity > 0) continue;
+				// ~ bodyB axes
+				for (let j = 0; j < bodyB.axes.length; j++) {
+					let axis = bodyB.axes[j];
+					let supportsA = getAllSupports(bodyB, axis);
+					let supportsB = getAllSupports(bodyA, axis);
+					let overlap = Math.min(supportsA.max - supportsB.min, supportsB.max - supportsA.min);
 					
-					let normalImpulse = (1 + restitution) * normalVelocity;
-					let normalForce = Basic.clamp(depth + normalVelocity, 0, 1) * 5;
-
-					// friction
-					let tangentImpulse = tangentVelocity;
-					let maxFriction = Infinity;
-
-					if (tangentSpeed > friction * friction * normalForce) { // second friction would be staticFriction
-						maxFriction = tangentSpeed;
-						tangentImpulse = Basic.clamp(friction * Math.sign(tangentVelocity), -maxFriction, maxFriction);
-					}
-					
-					const oAcN = offsetA.cross(normal);
-					const oBcN = offsetB.cross(normal);
-					const share = contactShare / (bodyA.inverseMass + bodyB.inverseMass + bodyA.inverseInertia * oAcN * oAcN  + bodyB.inverseInertia * oBcN * oBcN);
-					
-					normalImpulse *= share;
-					tangentImpulse *= share;
-
-					if (normalVelocity < 0 && normalVelocity * normalVelocity > 4) { // 4 is resting threshold
-						normalImpulse = 0;
-					}
-					else {
-						var contactNormalImpulse = normalImpulse;
-						normalImpulse = Math.min(normalImpulse + normalImpulse, 0);
-						normalImpulse = normalImpulse - contactNormalImpulse;
-					}
-
-					// apply forces
-					const impulse = normal.mult(normalImpulse).add2(tangent.mult(tangentImpulse));
-					if (!bodyA.static) {
-						bodyA.last.position.add2(impulse.mult(bodyA.inverseMass));
-						bodyA.last.angle += offsetA.cross(impulse) * bodyA.inverseInertia;
-					}
-					if (!bodyB.static) {
-						bodyB.last.position.sub2(impulse.mult(bodyB.inverseMass));
-						bodyB.last.angle -= offsetB.cross(impulse) * bodyB.inverseInertia;
+					if (overlap < 0) {
+						collision = false;
+						bodyA.lastSeparations[bodyB.id] = axis;
+						bodyB.lastSeparations[bodyA.id] = axis;
+						break;
 					}
 				}
 			}
+
+			if (collision === true) {
+				// - get collision normal by getting point with minimum depth
+				let minDepth = Infinity;
+				let normal;
+				let normalPoint;
+				let contactBody;
+				let normalBody;
+				let contacts = [];
+				let numContacts = 0;
+
+				function findNormal(bodyA, bodyB) {
+					let vertices = bodyA.vertices;
+					for (let i = 0; i < vertices.length; i++) {
+						let curVertice = vertices[i];
+						let nextVertice = vertices[(i + 1) % vertices.length];
+						let curNormal = curVertice.sub(nextVertice).normal().normalize();
+						let support = bodyB.getSupport(curNormal, curVertice);
+
+						if (bodyB.containsPoint(curVertice)) {
+							contacts.push({ vertice: curVertice, body: bodyA });
+							numContacts++;
+						}
+
+						if (support[1] < minDepth) {
+							minDepth = support[1];
+							normal = curNormal.inverse();
+							normalPoint = curVertice.avg(nextVertice);
+
+							normalBody = bodyB;
+							contactBody = bodyA;
+						}
+					}
+				}
+
+				findNormal(bodyA, bodyB);
+				findNormal(bodyB, bodyA);
+				if (contacts.length === 0) {
+					contacts.push({ vertice: new vec(bodyA.position), body: bodyA });
+				}
+
+				if (Render.showCollisions) {
+					globalVectors.push({ position: normalPoint, vector: normal.inverse() });
+					globalPoints.push(...contacts.map(v => v.vertice));
+				}
+
+				normal = normal.inverse();
+
+				let pairId = Common.pairCommon(bodyA.id, bodyB.id);
+				let pair = {
+					bodyA: contactBody,
+					bodyB: normalBody,
+					depth: minDepth,
+					penetration: normal.mult(minDepth),
+					contacts: contacts,
+					totalContacts: numContacts,
+					normal: normal,
+					tangent: normal.normal(),
+
+					id: pairId,
+					frame: Performance.frame,
+					start: Performance.aliveTime,
+				}
+
+				if (World.pairs[pairId]) { // Collision active
+					pair.start = World.pairs[pairId].start;
+					bodyA.trigger("collisionActive", pair);
+					bodyB.trigger("collisionActive", pair);
+				}
+				else { // Collision start
+					bodyA.trigger("collisionStart", pair);
+					bodyB.trigger("collisionStart", pair);
+					
+					bodyA.pairs.push(pairId);
+					bodyB.pairs.push(pairId);
+				}
+
+				World.pairs[pairId] = pair;
+			}
 		},
-		solveVelocitiesBasic: function() {
+		solveVelocity: function(delta) {
 			let { pairs } = ter.World;
+			let now = Performance.aliveTime;
 			
 			for (let i in pairs) {
 				let pair = pairs[i];
 				if (!pair || ter.Bodies.cleansePair(pair)) continue;
 
-				const { bodyA, bodyB, normal, tangent } = pair;
-				
-				// update body velocities
-				bodyA.velocity = bodyA.position.sub(bodyA.last.position);
-				bodyB.velocity = bodyB.position.sub(bodyB.last.position);
+				let { bodyA, bodyB, normal, tangent, contacts, start } = pair;
+				if (bodyA.isSensor || bodyB.isSensor) continue;
 
-				// update body velocities
-				bodyA.velocity = bodyA.position.sub(bodyA.last.position);
-				bodyB.velocity = bodyB.position.sub(bodyB.last.position);
-				bodyA.angularVelocity = bodyA.angle - bodyA.last.angle;
-				bodyB.angularVelocity = bodyB.angle - bodyB.last.angle;
+				while (bodyA.parent && bodyA.parent !== bodyA) {
+					bodyA = bodyA.parent;
+				}
+				while (bodyB.parent && bodyB.parent !== bodyB) {
+					bodyB = bodyB.parent;
+				}
 
 				const restitution = 1 + Math.max(bodyA.restitution, bodyB.restitution);
 				const relVel = bodyB.velocity.sub(bodyA.velocity);
-				const friction = Math.max(bodyA.friction, bodyB.friction);
-
+				const friction = Math.max(bodyA.friction, bodyB.friction) / 2; // divide friction by 2 to make it more stable
+				const sink = Math.max(bodyA.sink, bodyB.sink);
 
 				if (relVel.dot(normal) < 0) {
 					continue;
 				}
 
-				let impulse = normal.mult(normal.dot(relVel) * -restitution).sub2(tangent.abs().mult(relVel.mult(friction)));
-				// if (bodyA.static || bodyB.static) impulse.mult2(1.5);
+				let impulse = new vec(0, 0);
+				let angImpulseA = 0;
+				let angImpulseB = 0;
+
 				let totalMass = bodyA.mass + bodyB.mass;
 				let shareA = (bodyB.mass / totalMass) || 0;
 				let shareB = (bodyA.mass / totalMass) || 0;
-				if (bodyA.static) shareB = 1;
-				if (bodyB.static) shareA = 1;
+				let maxShare = ter.Engine.maxShare;
+				shareA = Math.min(maxShare, shareA);
+				shareB = Math.min(maxShare, shareB);
+				if (bodyA.isStatic) shareB = 1;
+				if (bodyB.isStatic) shareA = 1;
 
-				if (!bodyA.static) {
-					bodyA.last.position.add2(impulse.mult(shareA));
+				let numContacts = contacts.length;
+
+				for (let c = 0; c < numContacts; c++) {
+					const { vertice } = contacts[c];
+
+					const offsetA = vertice.sub(bodyA.position).sub(bodyA.velocity);
+					const offsetB = vertice.sub(bodyB.position).sub(bodyB.velocity);
+					const vpA = bodyA.velocity.add(offsetA.normal().mult(-bodyA.angularVelocity));
+					const vpB = bodyB.velocity.add(offsetB.normal().mult(-bodyB.angularVelocity));
+					var relativeVelocity = vpA.sub(vpB);
+					const normalVelocity = relativeVelocity.abs().mult(0.9).sub(sink).mult(relativeVelocity.sign()).dot(normal);
+					const tangentVelocity = relativeVelocity.dot(tangent);
+
+					if (normalVelocity > 0) continue;
+					
+					let normalImpulse = (restitution) * normalVelocity;
+
+					// friction
+					let tangentImpulse = tangentVelocity;
+
+					let curImpulse = normal.mult(normalImpulse).add2(tangent.mult(tangentImpulse * friction));
+					impulse.add2(curImpulse);
+					angImpulseA += offsetA.cross(curImpulse) * bodyA.inverseInertia;
+					angImpulseB += offsetB.cross(curImpulse) * bodyB.inverseInertia;
 				}
-				if (!bodyB.static) {
-					bodyB.last.position.sub2(impulse.mult(shareB));
+
+				impulse.div2(numContacts);
+				angImpulseA /= numContacts;
+				angImpulseB /= numContacts;
+				
+
+				// let impulse = normal.mult(normal.dot(relVel) * -restitution).sub2(tangent.abs().mult2(relVel).mult2(friction));
+				// if (bodyA.isStatic || bodyB.isStatic) impulse.mult2(1.5);
+
+				if (now - start > 2000) {
+					let m = 1000 / (now - start - 1000);
+					angImpulseA *= m;
+					angImpulseB *= m;
 				}
+
+				if (!bodyA.isStatic) {
+					bodyA.velocity.sub2(impulse.mult(shareA * delta));
+					bodyA.angularVelocity -= angImpulseA * shareA * delta;
+				}
+				if (!bodyB.isStatic) {
+					bodyB.velocity.add2(impulse.mult(shareB * delta));
+					bodyB.angularVelocity += angImpulseB * shareB * delta;
+				}
+			}
+		},
+		solvePositions: function() {
+			const World = ter.World;
+			const Bodies = ter.Bodies;
+			let { pairs } = World;
+			
+			for (let i in pairs) {
+				let pair = pairs[i];
+				if (!pair || Bodies.cleansePair(pair)) continue;
+				let { depth, bodyA, bodyB, normal } = pair;
+				if (bodyA.isSensor || bodyB.isSensor) continue;
+
+				while (bodyA.parent && bodyA.parent !== bodyA) {
+					bodyA = bodyA.parent;
+				}
+				while (bodyB.parent && bodyB.parent !== bodyB) {
+					bodyB = bodyB.parent;
+				}
+				
+				if (depth < 1) continue;
+
+				let impulse = normal.mult(depth * 0.1);
+				let totalMass = bodyA.mass + bodyB.mass;
+				let shareA = (bodyB.mass / totalMass) || 0;
+				let shareB = (bodyA.mass / totalMass) || 0;
+				let maxShare = ter.Engine.maxShare;
+				shareA = Math.min(maxShare, shareA);
+				shareB = Math.min(maxShare, shareB);
+				if (bodyA.isStatic) shareB = 1;
+				if (bodyB.isStatic) shareA = 1;
+				if (bodyA.isStatic || bodyB.isStatic) impulse.mult(2);
+
+				if (!bodyA.isStatic) {
+					let a = impulse.mult(shareA * 0.95);
+					bodyA.translate(a);
+				}
+				if (!bodyB.isStatic) {
+					let a = impulse.inverse().mult(shareB * 0.95);
+					bodyB.translate(a);
+				}
+			}
+		},
+		solveConstraints: function(delta) {
+			const constraints = ter.World.constraints;
+			const constraintIterations = ter.Engine.constraintIterations;
+			delta /= constraintIterations;
+
+			for (let step = 0; step < constraintIterations; step++) {
+				for (let i = 0; i < constraints.length; i++) {
+					let constraint = constraints[i];
+					let { bodyA, bodyB, offsetA, offsetB, stiffness, angularStiffness, length, ignoreSlack } = constraint;
+					let pointA = bodyA.position.add(offsetA.rotate(bodyA.angle));
+					let pointB = bodyB.position.add(offsetB.rotate(bodyB.angle));
+	
+					// constraint velocity solver
+					let diff = pointA.sub(pointB);
+					let normal = diff.normalize();
+					let tangent = normal.normal();
+	
+					let totalMass = bodyA.mass + bodyB.mass;
+					let shareA = (bodyB.mass / totalMass) || 0;
+					let shareB = (bodyA.mass / totalMass) || 0;
+					let maxShare = ter.Engine.maxShare;
+					shareA = Math.min(maxShare, shareA);
+					shareB = Math.min(maxShare, shareB);
+					if (bodyA.isStatic) shareB = 1;
+					if (bodyB.isStatic) shareA = 1;
+	
+					// stiffness = 1 - (1 - stiffness) ** delta;
+					// angularStiffness = 1 - (1 - angularStiffness) ** delta;
+	
+					let nextLength = pointA.sub(pointB).length + (length - pointA.sub(pointB).length) * stiffness;
+	
+					function solveImpulse(vertice, point, body) { // vertice = where the constraint goes to, point = where the constraint is
+						let offset = vertice.sub(body.position);
+						let offsetLen = offset.length;
+						if (offsetLen > length * 3) {
+							offset.mult2(length / offsetLen);
+						}
+						const vp = body.velocity.add(offset.normal().mult(-body.angularVelocity));
+						let vp2 = offset.mult(stiffness * (vertice.sub(point).length));
+						// console.log(offset);
+						if (vertice.sub(point).dot(normal) > 0 && ignoreSlack) {
+							// vp2.mult2(0);
+							vp.mult2(0);
+						}
+						const relativeVelocity = vp.sub(vp2);
+						const normalVelocity = relativeVelocity.dot(normal);
+						const tangentVelocity = relativeVelocity.dot(tangent);
+						let tangentImpulse = tangentVelocity;
+						
+						let normalImpulse = (stiffness) * normalVelocity; // min is to prevent breakage
+						normalImpulse = Math.min(Math.abs(normalImpulse), 300) * Math.sign(normalImpulse);
+						let curImpulse = normal.mult(normalImpulse).add2(tangent.mult(tangentImpulse * angularStiffness));
+	
+						return {
+							angularImpulse: offset.cross(curImpulse) * body.inverseInertia / 2,
+							normalImpulse: curImpulse.mult(0.5),
+						}
+					}
+	
+					let impulsePtA = bodyA.isStatic ? pointA : pointB.add(pointA.sub(pointB).normalize().mult(length));
+					let impulsePtB = bodyB.isStatic ? pointB : pointA.add(pointB.sub(pointA).normalize().mult(length));
+	
+					let { angularImpulse: angImpulseA, normalImpulse: impulseA } = solveImpulse(impulsePtA, pointA, bodyA);
+					let { angularImpulse: angImpulseB, normalImpulse: impulseB } = solveImpulse(impulsePtB, pointB, bodyB);
+					
+					if (!bodyA.isStatic) {
+						bodyA.velocity.sub2(impulseA.mult(shareA * delta));
+						bodyA.angularVelocity -= angImpulseA * shareA * delta;
+					}
+					if (!bodyB.isStatic) {
+						bodyB.velocity.sub2(impulseB.mult(shareB * delta));
+						bodyB.angularVelocity -= angImpulseB * shareB * delta;
+					}
+	
+					// constraint position solver
+					let changeA = nextLength - impulsePtB.sub(bodyA.position).length;
+					changeA = Math.min(50, Math.abs(changeA)) * Math.sign(changeA);
+					let changeB = nextLength - impulsePtA.sub(bodyB.position).length;
+					changeB = Math.min(50, Math.abs(changeB)) * Math.sign(changeB);
+	
+					bodyA.translate(normal.mult((changeA) * shareA * delta * 0.05));
+					bodyB.translate(normal.mult((changeB) * shareB * delta * 0.05));
+					constraint.updateBounds();
+				}
+
 			}
 		},
 	},
@@ -681,6 +767,12 @@ var ter = {
 			}
 			return mod(angle1 - angle2 + Math.PI, Math.PI * 2) - Math.PI;
 		},
+		modDiff: function(x, y, m = 1) {
+			function mod(a, b) {
+				return a - Math.floor(a / b) * b;
+			}
+			return mod(x - y + m/2, m) - m/2;
+		},
 		pair: function(x, y) { // Elegant pairing function - http://szudzik.com/ElegantPairing.pdf
 			if (x > y)
 				return x*x + x + y;
@@ -690,6 +782,110 @@ var ter = {
 			if (x > y)
 				return x*x + x + y;
 			return y*y + y + x;
+		},
+		merge: function(obj, options) {
+			Object.keys(options).forEach(option => {
+				let value = options[option];
+				
+				if (Array.isArray(value)) {
+					obj[option] = [ ...value ];
+				}
+				else if (typeof value === "object" && value !== null) {
+					if (typeof obj[option] !== "object") {
+						obj[option] = {};
+					}
+					ter.Common.merge(obj[option], value);
+				}
+				else {
+					obj[option] = value;
+				}
+			});
+		},
+		lineIntersects: function(a1, a2, b1, b2) {
+			if (a1.x === a1.x)
+				a1.x += 0.00001;
+			if (b1.x === b1.x)
+				b1.x += 0.00001;
+			if (a1.y === a1.y)
+				a1.y += 0.00001;
+			if (b1.y === b1.y)
+				b1.y += 0.00001;
+
+			let d = (a1.x - a2.x) * (b1.y - b2.y) - (a1.y - a2.y) * (b1.x - b2.x);
+			if (d === 0) return false;
+
+			let nx = (a1.x * a2.y - a1.y * a2.x) * (b1.x - b2.x) - (a1.x - a2.x) * (b1.x * b2.y - b1.y * b2.x);
+			let ny = (a1.x * a2.y - a1.y * a2.x) * (b1.y - b2.y) - (a1.y - a2.y) * (b1.x * b2.y - b1.y * b2.x);
+
+			let pt = new vec(nx / d, ny / d);
+
+			let withinX = pt.x > Math.min(a1.x, a2.x) && pt.x < Math.max(a1.x, a2.x) && pt.x > Math.min(b1.x, b2.x) && pt.x < Math.max(b1.x, b2.x);
+			let withinY = pt.y > Math.min(a1.y, a2.y) && pt.y < Math.max(a1.y, a2.y) && pt.y > Math.min(b1.y, b2.y) && pt.y < Math.max(b1.y, b2.y);
+			if (withinX && withinY) {
+				return pt;
+			}
+			else {
+				return false;
+			}
+		},
+		raycast: function(start, end, bodies) {
+			let lineIntersects = ter.Common.lineIntersects;
+			let minDist = Infinity;
+			let minPt = null;
+			let minBody = null;
+			let minVert = -1;
+
+			if (bodies === undefined) {
+				let grid = World.tree;
+				let size = grid.gridSize;
+				let bounds = { min: start.min(end).div2(size).floor2(), max: start.max(end).div2(size).floor2() };
+				bodies = [];
+		
+				for (let x = bounds.min.x; x <= bounds.max.x; x++) {
+					for (let y = bounds.min.y; y <= bounds.max.y; y++) {
+						let n = grid.pair(new vec(x, y));
+						let node = grid.grid[n];
+		
+						if (node) {
+							for (let body of node) {
+								if (!bodies.includes(body) && body.children.length === 0) {
+									bodies.push(body);
+								}
+							}
+						}
+					}
+				}
+			}
+
+			for (let i = 0; i < bodies.length; i++) {
+				let body = bodies[i];
+				let { vertices } = body;
+				let len = vertices.length;
+
+				for (let i = 0; i < len; i++) {
+					let cur = vertices[i];
+					let next = vertices[(i + 1) % len];
+
+					let intersection = lineIntersects(start, end, cur, next);
+					if (intersection) {
+						let dist = intersection.sub(start).length;
+						if (dist < minDist) {
+							minDist = dist;
+							minPt = intersection;
+							minBody = body;
+							minVert = i;
+						}
+					}
+				}
+			}
+
+			return {
+				collision: minPt !== null,
+				distance: minDist,
+				point: minPt,
+				body: minBody,
+				verticeIndex: minVert,
+			};
 		},
 	},
 	Render: (() => {
@@ -715,13 +911,6 @@ var ter = {
 			ctx.save();
 			ctx.translate(camera.translation.x, camera.translation.y);
 			ctx.scale(camera.scale, camera.scale);
-			
-			if (Render.showBoundingBox === true) {
-				Render.boundingBox();
-			}
-			if (Render.showBroadphase === true) {
-				Render.broadphase();
-			}
 
 			Render.trigger("beforeRender");
 			let layers = Object.keys(bodies).sort((a, b) => {
@@ -733,30 +922,45 @@ var ter = {
 				let layer = bodies[layerId];
 				Render.trigger("beforeLayer" + layerId);
 				for (let body of layer) {
-					const { position, vertices, render, bounds } = body;
-					const { visible, background, tempBackground, border, borderWidth, borderType, lineDash, bloom, opacity, sprite } = render;
-					const inView = !(bounds.max.x < camera.bounds.min.x || bounds.min.x > camera.bounds.max.x
-								 || bounds.max.y < camera.bounds.min.y || bounds.min.y > camera.bounds.max.y);
+					const { position, vertices, render, bounds, type } = body;
+					
+					if (render.visible === true && (bounds.max.x >= camera.bounds.min.x && bounds.min.x <= camera.bounds.max.x
+						&& bounds.max.y >= camera.bounds.min.y && bounds.min.y <= camera.bounds.max.y)) {
+						
+						if (type === "constraint") { // render constraint
+							Render.constraint(body);
+							continue;
+						}
 
-					if (visible && inView) {
-						ctx.beginPath();
+						const { background, border, borderWidth, borderType, lineDash, bloom, opacity, sprite, round, } = render;
+							
+						if (sprite && !Render.images[sprite]) { // load sprite if it doesn't exist
+							Render.loadImg(sprite);
+						}
+						if (sprite && Render.images[sprite]) { // sprite render
+							let { spriteX, spriteY, spriteWidth, spriteHeight, spriteScale } = render;
+	
+							ctx.translate(position.x, position.y);
+							ctx.rotate(body.angle);
+							ctx.scale(spriteScale.x, spriteScale.y);
+							ctx.drawImage(Render.images[sprite], spriteX, spriteY, spriteWidth, spriteHeight);
+							ctx.scale(1 / spriteScale.x, 1 / spriteScale.y);
+							ctx.rotate(-body.angle);
+							ctx.translate(-position.x, -position.y);
+
+							continue;
+						}
+
+						// render body that doesn't have a sprite
 						ctx.globalAlpha = opacity ?? 1;
 						ctx.lineWidth = borderWidth;
 						ctx.strokeStyle = border;
 						ctx.fillStyle = background;
 						ctx.lineJoin = borderType;
-	
+
 						if (bloom) {
 							ctx.shadowColor = border;
-							ctx.shadowBlur = bloom;
-						}
-			
-						if (tempBackground !== undefined) {
-							ctx.fillStyle = tempBackground;
-			
-							if (body.pairs.length === 0) {
-								delete render.tempBackground;
-							}
+							ctx.shadowBlur = bloom * camera.scale;
 						}
 			
 						if (lineDash) {
@@ -765,50 +969,19 @@ var ter = {
 						else {
 							ctx.setLineDash([]);
 						}
-
-						function renderVertices() {
-							ctx.moveTo(vertices[0].x, vertices[0].y);
-		
-							for (let j = 0; j < vertices.length; j++) {
-								if (j > 0) {
-									let vertice = vertices[j];
-									ctx.lineTo(vertice.x, vertice.y);
-								}
-							}
-				
-							ctx.closePath();
-						}
-	
-						if (sprite && Render.images[sprite]) { // sprite render
-							let { spriteX, spriteY, spriteWidth, spriteHeight } = render;
-	
-							ctx.translate(position.x, position.y);
-							ctx.rotate(body.angle)
-							ctx.drawImage(Render.images[sprite], spriteX, spriteY, spriteWidth, spriteHeight);
-							ctx.rotate(-body.angle);
-							ctx.translate(-position.x, -position.y);
-
-							if (Render.showVertices === true) {
-								renderVertices();
-								ctx.lineWidth = 3;
-								ctx.strokeStyle = "#FF832A";
-								ctx.stroke();
-							}
-
-							continue;
-						}
 			
 						ctx.beginPath();
 	
-						if (body.type === "circle") { // circle render
+						if (type === "circle") { // circle render
 							ctx.arc(position.x, position.y, body.radius, 0, Math.PI*2);
 						}
-						else if (body.type === "rectangle") { // rectangle render
-							let { width, height } = body;
-							ctx.rect(position.x - width/2, position.y - height/2, width, height);
-						}
 						else { // vertice render
-							renderVertices();
+							if (round > 0) { // rounded vertices
+								Render.roundedPolygon(vertices, round);
+							}
+							else { // normal vertices
+								Render.vertices(vertices);
+							}
 						}
 
 						if (ctx.fillStyle && ctx.fillStyle !== "transparent") ctx.fill();
@@ -819,26 +992,29 @@ var ter = {
 							ctx.shadowBlur = 0;
 						}
 						ctx.globalAlpha = 1;
-						
-						if (Render.showVertices === true) {
-							renderVertices();
-							ctx.lineWidth = 3;
-							ctx.strokeStyle = "#FF832A";
-							ctx.stroke();
-						}
 					}
 				}
+				Render.trigger("afterLayer" + layerId);
 			}
 			
+			if (Render.showBroadphase === true) {
+				Render.broadphase();
+			}
 			if (Render.showBoundingBox === true) {
 				Render.boundingBox();
+			}
+			if (Render.showVertices === true) {
+				Render.allVertices();
+			}
+			if (Render.showCenters === true) {
+				Render.allCenters();
 			}
 
 			if (globalPoints.length > 0) { // Render globalPoints
 				for (let i = 0; i < globalPoints.length; i++) {
 					let point = globalPoints[i];
 					ctx.beginPath();
-					ctx.arc(point.x, point.y, 4, 0, Math.PI*2);
+					ctx.arc(point.x, point.y, 2 / camera.scale, 0, Math.PI*2);
 					ctx.fillStyle = "#e8e8e8";
 					ctx.fill();
 				}
@@ -849,9 +1025,9 @@ var ter = {
 					let vector = globalVectors[i].vector;
 					ctx.beginPath();
 					ctx.moveTo(point.x, point.y);
-					ctx.lineTo(point.x + vector.x * 20, point.y + vector.y * 20);
+					ctx.lineTo(point.x + vector.x * 10 / camera.scale, point.y + vector.y * 10 / camera.scale);
 					ctx.strokeStyle = "#FFAB2E";
-					ctx.lineWidth = 3;
+					ctx.lineWidth = 3 / camera.scale;
 					ctx.stroke();
 				}
 			}
@@ -859,12 +1035,55 @@ var ter = {
 			Render.trigger("afterRender");
 			ctx.restore();
 
-			if (Performance.enabled) {
+			if (Performance.render) {
 				Performance.render();
 			}
 			Render.trigger("afterRestore");
 		}
 		Render.bodies = [new Set()];
+
+		Render.vertices = function(vertices) {
+			ctx.moveTo(vertices[0].x, vertices[0].y);
+
+			for (let j = 0; j < vertices.length; j++) {
+				if (j > 0) {
+					let vertice = vertices[j];
+					ctx.lineTo(vertice.x, vertice.y);
+				}
+			}
+
+			ctx.closePath();
+		}
+		Render.constraint = function(constraint) {
+			let { render, bodyA, bodyB, offsetA, offsetB } = constraint;
+			let { border, borderWidth, borderType, lineDash, visible, opacity } = render;
+
+			if (typeof opacity === "number" && opacity <= 0 || !visible) return;
+			if (borderWidth > 0 && border !== "transparent" && border !== "none") {
+				ctx.globalAlpha = opacity ?? 1;
+				
+				ctx.beginPath();
+
+				offsetA = offsetA.rotate(bodyA.angle);
+				offsetB = offsetB.rotate(bodyB.angle);
+				ctx.moveTo(bodyA.position.x + offsetA.x, bodyA.position.y + offsetA.y);
+				ctx.lineTo(bodyB.position.x + offsetB.x, bodyB.position.y + offsetB.y);
+
+				if (lineDash) {
+					ctx.setLineDash(lineDash);
+				}
+				else {
+					ctx.setLineDash([]);
+				}
+
+				ctx.lineWidth = borderWidth;
+				ctx.lineJoin = borderType;
+				ctx.strokeStyle = border;
+				ctx.stroke();
+
+				ctx.globalAlpha = 1;
+			}
+		}
 
 		// - Camera
 		Render.camera = {
@@ -888,15 +1107,53 @@ var ter = {
 			},
 		}
 
+		// - Extra render funcs
+		Render.roundedPolygon = function(vertices, round) {
+			if (vertices.length < 3) {
+				console.warn("Render.roundedPolygon needs at least 3 vertices", vertices);
+				return;
+			}
+			function getPoints(i) {
+				let curPt = vertices[i];
+				let lastPt = vertices[(vertices.length + i - 1) % vertices.length];
+				let nextPt = vertices[(i + 1) % vertices.length];
+
+				let lastDiff = lastPt.sub(curPt);
+				let nextDiff = curPt.sub(nextPt);
+				let lastLen = lastDiff.length;
+				let nextLen = nextDiff.length;
+
+				let curRound = Math.min(lastLen / 2, nextLen / 2, round);
+				let cp = curPt;
+				let pt1 = cp.add(lastDiff.normalize().mult(curRound));
+				let pt2 = cp.sub(nextDiff.normalize().mult(curRound));
+
+				return [pt1, cp, pt2];
+			}
+
+			let start = getPoints(0)
+			ctx.moveTo(start[0].x, start[0].y);
+			ctx.quadraticCurveTo(start[1].x, start[1].y, start[2].x, start[2].y);
+
+			for (let i = 1; i < vertices.length; i++) {
+				let cur = getPoints(i);
+				ctx.lineTo(cur[0].x, cur[0].y);
+				ctx.quadraticCurveTo(cur[1].x, cur[1].y, cur[2].x, cur[2].y);
+			}
+
+			ctx.closePath();
+		}
+
 
 		// - Images
 		Render.images = {};
+		Render.imgDir = "./img/";
 		Render.loadImg = function(name) {
 			let img = new Image();
-			img.src = "./img/" + name;
+			img.src = Render.imgDir + name;
 
 			img.onload = function() {
-				Render.images[name.split(".")[0]] = img;
+				Render.images[name] = img;
 			}
 		}
 
@@ -911,6 +1168,9 @@ var ter = {
 			if (event.includes("beforeLayer") && !Render.events[event]) {
 				Render.events[event] = [];
 			}
+			if (event.includes("afterLayer") && !Render.events[event]) {
+				Render.events[event] = [];
+			}
 
 			if (Render.events[event]) {
 				Render.events[event].push(callback);
@@ -921,7 +1181,9 @@ var ter = {
 		}
 		Render.off = function(event, callback) {
 			event = Render.events[event];
-			event.splice(event.indexOf(callback), 1);
+			if (event.includes(callback)) {
+				event.splice(event.indexOf(callback), 1);
+			}
 		}
 		Render.trigger = function(event) {
 			// Trigger each event
@@ -934,56 +1196,96 @@ var ter = {
 
 		
 		// - Broadphase
+		Render.showCollisions = false;
 		Render.showBoundingBox = false;
-		Render.showVertices = false;
 		Render.boundingBox = function() {
 			let allBodies = ter.World.bodies;
+			let allConstraints = ter.World.constraints;
 
 			ctx.strokeStyle = "#ffffff80";
-			ctx.lineWidth = 2;
+			ctx.lineWidth = 1 / this.camera.scale;
 
 			for (let i = 0; i < allBodies.length; i++) {
 				let body = allBodies[i];
-				let bounds = body.bounds;
-				let width = bounds.max.x - bounds.min.x;
+				if (!body.children || body.children.length === 0) {
+					let bounds = body.bounds;
+					let width  = bounds.max.x - bounds.min.x;
+					let height = bounds.max.y - bounds.min.y;
+
+					ctx.beginPath();
+					ctx.strokeRect(bounds.min.x, bounds.min.y, width, height);
+				}
+			}
+			ctx.strokeStyle = "#ffffff30";
+			for (let i = 0; i < allConstraints.length; i++) {
+				let constraint = allConstraints[i];
+				let bounds = constraint.bounds;
+				let width  = bounds.max.x - bounds.min.x;
 				let height = bounds.max.y - bounds.min.y;
 
 				ctx.beginPath();
 				ctx.strokeRect(bounds.min.x, bounds.min.y, width, height);
 			}
 		}
+		Render.showVertices = false;
+		Render.allVertices = function() {
+			function renderVertices(vertices) {
+				ctx.moveTo(vertices[0].x, vertices[0].y);
+	
+				for (let j = 0; j < vertices.length; j++) {
+					if (j > 0) {
+						let vertice = vertices[j];
+						ctx.lineTo(vertice.x, vertice.y);
+					}
+				}
+	
+				ctx.closePath();
+			}
+
+			ctx.beginPath();
+			let allBodies = ter.World.bodies;
+			for (let i = 0; i < allBodies.length; i++) {
+				let body = allBodies[i];
+				if (body.children.length === 0) {
+					renderVertices(body.vertices);
+				}
+			}
+			ctx.lineWidth = 2 / this.camera.scale;
+			ctx.strokeStyle = "#FF832A";
+			ctx.stroke();
+		}
+		Render.showCenters = false;
+		Render.allCenters = function() {
+			ctx.fillStyle = "#FF832A";
+			let allBodies = ter.World.bodies;
+			for (let i = 0; i < allBodies.length; i++) {
+				let body = allBodies[i];
+				if (body.children.length === 0 || true) {
+					ctx.beginPath();
+					ctx.arc(body.position.x, body.position.y, 2 / this.camera.scale, 0, Math.PI*2);
+					ctx.fill();
+				}
+			}
+		}
 
 		// - Quadtree
 		Render.showBroadphase = false;
 		Render.broadphase = function() {
-			let tree = ter.World.tree.tree;
-			ctx.lineWidth = 0.3;
-			ctx.strokeStyle = "#947849";
+			let tree = ter.World.tree;
+			let size = tree.gridSize;
+
+			ctx.lineWidth = 0.4;
+			ctx.strokeStyle = "#D0A356";
 			ctx.fillStyle = "#947849";
-			ctx.font = "20px Arial";
-			function renderNode(node, position, size, depth) {
-				Object.keys(node).forEach(childId => {
-					childId = Number(childId);
-					if (isNaN(childId)) return;
-		
-					// ctx.fillStyle = "#947849";
-					// ctx.strokeStyle = "#947849";
-
-					let pos = depth === 0 ? tree.unpairNeg(childId) : tree.unpair(childId);
-					let curPos = position.add(pos.mult(size));
-					ctx.strokeRect(curPos.x, curPos.y, size, size);
-					// ctx.globalAlpha = 0.015 * node.bodies.length;
-					// ctx.fillRect(curPos.x, curPos.y, size, size);
-					// ctx.globalAlpha = 1;
-
-					// ctx.fillStyle = "#ffffff80";
-					// let p2 = new vec(curPos);
-					// ctx.fillText(childId, p2.x + 10, p2.y + 10);
-		
-					renderNode(node[childId], curPos, size / 2, depth + 1);
-				});
-			}
-			renderNode(tree.nodes, new vec(0, 0), tree.nodeSize, 0);
+			
+			Object.keys(tree.grid).forEach(n => {
+				let node = tree.grid[n];
+				let pos = tree.unpair(n).mult(size);
+				ctx.strokeRect(pos.x, pos.y, size, size);
+				ctx.globalAlpha = 0.008 * node.length;
+				ctx.fillRect(pos.x, pos.y, size, size);
+				ctx.globalAlpha = 1;
+			});
 		}
 		
 		return Render;
