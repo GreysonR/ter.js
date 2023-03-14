@@ -22,20 +22,30 @@ class Body {
 
 		ter.Common.merge(this, options);
 
-		this.vertices = vertices;
+		this.vertices = vertices.map(v => new vec(v));
 		this.removeDuplicatesVertices();
+
 		
 		this.resetVertices();
+
 		if (!this.isConvex() && (!Array.isArray(options.children) || options.children.length === 0)) {
 			options.children = [];
 
-			let concaveVertices = decomp.quickDecomp(vertices.map(v => [v.x, v.y]));
+			let decompVerts = this.vertices.map(v => [v.x, v.y]);
+			decomp.makeCCW(decompVerts);
+			let concaveVertices = decomp.quickDecomp(decompVerts);
 			let parentCenter = this.getCenterOfMass();
 			for (let i = 0; i < concaveVertices.length; i++) {
 				let vertices = concaveVertices[i].map(v => new vec(v[0], v[1]));
 				let center = this.getCenterOfMass(vertices);
 				let body = new fromVertices(vertices, position.add(center).sub(parentCenter));
 				body.resetVertices(true);
+				body.makeConvex();
+
+				body.isSensor = this.isSensor;
+				body.isStatic = this.isStatic;
+				body.hasCollisions = this.hasCollisions;
+				
 				options.children.push(body);
 			}
 		}
@@ -77,7 +87,7 @@ class Body {
 				let nextVert = vertices[j];
 				let dist = curVert.sub(nextVert);
 
-				if (Math.abs(dist.x) + Math.abs(dist.y) < minDist) { // just use manhattan dist because it doesn't matter
+				if (Math.abs(dist.x) + Math.abs(dist.y) < minDist) { // just use manhattan dist because it doesn't really matter
 					vertices.splice(i, 1);
 					i--;
 					break;
@@ -325,7 +335,7 @@ class Body {
 			let center = this.position;
 	
 			let mapped = vertices.map(v => v.sub(center).angle);
-			if (mapped[0] > mapped[1]) {
+			if (ter.Common.angleDiff(mapped[0], mapped[1]) > 0) {
 				this.vertices.reverse();
 			}
 		}
@@ -537,7 +547,7 @@ class Body {
 		}
 		return true;
 	}
-	applyForce(force, delta = ter.Performance.delta * ter.World.timescale / 16.6667 / ter.Engine.substeps) { // set delta to 1 if you want to apply a force for only 1 frame
+	applyForce(force, delta = Engine.delta) { // set delta to 1 if you want to apply a force for only 1 frame
 		if (force.isNaN()) return;
 		if (this.isStatic) return this;
 
@@ -546,7 +556,7 @@ class Body {
 		
 		return this;
 	}
-	applyTorque(force, delta = ter.Performance.delta * ter.World.timescale / 16.6667 / ter.Engine.substeps) { // set delta to 1 if you want to apply a force for only 1 frame
+	applyTorque(force, delta = Engine.delta) { // set delta to 1 if you want to apply a force for only 1 frame
 		if (isNaN(force)) return;
 		this.torque += force * delta;
 		return this;

@@ -244,17 +244,16 @@ var ter = {
 			}
 			
 			body.velocity.mult2(frictionAir);
-			
-			if (body.velocity.x !== 0 || body.velocity.y !== 0) body.translate(body.velocity.mult(timescale));
-			
-
-			body.angularVelocity = (body.angularVelocity * frictionAngular);
-			if (Math.abs(body.angularVelocity) < 0.0001) body.angularVelocity = 0;
-
-			if (body.angularVelocity) {
-				body.translateAngle(body.angularVelocity * timescale);
+			if (body.velocity.x !== 0 || body.velocity.y !== 0){
+				body.translate(body.velocity.mult(timescale));
 			}
 
+			body.angularVelocity *= frictionAngular;
+			if (Math.abs(body.angularVelocity) < 0.0001) body.angularVelocity = 0;
+			if (body.angularVelocity){
+				body.translateAngle(body.angularVelocity * timescale);
+			}
+			
 			body.updateBounds();
 		},
 		preUpdate: function(body, delta) {
@@ -275,7 +274,7 @@ var ter = {
 		create: function(bodyA, bodyB, options = {}) {
 			return new Constraint(bodyA, bodyB, options);
 		},
-		rope: function(bodyA, bodyB, numConstraints, constraintOptions = {}, anchorOptions = {}) {
+		rope: function(bodyA, bodyB, numConstraints, constraintOptions = {}, anchorOptions = {}) { // very unstable, need to implement as separate class
 			let offsetA = constraintOptions.offsetA ?? new vec(0, 0);
 			let offsetB = constraintOptions.offsetA ?? new vec(0, 0);
 			let pointA = bodyA.position.add(offsetA.rotate(bodyA.angle));
@@ -321,11 +320,12 @@ var ter = {
 		},
 	},
 	Engine: {
+		delta: 1,
 		substeps: 4,
 		velocityIterations: 2,
 		positionIterations: 4,
 		constraintIterations: 4,
-		maxShare: 6,
+		maxShare: 1,
 
 		update: function(delta) {
 			const { World, Engine, Performance } = ter;
@@ -336,6 +336,7 @@ var ter = {
 			if (delta === undefined) {
 				delta = Performance.delta * ter.World.timescale / 16.66667 / substeps;
 			}
+			Engine.delta = delta;
 
 			// Get timing
 			Performance.update();
@@ -384,6 +385,8 @@ var ter = {
 					body.trigger("afterUpdate");
 				}
 			}
+
+			Engine.delta = delta * substeps;
 		},
 		testCollision: function(bodyA, bodyB) {
 			if (bodyA.isStatic && bodyB.isStatic) return false;
@@ -547,7 +550,6 @@ var ter = {
 				if (!pair || ter.Bodies.cleansePair(pair)) continue;
 
 				let { bodyA, bodyB, normal, tangent, contacts, start } = pair;
-				if (bodyA.isSensor || bodyB.isSensor) continue;
 
 				while (bodyA.parent && bodyA.parent !== bodyA) {
 					bodyA = bodyA.parent;
@@ -555,6 +557,7 @@ var ter = {
 				while (bodyB.parent && bodyB.parent !== bodyB) {
 					bodyB = bodyB.parent;
 				}
+				if (bodyA.isSensor || bodyB.isSensor) continue;
 
 				const restitution = 1 + Math.max(bodyA.restitution, bodyB.restitution);
 				const relVel = bodyB.velocity.sub(bodyA.velocity);
@@ -637,7 +640,6 @@ var ter = {
 				let pair = pairs[i];
 				if (!pair || Bodies.cleansePair(pair)) continue;
 				let { depth, bodyA, bodyB, normal } = pair;
-				if (bodyA.isSensor || bodyB.isSensor) continue;
 
 				while (bodyA.parent && bodyA.parent !== bodyA) {
 					bodyA = bodyA.parent;
@@ -645,6 +647,7 @@ var ter = {
 				while (bodyB.parent && bodyB.parent !== bodyB) {
 					bodyB = bodyB.parent;
 				}
+				if (bodyA.isSensor || bodyB.isSensor) continue;
 				
 				if (depth < 1) continue;
 
@@ -695,25 +698,19 @@ var ter = {
 					if (bodyA.isStatic) shareB = 1;
 					if (bodyB.isStatic) shareA = 1;
 	
-					// stiffness = 1 - (1 - stiffness) ** delta;
-					// angularStiffness = 1 - (1 - angularStiffness) ** delta;
-	
-					let nextLength = pointA.sub(pointB).length + (length - pointA.sub(pointB).length) * stiffness;
-	
 					function solveImpulse(vertice, point, body) { // vertice = where the constraint goes to, point = where the constraint is
-						let offset = vertice.sub(body.position);
+						let offset = point.sub(body.position);
 						let offsetLen = offset.length;
 						if (offsetLen > length * 3) {
 							offset.mult2(length / offsetLen);
 						}
-						const vp = body.velocity.add(offset.normal().mult(-body.angularVelocity));
-						let vp2 = offset.mult(stiffness * (vertice.sub(point).length));
-						// console.log(offset);
-						if (vertice.sub(point).dot(normal) > 0 && ignoreSlack) {
-							// vp2.mult2(0);
-							vp.mult2(0);
+						const vp1 = body.velocity.add(offset.normal().mult(-body.angularVelocity));
+						const vp2 = vertice.sub(point).mult(stiffness * 30);
+						if (ignoreSlack && diff.length < length * (1 + stiffness)) { // idk how to get this to work
+							vp1.mult2(0);
+							vp2.mult2(0);
 						}
-						const relativeVelocity = vp.sub(vp2);
+						const relativeVelocity = vp1.sub(vp2);
 						const normalVelocity = relativeVelocity.dot(normal);
 						const tangentVelocity = relativeVelocity.dot(tangent);
 						let tangentImpulse = tangentVelocity;
@@ -728,8 +725,9 @@ var ter = {
 						}
 					}
 	
-					let impulsePtA = bodyA.isStatic ? pointA : pointB.add(pointA.sub(pointB).normalize().mult(length));
-					let impulsePtB = bodyB.isStatic ? pointB : pointA.add(pointB.sub(pointA).normalize().mult(length));
+					let impulseDiff = pointA.sub(pointB).normalize().mult(length);
+					let impulsePtA = bodyA.isStatic ? pointA : pointB.add(impulseDiff);
+					let impulsePtB = bodyB.isStatic ? pointB : pointA.sub(impulseDiff);
 	
 					let { angularImpulse: angImpulseA, normalImpulse: impulseA } = solveImpulse(impulsePtA, pointA, bodyA);
 					let { angularImpulse: angImpulseB, normalImpulse: impulseB } = solveImpulse(impulsePtB, pointB, bodyB);
@@ -744,13 +742,15 @@ var ter = {
 					}
 	
 					// constraint position solver
-					let changeA = nextLength - impulsePtB.sub(bodyA.position).length;
-					changeA = Math.min(50, Math.abs(changeA)) * Math.sign(changeA);
-					let changeB = nextLength - impulsePtA.sub(bodyB.position).length;
-					changeB = Math.min(50, Math.abs(changeB)) * Math.sign(changeB);
+					// let nextLength = pointA.sub(pointB).length + (length - pointA.sub(pointB).length) * stiffness;
+					// let changeA = nextLength - impulsePtB.sub(bodyA.position).length;
+					// changeA = Math.min(50, Math.abs(changeA)) * Math.sign(changeA);
+					// let changeB = nextLength - impulsePtA.sub(bodyB.position).length;
+					// changeB = Math.min(50, Math.abs(changeB)) * Math.sign(changeB);
 	
-					bodyA.translate(normal.mult((changeA) * shareA * delta * 0.05));
-					bodyB.translate(normal.mult((changeB) * shareB * delta * 0.05));
+					// bodyA.translate(normal.mult((changeA) * shareA * delta * 0.05));
+					// bodyB.translate(normal.mult((changeB) * shareB * delta * 0.05));
+
 					constraint.updateBounds();
 				}
 
@@ -974,6 +974,20 @@ var ter = {
 	
 						if (type === "circle") { // circle render
 							ctx.arc(position.x, position.y, body.radius, 0, Math.PI*2);
+						}
+						else if (type === "rectangle") {
+							if (round > 0) { // rounded vertices
+								Render.roundedPolygon(vertices, round);
+							}
+							else {
+								const { width, height } = body;
+								ctx.translate(position.x, position.y);
+								ctx.rotate(body.angle);
+								ctx.beginPath();
+								ctx.rect(- width/2, - height/2, width, height);
+								ctx.rotate(-body.angle);
+								ctx.translate(-position.x, -position.y);
+							}
 						}
 						else { // vertice render
 							if (round > 0) { // rounded vertices
