@@ -911,6 +911,9 @@ var ter = {
 			ctx.save();
 			ctx.translate(camera.translation.x, camera.translation.y);
 			ctx.scale(camera.scale, camera.scale);
+			
+			let bWidth =  (camera.bounds.max.x - camera.bounds.min.x) * 0.5;
+			let bHeight = (camera.bounds.max.y - camera.bounds.min.y) * 0.5;
 
 			Render.trigger("beforeRender");
 			let layers = Object.keys(bodies).sort((a, b) => {
@@ -922,10 +925,26 @@ var ter = {
 				let layer = bodies[layerId];
 				Render.trigger("beforeLayer" + layerId);
 				for (let body of layer) {
-					const { position, vertices, render, bounds, type } = body;
+					let { position, vertices, render, bounds, type } = body;
+
+					let width, height;
+					if (body.render.sprite) {
+						width =  Math.max(body.render.spriteWidth,  bounds.max.x - bounds.min.x) * 0.5;
+						height = Math.max(body.render.spriteHeight, bounds.max.y - bounds.min.y) * 0.5;
+					}
+					else {
+						width =  (bounds.max.x - bounds.min.x) * 0.5;
+						height = (bounds.max.y - bounds.min.y) * 0.5;
+					}
+
+					if (type === "constraint") {
+						let { bodyA, bodyB, offsetA, offsetB } = body;
+						let pointA = bodyA.position.add(offsetA.rotate(bodyA.angle));
+						let pointB = bodyB.position.add(offsetB.rotate(bodyB.angle));
+						position = pointA.avg(pointB);
+					}
 					
-					if (render.visible === true && (bounds.max.x >= camera.bounds.min.x && bounds.min.x <= camera.bounds.max.x
-						&& bounds.max.y >= camera.bounds.min.y && bounds.min.y <= camera.bounds.max.y)) {
+					if (render.visible === true && (Math.abs(cameraPosition.x - position.x) <= bWidth + width && Math.abs(cameraPosition.y - position.y) <= bHeight + height)) {
 						
 						if (type === "constraint") { // render constraint
 							Render.constraint(body);
@@ -1059,11 +1078,9 @@ var ter = {
 		Render.vertices = function(vertices) {
 			ctx.moveTo(vertices[0].x, vertices[0].y);
 
-			for (let j = 0; j < vertices.length; j++) {
-				if (j > 0) {
-					let vertice = vertices[j];
-					ctx.lineTo(vertice.x, vertice.y);
-				}
+			for (let j = 1; j < vertices.length; j++) {
+				let vertice = vertices[j];
+				ctx.lineTo(vertice.x, vertice.y);
 			}
 
 			ctx.closePath();
@@ -1288,7 +1305,7 @@ var ter = {
 			let tree = ter.World.tree;
 			let size = tree.gridSize;
 
-			ctx.lineWidth = 0.4;
+			ctx.lineWidth = 0.4 / this.camera.scale;
 			ctx.strokeStyle = "#D0A356";
 			ctx.fillStyle = "#947849";
 			
@@ -1296,7 +1313,7 @@ var ter = {
 				let node = tree.grid[n];
 				let pos = tree.unpair(n).mult(size);
 				ctx.strokeRect(pos.x, pos.y, size, size);
-				ctx.globalAlpha = 0.008 * node.length;
+				ctx.globalAlpha = 0.003 * node.length;
 				ctx.fillRect(pos.x, pos.y, size, size);
 				ctx.globalAlpha = 1;
 			});
