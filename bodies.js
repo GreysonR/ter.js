@@ -234,7 +234,8 @@ class Body {
 		borderWidth: 3,
 		borderType: "miter",
 		lineDash: false,
-		visible: true,
+		visible: true
+		alwaysVisible: false,
 		opacity: 1,
 		layer: 0,
 		spriteScale: new vec(1, 1),
