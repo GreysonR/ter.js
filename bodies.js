@@ -1,8 +1,9 @@
 "use strict"
 
 Array.prototype.delete = function(val) {
-	if (this.includes(val)) {
-		this.splice(this.indexOf(val), 1);
+	let index = this.indexOf(val);
+	if (index !== -1) {
+		this.splice(index, 1);
 	}
 }
 Array.prototype.choose = function() {
@@ -66,11 +67,13 @@ class Body {
 		this.updateAxes();
 		this.updateInertia();
 
-		if (options.render.sprite && !Render.images[options.render.sprite]) {
+		if (typeof options.render.sprite === "string") {
 			if (options.render.sprite.indexOf(".") === -1) {
 				options.render.sprite += ".png";
 			}
-			Render.loadImg(options.render.sprite);
+			this.render.sprite = new Sprite({
+				src: options.render.sprite,
+			});
 		}
 
 		if (options.angle) {
@@ -234,7 +237,9 @@ class Body {
 		borderWidth: 3,
 		borderType: "miter",
 		lineDash: false,
+		lineCap: "butt",
 		visible: true,
+		alwaysRender: false,
 		opacity: 1,
 		layer: 0,
 		spriteScale: new vec(1, 1),
@@ -294,26 +299,31 @@ class Body {
 
 		return this;
 	}
-	centerSprite() {
+	centerSprite(sprite = this.render.sprite) {
 		let options = this;
-		if (options.render.sprite) {
-			if (!(options.render.spriteWidth && options.render.spriteHeight)) {
-				if (options.width) options.render.spriteWidth = options.width;
-				if (options.height) options.render.spriteHeight = options.height;
+		if (sprite) {
+			if (!(sprite.width && sprite.height)) {
+				if (options.width) sprite.width = options.width;
+				if (options.height) sprite.height = options.height;
 				if (options.radius) {
-					options.render.spriteWidth =  options.radius * 2;
-					options.render.spriteHeight = options.radius * 2;
+					sprite.width = options.radius * 2;
+					sprite.height = options.radius * 2;
 				}
 			}
-			if (options.render.spriteX === undefined || options.render.spriteY === undefined) {
-				if (options.width && options.render.spriteX === undefined) options.render.spriteX = -options.width/2;
-				if (options.height && options.render.spriteY === undefined) options.render.spriteY = -options.height/2;
+			if (sprite.position === undefined) {
+				sprite.position = new vec(0, 0);
+				if (options.width && options.height) {
+					sprite.position.x = -options.width/2;
+					sprite.position.y = -options.height/2;
+				}
 				if (options.radius) {
-					if (options.render.spriteX === undefined) options.render.spriteX = -options.render.spriteWidth  / 2;
-					if (options.render.spriteY === undefined) options.render.spriteY = -options.render.spriteHeight / 2;
+					sprite.position.x = -sprite.width  / 2;
+					sprite.position.y = -sprite.height / 2;
 				}
 			}
 		}
+
+		return sprite;
 	}
 	resetVertices(forceCCW = false) {
 		this.makeCCW(forceCCW);
@@ -503,7 +513,7 @@ class Body {
 				vert.y = position.y + (dist.x * sin + dist.y * cos);
 			}
 
-			let posOffset = rotationPoint.rotate(angle).sub(rotationPoint);
+			let posOffset = rotationPoint.sub(rotationPoint.rotate(angle));
 			this.translate(posOffset);
 			if (!silent) {
 				this.angle += angle;
@@ -541,7 +551,7 @@ class Body {
 			let curVertice = vertices[i];
 			let nextVertice = vertices[(i + 1) % vertices.length];
 			
-			if ((point.x - curVertice.x) * (nextVertice.y - curVertice.y) + (point.y - curVertice.y) * (curVertice.x - nextVertice.x) > 0) {
+			if ((point.x - curVertice.x) * (nextVertice.y - curVertice.y) + (point.y - curVertice.y) * (curVertice.x - nextVertice.x) >= 0) {
 				return false;
 			}
 		}
@@ -587,6 +597,10 @@ class Body {
 		this.events[event].forEach(callback => {
 			callback(arg1, arg2);
 		});
+
+		if (this.parent) {
+			this.parent.trigger(event, arg1, arg2);
+		}
 
 		return this;
 	}

@@ -13,12 +13,15 @@ var ter = {
 		this.setSize(options.width, options.height);
 	},
 	setSize(width, height) {
-		ter.canvas.width =  width;
-		ter.canvas.height = height;
-		ter.Render.camera.boundSize = Math.sqrt(width * height) || 1; // Math.sqrt(width * height) || 1; // Math.sqrt(width**2 + height**2) / 2;
+		let pixelRatio = this.Render.pixelRatio;
+		ter.canvas.width =  width  * pixelRatio;
+		ter.canvas.height = height * pixelRatio;
+		ter.canvas.style.transformOrigin = "top left";
+		ter.canvas.style.transform = `scale(${ 1 / pixelRatio })`;
+		ter.Render.camera.boundSize = (Math.sqrt(width * height) || 1) * pixelRatio; // Math.sqrt(width * height) || 1; // Math.sqrt(width**2 + height**2) / 2;
 	},
 	Performance: {
-		render: true,
+		enabled: true,
 		getAvgs: true,
 		lastUpdate: performance.now(),
 		fps: 60,
@@ -45,7 +48,7 @@ var ter = {
 			Performance.lastUpdate = curTime;
 			Performance.aliveTime += Performance.delta;
 
-			if (!Performance.render && Performance.getAvgs) {
+			if (!Performance.enabled && Performance.getAvgs) {
 				Performance.history.fps.push(Performance.fps);
 				Performance.history.delta.push(Performance.delta);
 	
@@ -74,6 +77,7 @@ var ter = {
 		},
 		render: function() {
 			let Performance = ter.Performance;
+			let pixelRatio = ter.Render.pixelRatio;
 			let ctx = ter.ctx;
 
 			Performance.history.fps.push(Performance.fps);
@@ -102,23 +106,24 @@ var ter = {
 			Performance.history.avgDelta = delta;
 
 			ctx.fillStyle = "#2D2D2D80";
-			ctx.fillRect(20, 20, 200, 70);
+			ctx.fillRect(20 * pixelRatio, 20 * pixelRatio, 200 * pixelRatio, 70 * pixelRatio);
 
 			ctx.textAlign = "left";
-			ctx.font = "12px Arial";
+			ctx.font = `${ 12 * pixelRatio }px Arial`;
 			ctx.fillStyle = "#C7C8C9";
-			ctx.fillText("FPS", 45, 50);
-			ctx.fillText("Δ T", 45, 70);
+			ctx.fillText("FPS", 45 * pixelRatio, 50 * pixelRatio);
+			ctx.fillText("Δ T", 45 * pixelRatio, 70 * pixelRatio);
 
 			ctx.textAlign = "right";
 			ctx.fillStyle = "#FFFFFF";
-			ctx.fillText(Math.round(fps), 190, 50);
-			ctx.fillText((Math.round(delta * 100) / 100).toFixed(2) + "ms", 190, 70);
+			ctx.fillText(Math.round(fps), 190 * pixelRatio, 50 * pixelRatio);
+			ctx.fillText((Math.round(delta * 100) / 100).toFixed(2) + "ms", 190 * pixelRatio, 70 * pixelRatio);
 		}
 	},
 	World: {
 		gravity: new vec(0, 0),
 		timescale: 1,
+		time: 0,
 
 		bodies: [],
 		tree: new Grid(1000),
@@ -334,8 +339,10 @@ var ter = {
 
 			// Get delta
 			if (delta === undefined) {
-				delta = Performance.delta * ter.World.timescale / 16.66667 / substeps;
+				delta = Performance.delta * ter.World.timescale / 16.66667;
 			}
+			World.time += delta * 16.66667;
+			delta /= substeps;
 			Engine.delta = delta;
 
 			// Get timing
@@ -487,7 +494,7 @@ var ter = {
 
 						if (support[1] < minDepth) {
 							minDepth = support[1];
-							normal = curNormal.inverse();
+							normal = curNormal.mult(-1);
 							normalPoint = curVertice.avg(nextVertice);
 
 							normalBody = bodyB;
@@ -503,11 +510,11 @@ var ter = {
 				}
 
 				if (Render.showCollisions) {
-					globalVectors.push({ position: normalPoint, vector: normal.inverse() });
+					globalVectors.push({ position: normalPoint, vector: normal.mult(-1) });
 					globalPoints.push(...contacts.map(v => v.vertice));
 				}
 
-				normal = normal.inverse();
+				normal = normal.mult(-1);
 
 				let pairId = Common.pairCommon(bodyA.id, bodyB.id);
 				let pair = {
@@ -667,7 +674,7 @@ var ter = {
 					bodyA.translate(a);
 				}
 				if (!bodyB.isStatic) {
-					let a = impulse.inverse().mult(shareB * 0.95);
+					let a = impulse.mult(-shareB * 0.95);
 					bodyB.translate(a);
 				}
 			}
@@ -802,6 +809,12 @@ var ter = {
 			});
 		},
 		lineIntersects: function(a1, a2, b1, b2) {
+			if (a1.x === a1.x || a1.y === a1.y) {
+				a1 = new vec(a1);
+			}
+			if (b1.x === b1.x || b1.y === b1.y) {
+				b1 = new vec(b1);
+			}
 			if (a1.x === a1.x)
 				a1.x += 0.00001;
 			if (b1.x === b1.x)
@@ -828,7 +841,7 @@ var ter = {
 				return false;
 			}
 		},
-		raycast: function(start, end, bodies) {
+		raycast: function(start, end, bodies) { // raycast that gets you all info
 			let lineIntersects = ter.Common.lineIntersects;
 			let minDist = Infinity;
 			let minPt = null;
@@ -887,13 +900,60 @@ var ter = {
 				verticeIndex: minVert,
 			};
 		},
+		raycastSimple: function(start, end, bodies) { // raycast that only tells you if there is a collision (usually faster)
+			let lineIntersects = ter.Common.lineIntersects;
+			let collision = false;
+
+			if (bodies === undefined) {
+				let grid = World.tree;
+				let size = grid.gridSize;
+				let bounds = { min: start.min(end).div2(size).floor2(), max: start.max(end).div2(size).floor2() };
+				bodies = [];
+		
+				for (let x = bounds.min.x; x <= bounds.max.x; x++) {
+					for (let y = bounds.min.y; y <= bounds.max.y; y++) {
+						let n = grid.pair(new vec(x, y));
+						let node = grid.grid[n];
+		
+						if (node) {
+							for (let body of node) {
+								if (!bodies.includes(body) && body.children.length === 0) {
+									bodies.push(body);
+								}
+							}
+						}
+					}
+				}
+			}
+
+			for (let i = 0; i < bodies.length; i++) {
+				let body = bodies[i];
+				let { vertices } = body;
+				let len = vertices.length;
+
+				for (let i = 0; i < len; i++) {
+					let cur = vertices[i];
+					let next = vertices[(i + 1) % len];
+
+					let intersection = lineIntersects(start, end, cur, next);
+					if (intersection) {
+						collision = true;
+						break;
+					}
+				}
+				if (collision) break;
+			}
+
+			return collision;
+		},
 	},
 	Render: (() => {
 		let Render = function() {
 			const { canvas, ctx, Performance, Render } = ter;
 
 			const camera = Render.camera;
-			const { position:cameraPosition, fov:FoV, boundSize } = camera;
+			const { position:cameraPosition, fov:FoV } = camera;
+			const boundSize = camera.boundSize;
 			const canvWidth = canvas.width;
 			const canvHeight = canvas.height;
 			const bodies = Render.bodies;
@@ -905,15 +965,14 @@ var ter = {
 
 			// { x: (point.x - camera.translation.x) / camera.scale, y: (point.y - camera.translation.y) / camera.scale }
 			camera.bounds.min.set({ x: -camera.translation.x / camera.scale, y: -camera.translation.y / camera.scale });
-			camera.bounds.max.set({ x:  (canvWidth - camera.translation.x) / camera.scale, y:  (canvHeight - camera.translation.y) / camera.scale });
+			camera.bounds.max.set({ x: (canvWidth - camera.translation.x) / camera.scale, y: (canvHeight - camera.translation.y) / camera.scale });
 
 			Render.trigger("beforeSave");
 			ctx.save();
 			ctx.translate(camera.translation.x, camera.translation.y);
 			ctx.scale(camera.scale, camera.scale);
 			
-			let bWidth =  (camera.bounds.max.x - camera.bounds.min.x) * 0.5;
-			let bHeight = (camera.bounds.max.y - camera.bounds.min.y) * 0.5;
+			let cameraBoundSize = camera.bounds.max.sub(camera.bounds.min).mult(0.5);
 
 			Render.trigger("beforeRender");
 			let layers = Object.keys(bodies).sort((a, b) => {
@@ -926,14 +985,16 @@ var ter = {
 				Render.trigger("beforeLayer" + layerId);
 				for (let body of layer) {
 					let { position, vertices, render, bounds, type } = body;
+					let bodyBoundsPosition = new vec(0, 0);
 
 					let width, height;
 					if (body.render.sprite) {
-						width =  Math.max(body.render.spriteWidth,  bounds.max.x - bounds.min.x) * 0.5;
-						height = Math.max(body.render.spriteHeight, bounds.max.y - bounds.min.y) * 0.5;
+						let sprite = body.render.sprite;
+						width  = Math.max(sprite.width,  bounds.max.x - bounds.min.x) * 0.5;
+						height = Math.max(sprite.height, bounds.max.y - bounds.min.y) * 0.5;
 					}
 					else {
-						width =  (bounds.max.x - bounds.min.x) * 0.5;
+						width  = (bounds.max.x - bounds.min.x) * 0.5;
 						height = (bounds.max.y - bounds.min.y) * 0.5;
 					}
 
@@ -941,41 +1002,42 @@ var ter = {
 						let { bodyA, bodyB, offsetA, offsetB } = body;
 						let pointA = bodyA.position.add(offsetA.rotate(bodyA.angle));
 						let pointB = bodyB.position.add(offsetB.rotate(bodyB.angle));
-						position = pointA.avg(pointB);
+						bodyBoundsPosition.set(pointA.avg(pointB));
+					}
+					else {
+						bodyBoundsPosition.set(bounds.max.avg(bounds.min));
 					}
 					
-					if (render.visible === true && (Math.abs(cameraPosition.x - position.x) <= bWidth + width && Math.abs(cameraPosition.y - position.y) <= bHeight + height)) {
-						
+					if (render.alwaysRender || render.visible === true && (Math.abs(cameraPosition.x - bodyBoundsPosition.x) <= cameraBoundSize.x + width && Math.abs(cameraPosition.y - bodyBoundsPosition.y) <= cameraBoundSize.y + height)) {
 						if (type === "constraint") { // render constraint
 							Render.constraint(body);
 							continue;
 						}
 
-						const { background, border, borderWidth, borderType, lineDash, bloom, opacity, sprite, round, } = render;
-							
-						if (sprite && !Render.images[sprite]) { // load sprite if it doesn't exist
-							Render.loadImg(sprite);
-						}
-						if (sprite && Render.images[sprite]) { // sprite render
-							let { spriteX, spriteY, spriteWidth, spriteHeight, spriteScale } = render;
+						const { background, border, borderWidth, borderType, lineDash, lineCap, bloom, opacity, sprite, round, } = render;
+						
+						if (sprite && sprite.loaded) { // sprite render
+							let { position: spritePos, width, height, scale } = sprite;
+							scale = scale.mult(render.spriteScale);
 	
 							ctx.translate(position.x, position.y);
 							ctx.rotate(body.angle);
-							ctx.scale(spriteScale.x, spriteScale.y);
-							ctx.drawImage(Render.images[sprite], spriteX, spriteY, spriteWidth, spriteHeight);
-							ctx.scale(1 / spriteScale.x, 1 / spriteScale.y);
+							ctx.scale(scale.x, scale.y);
+							ctx.drawImage(sprite.image, spritePos.x, spritePos.y, width, height);
+							ctx.scale(1 / scale.x, 1 / scale.y);
 							ctx.rotate(-body.angle);
 							ctx.translate(-position.x, -position.y);
 
 							continue;
 						}
 
-						// render body that doesn't have a sprite
+						// render body using vertices
 						ctx.globalAlpha = opacity ?? 1;
 						ctx.lineWidth = borderWidth;
 						ctx.strokeStyle = border;
 						ctx.fillStyle = background;
 						ctx.lineJoin = borderType;
+						ctx.lineCap = lineCap || "butt";
 
 						if (bloom) {
 							ctx.shadowColor = border;
@@ -994,7 +1056,7 @@ var ter = {
 						if (type === "circle") { // circle render
 							ctx.arc(position.x, position.y, body.radius, 0, Math.PI*2);
 						}
-						else if (type === "rectangle") {
+						else if (type === "rectangle") { // rectangle render
 							if (round > 0) { // rounded vertices
 								Render.roundedPolygon(vertices, round);
 							}
@@ -1003,7 +1065,7 @@ var ter = {
 								ctx.translate(position.x, position.y);
 								ctx.rotate(body.angle);
 								ctx.beginPath();
-								ctx.rect(- width/2, - height/2, width, height);
+								ctx.rect(-width/2, -height/2, width, height);
 								ctx.rotate(-body.angle);
 								ctx.translate(-position.x, -position.y);
 							}
@@ -1018,7 +1080,7 @@ var ter = {
 						}
 
 						if (ctx.fillStyle && ctx.fillStyle !== "transparent") ctx.fill();
-						if (ctx.strokeStyle && ctx.strokeStyle !== "transparent") ctx.stroke();
+						if (ctx.strokeStyle && ctx.strokeStyle !== "transparent" && borderWidth > 0) ctx.stroke();
 						
 						if (bloom) {
 							ctx.shadowColor = "rgba(0, 0, 0, 0)";
@@ -1068,7 +1130,7 @@ var ter = {
 			Render.trigger("afterRender");
 			ctx.restore();
 
-			if (Performance.render) {
+			if (Performance.enabled) {
 				Performance.render();
 			}
 			Render.trigger("afterRestore");
@@ -1087,7 +1149,7 @@ var ter = {
 		}
 		Render.constraint = function(constraint) {
 			let { render, bodyA, bodyB, offsetA, offsetB } = constraint;
-			let { border, borderWidth, borderType, lineDash, visible, opacity } = render;
+			let { border, borderWidth, borderType, lineDash, lineCap, visible, opacity } = render;
 
 			if (typeof opacity === "number" && opacity <= 0 || !visible) return;
 			if (borderWidth > 0 && border !== "transparent" && border !== "none") {
@@ -1106,9 +1168,10 @@ var ter = {
 				else {
 					ctx.setLineDash([]);
 				}
-
+				
 				ctx.lineWidth = borderWidth;
 				ctx.lineJoin = borderType;
+				ctx.lineCap = lineCap || "butt";
 				ctx.strokeStyle = border;
 				ctx.stroke();
 
@@ -1130,11 +1193,11 @@ var ter = {
 			// ~ Camera
 			screenPtToGame: function(point) {
 				let camera = ter.Render.camera;
-				return new vec({ x: (point.x - camera.translation.x) / camera.scale, y: (point.y - camera.translation.y) / camera.scale });
+				return new vec((point.x - camera.translation.x) / camera.scale, (point.y - camera.translation.y) / camera.scale);
 			},
 			gamePtToScreen: function(point) {
 				let camera = ter.Render.camera;
-				return new vec({ x: point.x * camera.scale + camera.translation.x, y: point.y * camera.scale + camera.translation.y });
+				return new vec(point.x * camera.scale + camera.translation.x, point.y * camera.scale + camera.translation.y);
 			},
 		}
 
@@ -1174,19 +1237,27 @@ var ter = {
 
 			ctx.closePath();
 		}
+		Render.arrow = function(position, direction, size = 10) {
+			let endPos = new vec(position.x + direction.x, position.y + direction.y);
+			let sideA = direction.rotate(Math.PI * 3/4).normalize2().mult(size);
+			let sideB = sideA.reflect(direction.normalize());
 
-
-		// - Images
-		Render.images = {};
-		Render.imgDir = "./img/";
-		Render.loadImg = function(name) {
-			let img = new Image();
-			img.src = Render.imgDir + name;
-
-			img.onload = function() {
-				Render.images[name] = img;
-			}
+			ctx.moveTo(position.x, position.y);
+			ctx.lineTo(endPos.x, endPos.y);
+			ctx.lineTo(endPos.x + sideA.x, endPos.y + sideA.y);
+			ctx.moveTo(endPos.x, endPos.y);
+			ctx.lineTo(endPos.x + sideB.x, endPos.y + sideB.y);
 		}
+
+		Render.pixelRatio = 1;
+		Render.setPixelRatio = function(ratio) {
+			let { canvas, ctx } = ter;
+			let prevRatio = Render.pixelRatio;
+
+			Render.pixelRatio = ratio;
+			ctx.scale(prevRatio / ratio, prevRatio / ratio);
+			ter.setSize(canvas.width / prevRatio, canvas.height / prevRatio);
+		},
 
 		// - Events
 		Render.events = {
@@ -1225,6 +1296,11 @@ var ter = {
 			}
 		}
 
+		// - Backwards compatibility
+		Render.loadImg = function(src) {
+			new Image({ src: src });
+		}
+
 		
 		// - Broadphase
 		Render.showCollisions = false;
@@ -1233,7 +1309,7 @@ var ter = {
 			let allBodies = ter.World.bodies;
 			let allConstraints = ter.World.constraints;
 
-			ctx.strokeStyle = "#ffffff80";
+			ctx.strokeStyle = "#66666680";
 			ctx.lineWidth = 1 / this.camera.scale;
 
 			for (let i = 0; i < allBodies.length; i++) {
@@ -1247,7 +1323,7 @@ var ter = {
 					ctx.strokeRect(bounds.min.x, bounds.min.y, width, height);
 				}
 			}
-			ctx.strokeStyle = "#ffffff30";
+			ctx.strokeStyle = "#66666630";
 			for (let i = 0; i < allConstraints.length; i++) {
 				let constraint = allConstraints[i];
 				let bounds = constraint.bounds;
@@ -1281,7 +1357,7 @@ var ter = {
 					renderVertices(body.vertices);
 				}
 			}
-			ctx.lineWidth = 2 / this.camera.scale;
+			ctx.lineWidth = 1 / this.camera.scale;
 			ctx.strokeStyle = "#FF832A";
 			ctx.stroke();
 		}
@@ -1301,8 +1377,7 @@ var ter = {
 
 		// - Quadtree
 		Render.showBroadphase = false;
-		Render.broadphase = function() {
-			let tree = ter.World.tree;
+		Render.broadphase = function(tree = ter.World.tree) {
 			let size = tree.gridSize;
 
 			ctx.lineWidth = 0.4 / this.camera.scale;

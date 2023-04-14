@@ -55,6 +55,7 @@ class Constraint {
 		borderWidth: 4,
 		borderType: "miter",
 		lineDash: false,
+		lineCap: "butt",
 		visible: true,
 		opacity: 1,
 		layer: 0,

@@ -59,6 +59,20 @@ class Grid {
 			}
 		}
 	}
+	getBucketIds = function(bounds) {
+		let ids = [];
+		for (let x = bounds.min.x; x <= bounds.max.x; x++) {
+			for (let y = bounds.min.y; y <= bounds.max.y; y++) {
+				let n = this.pair(new vec(x, y));
+
+				if (this.grid[n]) {
+					ids.push(n);
+				}
+			}
+		}
+
+		return ids;
+	}
 	removeBody = function(body) {
 		for (let n of body._Grids[this.id]) {
 			let node = this.grid[n];
