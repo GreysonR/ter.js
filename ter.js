@@ -944,7 +944,7 @@ var ter = {
 						position = pointA.avg(pointB);
 					}
 					
-					if (render.visible === true && (Math.abs(cameraPosition.x - position.x) <= bWidth + width && Math.abs(cameraPosition.y - position.y) <= bHeight + height)) {
+					if (render.alwaysVisible || render.visible === true && (Math.abs(cameraPosition.x - position.x) <= bWidth + width && Math.abs(cameraPosition.y - position.y) <= bHeight + height)) {
 						
 						if (type === "constraint") { // render constraint
 							Render.constraint(body);
