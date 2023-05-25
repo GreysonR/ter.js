@@ -2,6 +2,7 @@
 
 class Sprite {
 	static all = {};
+	static allBuffers = {};
 	static imgDir = "./img/";
 	constructor({ src = "", width, height, position, scale = new vec(1, 1) }) {
 		this.src = src;
@@ -10,24 +11,113 @@ class Sprite {
 		this.scale = scale;
 		this.loaded = false;
 		this.position = position;
+		this.useBuffer = false;
 
 		let sprite = this;
 		let cache = Sprite.all[src];
 		
 		if (!cache) {
 			let img = new Image();
+			img.decoding = "async";
+			img.loading = "eager";
+			
+			// document.body.appendChild(img);
+			img.id = src + "-image";
+			img.style.position = "absolute";
+			img.style.top =  "0px";
+			img.style.left = "0px";
+			img.style.opacity = 0.001;
+			img.width =  width ;
+			img.height = height;
+
+			// cache image
 			Sprite.all[src] = img;
-			img.src = Sprite.imgDir + src;
 
 			img.onload = function() {
 				sprite.image = img;
 				sprite.loaded = true;
+				sprite.trigger("load");
+				sprite.events.load.length = 0;
 			}
+			img.src = Sprite.imgDir + src;
 		}
 		else {
 			sprite.image = cache;
 			sprite.loaded = true;
+			sprite.trigger("load");
+			sprite.events.load.length = 0;
 		}
+	}
+	buffer() {
+		let { src, width, height, image } = this;
+		let cache = Sprite.allBuffers[src];
+		if (!cache) {
+			let buffer = document.createElement("canvas");
+			// let scale = 0.5 * Math.min(1.5, Math.sqrt(canv.width * canv.height / 1700 ** 2));
+			let scale = Math.min(1, camera.scale * 0.9);
+			buffer.width =  width  * scale;
+			buffer.height = height * scale;
+
+			// console.log(buffer, this);
+			buffer.getContext("2d").drawImage(image, 0, 0, buffer.width, buffer.height);
+			this.image = buffer;
+			Sprite.allBuffers[src] = buffer;
+
+			buffer.id = src + "-buffer";
+			buffer.style.position = "absolute";
+			buffer.style.top = "0px";
+			buffer.style.left = "0px";
+			buffer.style.opacity = 0.0001;
+			document.body.appendChild(buffer);
+		}
+		else {
+			this.image = cache;
+		}
+		this.useBuffer = true;
+	}
+	render = function(position, angle, ctx, spriteScale = new vec(1, 1)) {
+		let { position: spritePos, width, height, scale, image } = this;
+		scale = scale.mult(spriteScale);
+
+		ctx.translate(position.x, position.y);
+		ctx.rotate(angle);
+		ctx.scale(scale.x, scale.y);
+		ctx.drawImage(image, spritePos.x, spritePos.y, width, height);
+		ctx.scale(1 / scale.x, 1 / scale.y);
+		ctx.rotate(-angle);
+		ctx.translate(-position.x, -position.y);
+	}
+	deleteCache() {
+		delete Sprite.all[this.src];
+		if (this.useBuffer) {
+			document.body.removeChild(Sprite.allBuffers[this.src]);
+			delete Sprite.allBuffers[this.src];
+		}
+	}
+
+	events = {
+		load: [],
+	}
+	on(event, callback) {
+		if (event === "load" && this.loaded) {
+			callback();
+			return;
+		}
+
+		if (this.events[event]) {
+			this.events[event].push(callback);
+		}
+	}
+	off(event, callback) {
+		event = this.events[event];
+		if (event.includes(callback)) {
+			event.splice(event.indexOf(callback), 1);
+		}
+	}
+	trigger(event) {
+		this.events[event].forEach(callback => {
+			callback();
+		});
 	}
 }
 
