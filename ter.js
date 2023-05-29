@@ -133,6 +133,7 @@ var ter = {
 		
 		getPairs: function(bodies) {
 			let pairs = [];
+			let canCollide = ter.Bodies.canCollide;
 
 			for (let i = 0; i < bodies.length - 1; i++) {
 				let bodyA = bodies[i];
@@ -163,11 +164,13 @@ var ter = {
 					}
 					if (!bodyB.hasCollisions || bodyA.parent && bodyA.parent === bodyB.parent)
 						continue;
-
+					if (!canCollide(bodyA.collisionFilter, bodyB.collisionFilter))
+						continue;
+					
 
 					const boundsA = bodyA.bounds;
 					const boundsB = bodyB.bounds;
-					
+
 					if (boundsA.min.x <= boundsB.max.x &&
 						boundsA.max.x >= boundsB.min.x &&
 						boundsA.min.y <= boundsB.max.y &&
@@ -180,6 +183,7 @@ var ter = {
 			return pairs;
 		},
 		get collisionPairs() {
+			let canCollide = ter.Bodies.canCollide;
 			let dynamicGrid = ter.World.dynamicGrid;
 			let staticGrid = ter.World.staticGrid;
 			let pair = ter.Common.pairCommon;
@@ -206,6 +210,8 @@ var ter = {
 							let bodyB = curStaticBucket[k];
 	
 							if (!bodyB.hasCollisions || bodyA.isStatic && bodyB.isStatic || bodyA.parent && bodyA.parent === bodyB.parent)
+								continue;
+							if (!canCollide(bodyA.collisionFilter, bodyB.collisionFilter))
 								continue;
 		
 		
@@ -239,6 +245,15 @@ var ter = {
 		bodies: 0,
 		get uniqueId() {
 			return this.bodies++;
+		},
+		canCollide: function(filterA, filterB) {
+			let { category: categoryA, mask: maskA } = filterA;
+			let { category: categoryB, mask: maskB } = filterB;
+
+			let canA = maskA === 0 || maskA & categoryB !== 0;
+			let canB = maskB === 0 || maskB & categoryA !== 0;
+
+			return canA && canB;
 		},
 
 		rectangle: function(width, height, position, options = {}) {
