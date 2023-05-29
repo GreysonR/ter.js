@@ -197,7 +197,6 @@ var ter = {
 				let curPairs = getPairs(curDynamicBucket); // pair dynamic bodies
 
 				// add static bodies
-						if (!bodyB.hasCollisions || bodyA.isStatic && bodyB.isStatic || bodyA.parent && bodyA.parent === bodyB.parent)
 				if (curStaticBucket) {
 					for (let j = 0; j < curDynamicBucket.length; j++) {
 						let bodyA = curDynamicBucket[j];
