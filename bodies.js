@@ -216,6 +216,16 @@ class Body {
 			}
 		}
 	}
+	setRenderLayer(layer) {
+		if (!this.parent) {
+			Render.bodies[this.render.layer].delete(this);
+			this.render.layer = layer;
+			if (!Render.bodies[this.render.layer]) {
+				Render.bodies[this.render.layer] = new Set();
+			}
+			Render.bodies[this.render.layer].add(this);
+		}
+	}
 	setCollisions(hasCollisions) {
 		let { dynamicGrid, staticGrid } = ter.World;
 		if (hasCollisions === this.hasCollisions) return;

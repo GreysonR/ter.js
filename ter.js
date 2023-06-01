@@ -1225,9 +1225,9 @@ var ter = {
 
 		// - Camera
 		Render.camera = {
-			position: { x: 0, y: 0 },
+			position: new vec(0, 0),
 			fov: 2000,
-			translation: { x: 0, y: 0 },
+			translation: new vec(0, 0),
 			scale: 1,
 			boundSize: 1,
 			bounds: {
