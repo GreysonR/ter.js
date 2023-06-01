@@ -1237,11 +1237,11 @@ var ter = {
 			// ~ Camera
 			screenPtToGame: function(point) {
 				let camera = ter.Render.camera;
-				return new vec((point.x - camera.translation.x) / camera.scale, (point.y - camera.translation.y) / camera.scale);
+				return new vec((point.x * Render.pixelRatio - camera.translation.x) / camera.scale, (point.y * Render.pixelRatio - camera.translation.y) / camera.scale);
 			},
 			gamePtToScreen: function(point) {
 				let camera = ter.Render.camera;
-				return new vec(point.x * camera.scale + camera.translation.x, point.y * camera.scale + camera.translation.y);
+				return new vec((point.x * camera.scale + camera.translation.x) / Render.pixelRatio, (point.y * camera.scale + camera.translation.y) / Render.pixelRatio);
 			},
 		}
 
