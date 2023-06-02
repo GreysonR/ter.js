@@ -22,11 +22,16 @@ class Body {
 		}
 
 		ter.Common.merge(this, options);
+		
+		if (typeof this.collisionFilter.mask === "string") {
+			this.collisionFilter.mask = parseInt(this.collisionFilter.mask, 2);
+		}
+		if (typeof this.collisionFilter.category === "string") {
+			this.collisionFilter.category = parseInt(this.collisionFilter.category, 2);
+		}
 
 		this.vertices = vertices.map(v => new vec(v));
 		this.removeDuplicatesVertices();
-
-		
 		this.resetVertices();
 
 		if (!this.isConvex() && (!Array.isArray(options.children) || options.children.length === 0)) {

@@ -1068,7 +1068,9 @@ var ter = {
 						const { background, border, borderWidth, borderType, lineDash, lineCap, bloom, opacity, sprite, round, } = render;
 						
 						if (sprite && sprite.loaded) { // sprite render
+							ctx.globalAlpha = opacity ?? 1;
 							sprite.render(position, body.angle, ctx, render.spriteScale);
+							ctx.globalAlpha = 1;
 							continue;
 						}
 
