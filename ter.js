@@ -250,8 +250,8 @@ var ter = {
 			let { category: categoryA, mask: maskA } = filterA;
 			let { category: categoryB, mask: maskB } = filterB;
 
-			let canA = maskA === 0 || maskA & categoryB !== 0;
-			let canB = maskB === 0 || maskB & categoryA !== 0;
+			let canA = maskA === 0 || (maskA & categoryB) !== 0;
+			let canB = maskB === 0 || (maskB & categoryA) !== 0;
 
 			return canA && canB;
 		},

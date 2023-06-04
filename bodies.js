@@ -206,7 +206,7 @@ class Body {
 		
 		this.isStatic = isStatic;
 
-		if (this.hasCollisions) {
+		if (this.hasCollisions && !this.removed) {
 			if (lastStatic) {
 				staticGrid.removeBody(this);
 			}
