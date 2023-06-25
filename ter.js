@@ -815,16 +815,16 @@ var ter = {
 		},
 	},
 	Common: {
-		clamp: function(x, min, max) {
+		clamp: function(x, min, max) { // clamps x so that min <= x <= max
 			return Math.max(min, Math.min(x, max));
 		},
-		angleDiff: function(angle1, angle2) {
+		angleDiff: function(angle1, angle2) { // returns the signed difference between 2 angles
 			function mod(a, b) {
 				return a - Math.floor(a / b) * b;
 			}
 			return mod(angle1 - angle2 + Math.PI, Math.PI * 2) - Math.PI;
 		},
-		modDiff: function(x, y, m = 1) {
+		modDiff: function(x, y, m = 1) { // returns the signed difference between 2 values with any modulo, ie 11 oclock is 2 hours from 1 oclock with m = 12
 			function mod(a, b) {
 				return a - Math.floor(a / b) * b;
 			}
@@ -840,7 +840,7 @@ var ter = {
 				return x*x + x + y;
 			return y*y + y + x;
 		},
-		merge: function(obj, options) {
+		merge: function(obj, options) { // deep copies options object onto obj, no return since it's in-place
 			Object.keys(options).forEach(option => {
 				let value = options[option];
 				
@@ -858,7 +858,7 @@ var ter = {
 				}
 			});
 		},
-		lineIntersects: function(a1, a2, b1, b2) {
+		lineIntersects: function(a1, a2, b1, b2) { // tells you if lines given by a1->a2) and b1->b2 are intersecting
 			if (a1.x === a1.x || a1.y === a1.y) {
 				a1 = new vec(a1);
 			}
@@ -891,7 +891,7 @@ var ter = {
 				return false;
 			}
 		},
-		raycast: function(start, end, bodies) { // raycast that gets you all info
+		raycast: function(start, end, bodies) { // raycast that gets you all info: { boolean collision, int distance, vec point, Body body, int verticeIndex }
 			let lineIntersects = ter.Common.lineIntersects;
 			let minDist = Infinity;
 			let minPt = null;
@@ -950,7 +950,7 @@ var ter = {
 				verticeIndex: minVert,
 			};
 		},
-		raycastSimple: function(start, end, bodies) { // raycast that only tells you if there is a collision (usually faster)
+		raycastSimple: function(start, end, bodies) { // raycast that only tells you if there is a collision (usually faster), returns true/false
 			let lineIntersects = ter.Common.lineIntersects;
 			let collision = false;
 
@@ -995,6 +995,10 @@ var ter = {
 			}
 
 			return collision;
+		},
+		boundCollision: function(boundsA, boundsB) { // checks if 2 bounds { min: vec, max: vec } are intersecting, returns true/false
+			return (boundsA.max.x >= boundsB.min.x && boundsA.min.x <= boundsB.max.x && 
+					boundsA.max.y >= boundsB.min.y && boundsA.min.y <= boundsB.max.y);
 		},
 	},
 	Render: (() => {
