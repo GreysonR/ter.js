@@ -741,3 +741,4 @@ class fromVertices extends Body {
 		this.centerSprite();
 		this.add();
 	}
+}
