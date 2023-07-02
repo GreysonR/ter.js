@@ -384,6 +384,10 @@ class Body {
 					sprite.width = options.radius * 2;
 					sprite.height = options.radius * 2;
 				}
+				sprite.on("load", () => {
+					sprite.image.width = sprite.width;
+					sprite.image.height = sprite.height;
+				});
 			}
 			if (sprite.position === undefined) {
 				sprite.position = new vec(0, 0);
@@ -737,4 +741,3 @@ class fromVertices extends Body {
 		this.centerSprite();
 		this.add();
 	}
-}
