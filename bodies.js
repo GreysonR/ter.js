@@ -690,7 +690,9 @@ class rectangle extends Body {
 		this.centerSprite();
 
 		this.setPosition(position, true);
-		this.add();
+		if (!options.removed) {
+			this.add();
+		}
 	}
 }
 class polygon extends Body {
@@ -710,7 +712,9 @@ class polygon extends Body {
 		this.centerSprite();
 
 		this.setPosition(position, true);
-		this.add();
+		if (!options.removed) {
+			this.add();
+		}
 	}
 }
 class circle extends Body {
@@ -730,7 +734,9 @@ class circle extends Body {
 		this.centerSprite();
 
 		this.setPosition(position, true);
-		this.add();
+		if (!options.removed) {
+			this.add();
+		}
 	}
 }
 class fromVertices extends Body {
@@ -739,6 +745,8 @@ class fromVertices extends Body {
 
 		this.setPosition(position, true);
 		this.centerSprite();
-		this.add();
+		if (!options.removed) {
+			this.add();
+		}
 	}
 }
