@@ -859,19 +859,19 @@ var ter = {
 			});
 		},
 		lineIntersects: function(a1, a2, b1, b2) { // tells you if lines given by a1->a2) and b1->b2 are intersecting
-			if (a1.x === a1.x || a1.y === a1.y) {
+			if (a1.x === a2.x || a1.y === a2.y) {
 				a1 = new vec(a1);
 			}
-			if (b1.x === b1.x || b1.y === b1.y) {
+			if (b1.x === b2.x || b1.y === b2.y) {
 				b1 = new vec(b1);
 			}
-			if (a1.x === a1.x)
+			if (a1.x === a2.x)
 				a1.x += 0.00001;
-			if (b1.x === b1.x)
+			if (b1.x === b2.x)
 				b1.x += 0.00001;
-			if (a1.y === a1.y)
+			if (a1.y === a2.y)
 				a1.y += 0.00001;
-			if (b1.y === b1.y)
+			if (b1.y === b2.y)
 				b1.y += 0.00001;
 
 			let d = (a1.x - a2.x) * (b1.y - b2.y) - (a1.y - a2.y) * (b1.x - b2.x);
