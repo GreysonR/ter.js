@@ -1424,8 +1424,6 @@ var ter = {
 				}
 			}
 		}
-
-		// - Quadtree
 		Render.showBroadphase = false;
 		Render.broadphase = function(tree = ter.World.dynamicGrid) {
 			let size = tree.gridSize;
