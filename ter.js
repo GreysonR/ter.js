@@ -1,5 +1,4 @@
 "use strict";
-
 var globalPoints = [];
 var globalVectors = [];
 
@@ -306,9 +305,10 @@ var ter = {
 				return;
 			}
 			
+			let lastVelocity = new vec(body.velocity);
 			body.velocity.mult2(frictionAir);
 			if (body.velocity.x !== 0 || body.velocity.y !== 0){
-				body.translate(body.velocity.mult(timescale));
+				body.translate(body.velocity.add(lastVelocity).mult(timescale / 2)); // trapezoidal rule to take into account acceleration
 			}
 
 			body.angularVelocity *= frictionAngular;
@@ -1240,7 +1240,6 @@ var ter = {
 				min: new vec({ x: 0, y: 0 }),
 				max: new vec({ x: 2000, y: 2000 }),
 			},
-			// ~ Camera
 			screenPtToGame: function(point) {
 				let camera = ter.Render.camera;
 				return new vec((point.x * Render.pixelRatio - camera.translation.x) / camera.scale, (point.y * Render.pixelRatio - camera.translation.y) / camera.scale);
@@ -1307,7 +1306,7 @@ var ter = {
 			Render.pixelRatio = ratio;
 			ctx.scale(prevRatio / ratio, prevRatio / ratio);
 			ter.setSize(canvas.width / prevRatio, canvas.height / prevRatio);
-		},
+		}
 
 		// - Events
 		Render.events = {
