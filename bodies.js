@@ -82,6 +82,7 @@ class Body {
 		}
 
 		if (options.angle) {
+			this.angle = 0;
 			this.setAngle(-options.angle);
 		}
 	}
@@ -320,7 +321,7 @@ class Body {
 
 	delete() {
 		let { World, Render } = ter;
-		if (!this.parent) {
+		if (!this.parent && Render.bodies[this.render.layer]) {
 			Render.bodies[this.render.layer].delete(this);
 		}
 		if (World.bodies.includes(this)) {
@@ -349,6 +350,7 @@ class Body {
 	add() {
 		let { World, Render} = ter;
 		if (!World.bodies.includes(this)) {
+			this.trigger("add");
 			this.removed = false;
 			
 			World.bodies.push(this);
@@ -650,8 +652,8 @@ class Body {
 		collisionEnd: [],
 		beforeUpdate: [], // apply forces to current body
 		duringUpdate: [], // clear forces from current body
-		// afterUpdate: [], // deprecated: use your main game loop instead | apply forces to current + other bodies
 		delete: [],
+		add: [],
 	}
 	on(event, callback) {
 		if (!this.events[event]) {
