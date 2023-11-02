@@ -311,10 +311,11 @@ var ter = {
 				body.translate(body.velocity.add(lastVelocity).mult(timescale / 2)); // trapezoidal rule to take into account acceleration
 			}
 
+			let lastAngularVelocity = body.angularVelocity;
 			body.angularVelocity *= frictionAngular;
 			if (Math.abs(body.angularVelocity) < 0.0001) body.angularVelocity = 0;
 			if (body.angularVelocity){
-				body.translateAngle(body.angularVelocity * timescale);
+				body.translateAngle((body.angularVelocity + lastAngularVelocity) / 2 * timescale); // trapezoidal rule to take into account acceleration
 			}
 			
 			body.updateBounds();
@@ -863,7 +864,7 @@ var ter = {
 				}
 			});
 		},
-		lineIntersects: function(a1, a2, b1, b2) { // tells you if lines given by a1->a2) and b1->b2 are intersecting
+		lineIntersects: function(a1, a2, b1, b2) { // tells you if lines a1->a2 and b1->b2 are intersecting, and at what point
 			if (a1.x === a2.x || a1.y === a2.y) {
 				a1 = new vec(a1);
 			}
@@ -895,6 +896,39 @@ var ter = {
 			else {
 				return false;
 			}
+		},
+		lineIntersectsBody: function(a1, a2, body) { // tells you if line a1->a2 is intersecting with body, returns true/false
+			let ray = a2.sub(a1);
+			let rayNormalized = ray.normalize();
+			let rayAxes = [ rayNormalized, rayNormalized.normal() ];
+			let rayVertices = [ a1, a2 ]; 
+
+			function SAT(verticesA, verticesB, axes) {
+				for (let axis of axes) {
+					let boundsA = { min: Infinity, max: -Infinity };
+					let boundsB = { min: Infinity, max: -Infinity };
+					for (let vertice of verticesA) {
+						let projected = vertice.dot(axis);
+						if (projected < boundsA.min) {
+							boundsA.minVertice
+						}
+						boundsA.min = Math.min(boundsA.min, projected);
+						boundsA.max = Math.max(boundsA.max, projected);
+					}
+					for (let vertice of verticesB) {
+						let projected = vertice.dot(axis);
+						boundsB.min = Math.min(boundsB.min, projected);
+						boundsB.max = Math.max(boundsB.max, projected);
+					}
+
+					if (boundsA.min > boundsB.max || boundsA.max < boundsB.min) { // they are NOT colliding on this axis
+						return false;
+					}
+				}
+				return true;
+			}
+			// SAT using ray axes and body axes
+			return SAT(rayVertices, body.vertices, rayAxes) && SAT(rayVertices, body.vertices, body.axes);
 		},
 		raycast: function(start, end, bodies) { // raycast that gets you all info: { boolean collision, int distance, vec point, Body body, int verticeIndex }
 			let lineIntersects = ter.Common.lineIntersects;
@@ -956,8 +990,7 @@ var ter = {
 			};
 		},
 		raycastSimple: function(start, end, bodies) { // raycast that only tells you if there is a collision (usually faster), returns true/false
-			let lineIntersects = ter.Common.lineIntersects;
-			let collision = false;
+			let lineIntersectsBody = ter.Common.lineIntersectsBody;
 
 			if (bodies === undefined) {
 				let grid = World.dynamicGrid;
@@ -983,23 +1016,12 @@ var ter = {
 
 			for (let i = 0; i < bodies.length; i++) {
 				let body = bodies[i];
-				let { vertices } = body;
-				let len = vertices.length;
-
-				for (let i = 0; i < len; i++) {
-					let cur = vertices[i];
-					let next = vertices[(i + 1) % len];
-
-					let intersection = lineIntersects(start, end, cur, next);
-					if (intersection) {
-						collision = true;
-						break;
-					}
+				let intersection = lineIntersectsBody(start, end, body);
+				if (intersection) {
+					return true;
 				}
-				if (collision) break;
 			}
-
-			return collision;
+			return false;
 		},
 		boundCollision: function(boundsA, boundsB) { // checks if 2 bounds { min: vec, max: vec } are intersecting, returns true/false
 			return (boundsA.max.x >= boundsB.min.x && boundsA.min.x <= boundsB.max.x && 
@@ -1010,6 +1032,8 @@ var ter = {
 		let Render = function() {
 			const { canvas, ctx, Performance, Render } = ter;
 
+			Render.trigger("beforeSave");
+			
 			const camera = Render.camera;
 			const { position:cameraPosition, fov:FoV } = camera;
 			const boundSize = camera.boundSize;
@@ -1026,7 +1050,6 @@ var ter = {
 			camera.bounds.min.set({ x: -camera.translation.x / camera.scale, y: -camera.translation.y / camera.scale });
 			camera.bounds.max.set({ x: (canvWidth - camera.translation.x) / camera.scale, y: (canvHeight - camera.translation.y) / camera.scale });
 
-			Render.trigger("beforeSave");
 			ctx.save();
 			ctx.translate(camera.translation.x, camera.translation.y);
 			ctx.scale(camera.scale, camera.scale);
@@ -1099,9 +1122,6 @@ var ter = {
 						if (lineDash) {
 							ctx.setLineDash(lineDash);
 						}
-						else {
-							ctx.setLineDash([]);
-						}
 			
 						ctx.beginPath();
 	
@@ -1137,6 +1157,9 @@ var ter = {
 						if (bloom) {
 							ctx.shadowColor = "rgba(0, 0, 0, 0)";
 							ctx.shadowBlur = 0;
+						}
+						if (lineDash) {
+							ctx.setLineDash([]);
 						}
 						ctx.globalAlpha = 1;
 					}
@@ -1220,15 +1243,16 @@ var ter = {
 				if (lineDash) {
 					ctx.setLineDash(lineDash);
 				}
-				else {
-					ctx.setLineDash([]);
-				}
 				
 				ctx.lineWidth = borderWidth;
 				ctx.lineJoin = borderType;
 				ctx.lineCap = lineCap || "butt";
 				ctx.strokeStyle = border;
 				ctx.stroke();
+
+				if (lineDash) {
+					ctx.setLineDash([]);
+				}
 
 				ctx.globalAlpha = 1;
 			}
@@ -1245,6 +1269,7 @@ var ter = {
 				min: new vec({ x: 0, y: 0 }),
 				max: new vec({ x: 2000, y: 2000 }),
 			},
+			// ~ Point transformations
 			screenPtToGame: function(point) {
 				let camera = ter.Render.camera;
 				return new vec((point.x * Render.pixelRatio - camera.translation.x) / camera.scale, (point.y * Render.pixelRatio - camera.translation.y) / camera.scale);
@@ -1319,7 +1344,7 @@ var ter = {
 			Render.pixelRatio = ratio;
 			ctx.scale(prevRatio / ratio, prevRatio / ratio);
 			ter.setSize(canvas.width / prevRatio, canvas.height / prevRatio);
-		}
+		},
 
 		// - Events
 		Render.events = {
@@ -1436,6 +1461,8 @@ var ter = {
 				}
 			}
 		}
+
+		// - Quadtree
 		Render.showBroadphase = false;
 		Render.broadphase = function(tree = ter.World.dynamicGrid) {
 			let size = tree.gridSize;
