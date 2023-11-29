@@ -25,10 +25,10 @@ class World {
 			let bodyA = bodies[i];
 			if (bodyA.removed) {
 				if (bodyA.isStatic) {
-					ter.World.staticGrid.removeBody(bodyA);
+					this.staticGrid.removeBody(bodyA);
 				}
 				else {
-					ter.World.dynamicGrid.removeBody(bodyA);
+					this.dynamicGrid.removeBody(bodyA);
 				}
 				continue;
 			}
@@ -41,10 +41,10 @@ class World {
 
 				if (bodyB.removed) {
 					if (bodyB.isStatic) {
-						ter.World.staticGrid.removeBody(bodyB);
+						this.staticGrid.removeBody(bodyB);
 					}
 					else {
-						ter.World.dynamicGrid.removeBody(bodyB);
+						this.dynamicGrid.removeBody(bodyB);
 					}
 					continue;
 				}
@@ -70,10 +70,10 @@ class World {
 	}
 	get collisionPairs() {
 		let canCollide = ter.Bodies.canCollide;
-		let dynamicGrid = ter.World.dynamicGrid;
-		let staticGrid = ter.World.staticGrid;
+		let dynamicGrid = this.dynamicGrid;
+		let staticGrid = this.staticGrid;
 		let pair = ter.Common.pairCommon;
-		let getPairs = ter.World.getPairs;
+		let getPairs = this.getPairs;
 		let pairIds = new Set();
 		let pairs = [];
 

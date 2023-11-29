@@ -17,7 +17,7 @@ var ter = {
 		ter.canvas.height = height * pixelRatio;
 		ter.canvas.style.transformOrigin = "top left";
 		ter.canvas.style.transform = `scale(${ 1 / pixelRatio })`;
-		ter.Render.camera.boundSize = (Math.sqrt(width * height) || 1) * pixelRatio; // Math.sqrt(width * height) || 1; // Math.sqrt(width**2 + height**2) / 2;
+		ter.Render.camera.boundSize = (Math.min(width, height) || 1) * pixelRatio;
 	},
 	Performance: {
 		enabled: true,
@@ -204,7 +204,7 @@ var ter = {
 			if (body.isStatic) return;
 
 			// apply forces
-			body.velocity.add2(body.force).add2(World.gravity.mult(delta));
+			body.velocity.add2(body.force).add2(ter.World.gravity.mult(delta));
 			body.angularVelocity += body.torque;
 
 			// clear forces
@@ -327,6 +327,7 @@ var ter = {
 			Engine.delta = delta * substeps;
 		},
 		testCollision: function(bodyA, bodyB) {
+			const World = ter.World;
 			if (bodyA.isStatic && bodyB.isStatic) return false;
 
 			let collision = true;
