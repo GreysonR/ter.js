@@ -193,7 +193,6 @@ var ter = {
 
 			let lastAngularVelocity = body.angularVelocity;
 			body.angularVelocity *= frictionAngular;
-			if (Math.abs(body.angularVelocity) < 0.0001) body.angularVelocity = 0;
 			if (body.angularVelocity){
 				body.translateAngle((body.angularVelocity + lastAngularVelocity) / 2 * timescale); // trapezoidal rule to take into account acceleration
 			}
