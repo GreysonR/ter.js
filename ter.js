@@ -609,6 +609,7 @@ var ter = {
 					let a = impulse.mult(-shareB * 0.95);
 					bodyB.translate(a);
 				}
+				pair.depth -= impulse.length;
 			}
 		},
 		solveConstraints: function(delta) {
