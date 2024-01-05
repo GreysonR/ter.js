@@ -178,6 +178,7 @@ var ter = {
 		},
 		updateVelocity: function(body, delta) {
 			const timescale = delta;
+			// let { velocity: lastVelocity, angularVelocity: lastAngularVelocity } = body.last;
 
 			let frictionAir = (1 - body.frictionAir) ** timescale;
 			let frictionAngular = (1 - body.frictionAngular) ** timescale;
@@ -186,17 +187,19 @@ var ter = {
 				return;
 			}
 			
-			let lastVelocity = new vec(body.velocity);
 			body.velocity.mult2(frictionAir);
 			if (body.velocity.x !== 0 || body.velocity.y !== 0){
-				body.translate(body.velocity.add(lastVelocity).mult(timescale / 2)); // trapezoidal rule to take into account acceleration
+				// body.translate(body.velocity.add(lastVelocity).mult(timescale / 2)); // trapezoidal rule to take into account acceleration
+				body.translate(body.velocity.mult(timescale)); // more stable
 			}
+			// body.last.velocity.set(body.velocity);
 
-			let lastAngularVelocity = body.angularVelocity;
 			body.angularVelocity *= frictionAngular;
 			if (body.angularVelocity){
-				body.translateAngle((body.angularVelocity + lastAngularVelocity) / 2 * timescale); // trapezoidal rule to take into account acceleration
+				// body.translateAngle((body.angularVelocity + lastAngularVelocity) / 2 * timescale); // trapezoidal rule to take into account acceleration
+				body.translateAngle((body.angularVelocity) * timescale); // more stable
 			}
+			// body.last.angularVelocity = body.angularVelocity;
 			
 			body.updateBounds();
 		},
@@ -482,13 +485,14 @@ var ter = {
 		},
 		solveVelocity: function(delta) {
 			let { pairs } = ter.World;
-			let now = Performance.aliveTime;
 			
 			for (let i in pairs) {
 				let pair = pairs[i];
 				if (!pair || ter.Bodies.cleansePair(pair)) continue;
 
-				let { bodyA, bodyB, normal, tangent, contacts, start } = pair;
+				let { bodyA, bodyB, normal, tangent, contacts } = pair;
+				let numContacts = contacts.length;
+				if (numContacts === 0) continue;
 
 				while (bodyA.parent && bodyA.parent !== bodyA) {
 					bodyA = bodyA.parent;
@@ -500,7 +504,7 @@ var ter = {
 
 				const restitution = 1 + Math.max(bodyA.restitution, bodyB.restitution);
 				const relVel = bodyB.velocity.sub(bodyA.velocity);
-				const friction = Math.max(bodyA.friction, bodyB.friction) / 2; // divide friction by 2 to make it more stable
+				const friction = Math.max(bodyA.friction, bodyB.friction);
 				const slop = Math.max(bodyA.slop, bodyB.slop);
 
 				if (relVel.dot(normal) < 0) {
@@ -519,8 +523,6 @@ var ter = {
 				shareB = Math.min(maxShare, shareB);
 				if (bodyA.isStatic) shareB = 1;
 				if (bodyB.isStatic) shareA = 1;
-
-				let numContacts = contacts.length;
 
 				for (let c = 0; c < numContacts; c++) {
 					const { vertice } = contacts[c];
@@ -549,16 +551,6 @@ var ter = {
 				impulse.div2(numContacts);
 				angImpulseA /= numContacts;
 				angImpulseB /= numContacts;
-				
-
-				// let impulse = normal.mult(normal.dot(relVel) * -restitution).sub2(tangent.abs().mult2(relVel).mult2(friction));
-				// if (bodyA.isStatic || bodyB.isStatic) impulse.mult2(1.5);
-
-				if (now - start > 2000) {
-					let m = 1000 / (now - start - 1000);
-					angImpulseA *= m;
-					angImpulseB *= m;
-				}
 
 				if (!bodyA.isStatic) {
 					bodyA.velocity.sub2(impulse.mult(shareA * delta));
@@ -590,7 +582,7 @@ var ter = {
 				
 				if (depth < 1) continue;
 
-				let impulse = normal.mult(depth * 0.1);
+				let impulse = normal.mult(depth * 0.9);
 				let totalMass = bodyA.mass + bodyB.mass;
 				let shareA = (bodyB.mass / totalMass) || 0;
 				let shareB = (bodyA.mass / totalMass) || 0;
@@ -914,6 +906,8 @@ var ter = {
 		let Render = function() {
 			const { canvas, ctx, Performance, Render } = ter;
 			
+			Render.trigger("beforeSave");
+			
 			const camera = Render.camera;
 			const { position:cameraPosition, fov:FoV } = camera;
 			const boundSize = camera.boundSize;
@@ -930,7 +924,6 @@ var ter = {
 			camera.bounds.min.set({ x: -camera.translation.x / camera.scale, y: -camera.translation.y / camera.scale });
 			camera.bounds.max.set({ x: (canvWidth - camera.translation.x) / camera.scale, y: (canvHeight - camera.translation.y) / camera.scale });
 
-			Render.trigger("beforeSave");
 			ctx.save();
 			ctx.translate(camera.translation.x, camera.translation.y);
 			ctx.scale(camera.scale, camera.scale);
