@@ -942,6 +942,14 @@ var ter = {
 			});
 			for (let layerId of layers) {
 				let layer = bodies[layerId];
+				if (layer.size === 0) { // delete unused layers
+					// check if there's no events with this layer before deleting it
+					if ((!Render.events["beforeLayer" + layerId] || Render.events["beforeLayer" + layerId].length == 0) && (!Render.events["afterLayer" + layerId] || Render.events["afterLayer" + layerId].length == 0)) {
+						delete Render.bodies[layerId];
+						continue;
+					}
+				}
+
 				Render.trigger("beforeLayer" + layerId);
 				for (let body of layer) {
 					let { position, vertices, render, bounds, type } = body;
@@ -1237,6 +1245,13 @@ var ter = {
 			}
 			if (event.includes("afterLayer") && !Render.events[event]) {
 				Render.events[event] = [];
+			}
+
+			if (event.includes("beforeLayer") || event.includes("afterLayer")) { // Create render layer if it doesn't exit
+				let layer = Number(event.replace("beforeLayer", "").replace("afterLayer", ""));
+				if (!isNaN(layer) && !Render.bodies[layer]) {
+					Render.bodies[layer] = new Set();
+				}
 			}
 
 			if (Render.events[event]) {
