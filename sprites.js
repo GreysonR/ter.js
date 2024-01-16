@@ -34,9 +34,6 @@ class Sprite {
 			img.onload = function() {
 				sprite.image = img;
 				sprite.loaded = true;
-				sprite.naturalWidth = img.naturalWidth;
-				sprite.naturalHeight = img.naturalHeight;
-				sprite.naturalScale = sprite.naturalWidth / sprite.width;
 				sprite.trigger("load");
 				sprite.events.load.length = 0;
 			}
@@ -45,9 +42,6 @@ class Sprite {
 		else {
 			sprite.image = cache;
 			sprite.loaded = true;
-			sprite.naturalWidth = cache.naturalWidth;
-			sprite.naturalHeight = cache.naturalHeight;
-			sprite.naturalScale = sprite.naturalWidth / sprite.width;
 			sprite.trigger("load");
 			sprite.events.load.length = 0;
 		}
@@ -58,10 +52,12 @@ class Sprite {
 		if (!cache) {
 			let buffer = document.createElement("canvas");
 			// let scale = 0.5 * Math.min(1.5, Math.sqrt(canv.width * canv.height / 1700 ** 2));
-			let scale = Math.min(1, camera.scale);
-			buffer.width =  width  * scale * this.naturalScale;
-			buffer.height = height * scale * this.naturalScale;
+			// let scale = Math.min(1, camera.scale * 0.9);
+			let scale = Math.min(1, camera.scale * 0.5);
+			buffer.width  = width  * scale;
+			buffer.height = height * scale;
 
+			// console.log(buffer, this);
 			buffer.getContext("2d").drawImage(image, 0, 0, buffer.width, buffer.height);
 			this.image = buffer;
 			Sprite.allBuffers[src] = buffer;
@@ -73,46 +69,34 @@ class Sprite {
 			buffer.style.opacity = 0.0001;
 			buffer.style.pointerEvents = "none";
 			document.body.appendChild(buffer);
-
-			this.naturalWidth =  buffer.width;
-			this.naturalHeight = buffer.height;
 		}
 		else {
 			this.image = cache;
-			this.naturalWidth =  cache.width;
-			this.naturalHeight = cache.height;
 		}
 		this.useBuffer = true;
 	}
-	render = function(position, angle, ctx, spriteScale = new vec(1, 1)) {
-		if (!this.naturalWidth) {
-			this.naturalWidth = this.image.naturalWidth;
-			this.naturalHeight = this.image.naturalHeight;
-			if (!this.naturalWidth) {
-				return;
-			}
-		}
-		let { position: spritePos, width, height, scale, image, naturalWidth, naturalHeight } = this;
-		let bounds = ter.Render.camera.bounds;
+	render = function(position, angle, ctx = ter.ctx, spriteScale = new vec(1, 1)) {
+		if (!this.loaded) return;
+		let { position: spritePos, width, height, scale, image } = this;
 		scale = scale.mult(spriteScale);
-		
-		let rx = Math.max(position.x, bounds.min.x + width/2) - position.x;
-		let ry = Math.max(position.y, bounds.min.y + height/2) - position.y;
-		let rw = (Math.min(position.x + width, bounds.max.x + width/2) - position.x - rx);
-		let rh = (Math.min(position.y + height, bounds.max.y + height/2) - position.y - ry);
-		if (rw <= 0 || rh <= 0) return;
-
-		let xScale = naturalWidth / width;
-		let yScale = naturalHeight / height;
-		let sx = rx * xScale;
-		let sy = ry * xScale;
-		let sw = rw * xScale;
-		let sh = rh * yScale;
 
 		ctx.translate(position.x, position.y);
 		ctx.rotate(angle);
 		ctx.scale(scale.x, scale.y);
-		ctx.drawImage(image, sx, sy, sw, sh, rx + spritePos.x, ry + spritePos.y, rw, rh);
+		ctx.drawImage(image, spritePos.x, spritePos.y, width, height);
+		ctx.scale(1 / scale.x, 1 / scale.y);
+		ctx.rotate(-angle);
+		ctx.translate(-position.x, -position.y);
+	}
+	renderClipped = function(position, angle, clipPosition = new vec(0, 0), clipSize = new vec(0, 0), ctx = ter.ctx, spriteScale = new vec(1, 1)) {
+		if (!this.loaded) return;
+		let { position: spritePos, width, height, scale, image } = this;
+		scale = scale.mult(spriteScale);
+
+		ctx.translate(position.x, position.y);
+		ctx.rotate(angle);
+		ctx.scale(scale.x, scale.y);
+		ctx.drawImage(image, clipPosition.x, clipPosition.y, clipSize.x, clipSize.y, spritePos.x, spritePos.y, width, height);
 		ctx.scale(1 / scale.x, 1 / scale.y);
 		ctx.rotate(-angle);
 		ctx.translate(-position.x, -position.y);
