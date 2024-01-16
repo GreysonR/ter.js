@@ -13,18 +13,17 @@ class Sprite {
 		this.position = position;
 		this.useBuffer = false;
 
+		this.clip = {
+			enabled: false,
+			position: new vec(0, 0),
+			size: new vec(0, 0),
+		};
+
 		let sprite = this;
 		let cache = Sprite.all[src];
 		
 		if (!cache) {
 			let img = new Image();
-			
-			// document.body.appendChild(img);
-			// img.id = src + "-image";
-			// img.style.position = "absolute";
-			// img.style.top =  "0px";
-			// img.style.left = "0px";
-			// img.style.opacity = 0.001;
 			img.width =  width;
 			img.height = height;
 			
@@ -34,6 +33,9 @@ class Sprite {
 			img.onload = function() {
 				sprite.image = img;
 				sprite.loaded = true;
+				sprite.naturalWidth = img.naturalWidth;
+				sprite.naturalHeight = img.naturalHeight;
+				sprite.naturalScale = sprite.naturalWidth / sprite.width;
 				sprite.trigger("load");
 				sprite.events.load.length = 0;
 			}
@@ -42,6 +44,9 @@ class Sprite {
 		else {
 			sprite.image = cache;
 			sprite.loaded = true;
+			sprite.naturalWidth = cache.naturalWidth;
+			sprite.naturalHeight = cache.naturalHeight;
+			sprite.naturalScale = sprite.naturalWidth / sprite.width;
 			sprite.trigger("load");
 			sprite.events.load.length = 0;
 		}
@@ -88,15 +93,18 @@ class Sprite {
 		ctx.rotate(-angle);
 		ctx.translate(-position.x, -position.y);
 	}
-	renderClipped = function(position, angle, clipPosition = new vec(0, 0), clipSize = new vec(0, 0), ctx = ter.ctx, spriteScale = new vec(1, 1)) {
+	renderClipped = function(position, angle, clipPosition = this.clip.position, clipSize = this.clip.size, ctx = ter.ctx, spriteScale = new vec(1, 1)) {
 		if (!this.loaded) return;
-		let { position: spritePos, width, height, scale, image } = this;
+		let { position: spritePos, scale, naturalScale, image } = this;
 		scale = scale.mult(spriteScale);
+
+		let xScale = this.naturalWidth / this.width;
+		let yScale = this.naturalHeight / this.height;
 
 		ctx.translate(position.x, position.y);
 		ctx.rotate(angle);
 		ctx.scale(scale.x, scale.y);
-		ctx.drawImage(image, clipPosition.x, clipPosition.y, clipSize.x, clipSize.y, spritePos.x, spritePos.y, width, height);
+		ctx.drawImage(image, clipPosition.x * xScale, clipPosition.y * xScale, clipSize.x * xScale, clipSize.y * yScale, spritePos.x, spritePos.y, clipSize.x, clipSize.y);
 		ctx.scale(1 / scale.x, 1 / scale.y);
 		ctx.rotate(-angle);
 		ctx.translate(-position.x, -position.y);
@@ -135,11 +143,11 @@ class Sprite {
 	}
 }
 
-class SpriteAnimation {
+class DiscreteAnimation {
 	static all = new Set();
 	static update() {
 		const now = ter.World.time;
-		for (let animation of SpriteAnimation.all) {
+		for (let animation of DiscreteAnimation.all) {
 			let { startTime, duration, frames, lastFrame, curve, totalLoops, loopNumber } = animation;
 			let pLinear = Math.max(0, Math.min(1, (now - startTime) / duration));
 			let p = curve(pLinear);
@@ -151,20 +159,22 @@ class SpriteAnimation {
 					p = curve(0);
 				}
 				else {
-					animation.lastFrame = frames.length - 1;
-					animation.stop();
+					animation.lastFrame = frames - 1;
+					if (animation.stop) animation.stop();
 				}
 			}
 
-			let frame = Math.floor(p * frames.length);
+			let frame = Math.floor(p * frames);
+			animation.frame = frame;
 			if (p < 1 && frame !== lastFrame) {
 				animation.lastFrame = frame;
-				animation.callback({ sprite: frames[frame], frame: frame });
+				if (animation.callback) animation.callback(frame);
 			}
 		}
 	}
 
-	constructor({ frames = [], duration = 200, curve = ease.linear, callback, onstart, onend, totalLoops = 1, autostart = false }) {
+	constructor({ frames, duration = 200, curve = ease.linear, callback, onstart, onend, totalLoops = 1, autostart = false }) {
+		this.frame = 0;
 		this.frames = frames;
 		this.duration = duration;
 		this.startTime = ter.World.time;
@@ -180,14 +190,14 @@ class SpriteAnimation {
 		this.playing = false;
 
 		if (autostart && totalLoops > 0) {
-			SpriteAnimation.all.add(this);
+			DiscreteAnimation.all.add(this);
 			if (typeof this.onstart === "function") this.onstart();
 		}
 	}
 	stop() {
 		if (this.playing) {
 			if (typeof this.onend === "function") this.onend();
-			SpriteAnimation.all.delete(this);
+			DiscreteAnimation.all.delete(this);
 			this.pauseTime = 0;
 			this.lastFrame = -1;
 			this.loopNumber = 0;
@@ -196,18 +206,61 @@ class SpriteAnimation {
 	}
 	pause() {
 		if (this.playing) {
-			SpriteAnimation.all.delete(this);
+			DiscreteAnimation.all.delete(this);
 			this.pauseTime = ter.World.time - this.startTime;
 			this.playing = false;
 		}
 	}
 	start() {
 		this.startTime = ter.World.time - this.pauseTime;
-		SpriteAnimation.all.add(this);
+		DiscreteAnimation.all.add(this);
 		this.playing = true;
 
 		if (this.pauseTime === 0 && typeof this.onstart === "function") {
 			this.onstart();
 		}
+	}
+}
+
+class SpriteAnimation extends DiscreteAnimation {
+	constructor({ sprite, frameSize = new vec(100, 100), animationNumber = 0, frameNumber = 0, duration = 200, curve = ease.linear, onstart, onend, totalLoops = 1, autostart = false, spriteScale = new vec(1, 1) }) {
+		super({
+			frames: Math.round(sprite.width / frameSize.x),
+			duration: duration,
+			curve: curve,
+			onstart: onstart,
+			onend: onend,
+			totalLoops: totalLoops,
+			autostart: autostart,
+		});
+		this.sprite = sprite;
+		this.curve = curve;
+		this.callback = this.update.bind(this);
+
+		this.frame = frameNumber;
+		this.lastFrame = frameNumber - 1;
+		this.animationNumber = animationNumber;
+		this.spriteScale = spriteScale;
+		
+		sprite.clip.enabled = true;
+		sprite.clip.position = new vec(0, 0);
+		sprite.clip.size = new vec(frameSize);
+
+		if (autostart && totalLoops > 0) {
+			SpriteAnimation.all.add(this);
+			if (typeof this.onstart === "function") this.onstart();
+		}
+	}
+	update(frame) {
+		this.sprite.clip.position.x = frame * this.sprite.clip.size.x;
+		this.sprite.clip.position.y = this.animationNumber * this.sprite.clip.size.y;
+	}
+	setAnimationNumber(animationNumber) {
+		this.animationNumber = animationNumber;
+		this.update(this.frame);
+	}
+	start() {
+		super.start();
+		this.sprite.scale.set(this.spriteScale);
 	}
 }
