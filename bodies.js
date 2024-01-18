@@ -689,6 +689,7 @@ class Body {
 		duringUpdate: [], // clear forces from current body
 		delete: [],
 		add: [],
+		render: [],
 	}
 	on(event, callback) {
 		if (!this.events[event]) {

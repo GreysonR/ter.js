@@ -119,7 +119,7 @@ var ter = {
 			ctx.fillText((Math.round(delta * 100) / 100).toFixed(2) + "ms", 190 * pixelRatio, 70 * pixelRatio);
 		}
 	},
-	World: new World(new vec(0, 0), 2000),
+	World: new World(new vec(0, 0), 1000),
 	Bodies: {
 		bodies: 0,
 		get uniqueId() {
@@ -267,10 +267,10 @@ var ter = {
 	},
 	Engine: {
 		delta: 1,
-		substeps: 4,
-		velocityIterations: 2,
-		positionIterations: 4,
-		constraintIterations: 4,
+		substeps: 5,
+		velocityIterations: 1,
+		positionIterations: 1,
+		constraintIterations: 1,
 		maxShare: 1,
 
 		update: function(delta) {
@@ -948,7 +948,11 @@ var ter = {
 				return a < b ? -1 : a > b ? 1 : 0;
 			});
 			for (let layerId of layers) {
-				let layer = bodies[layerId];
+				// y sort for bodies, sorted by bottom of body
+				let layer = Array.from(bodies[layerId]);
+				layer.sort((a, b) => (a.isStatic || b.isStatic) ? 0 : ((a.position.y + (a.bounds.max.y - a.bounds.min.y)) - (b.position.y + (b.bounds.max.y - b.bounds.min.y))));
+				
+				// let layer = bodies[layerId];
 				if (layer.size === 0) { // delete unused layers
 					// check if there's no events with this layer before deleting it
 					if ((!Render.events["beforeLayer" + layerId] || Render.events["beforeLayer" + layerId].length == 0) && (!Render.events["afterLayer" + layerId] || Render.events["afterLayer" + layerId].length == 0)) {
@@ -961,6 +965,8 @@ var ter = {
 					let { position, vertices, render, bounds, type } = body;
 					let bodyBoundsPosition = new vec(0, 0);
 
+					body.trigger("render");
+					
 					let width, height;
 					if (body.render.sprite) {
 						let sprite = body.render.sprite;
