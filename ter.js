@@ -129,8 +129,8 @@ var ter = {
 			let { category: categoryA, mask: maskA } = filterA;
 			let { category: categoryB, mask: maskB } = filterB;
 
-			let canA = maskA === 0 || (maskA & categoryB) !== 0;
-			let canB = maskB === 0 || (maskB & categoryA) !== 0;
+			let canA = maskA === 0 || categoryB === 0 || (maskA & categoryB) !== 0;
+			let canB = maskB === 0 || categoryA === 0 || (maskB & categoryA) !== 0;
 
 			return canA && canB;
 		},
@@ -178,7 +178,7 @@ var ter = {
 		},
 		updateVelocity: function(body, delta) {
 			const timescale = delta;
-			// let { velocity: lastVelocity, angularVelocity: lastAngularVelocity } = body.last;
+			let { velocity: lastVelocity, angularVelocity: lastAngularVelocity } = body.last;
 
 			let frictionAir = (1 - body.frictionAir) ** timescale;
 			let frictionAngular = (1 - body.frictionAngular) ** timescale;
@@ -189,17 +189,17 @@ var ter = {
 			
 			body.velocity.mult2(frictionAir);
 			if (body.velocity.x !== 0 || body.velocity.y !== 0){
-				// body.translate(body.velocity.add(lastVelocity).mult(timescale / 2)); // trapezoidal rule to take into account acceleration
-				body.translate(body.velocity.mult(timescale)); // more stable
+				body.translate(body.velocity.add(lastVelocity).mult(timescale / 2)); // trapezoidal rule to take into account acceleration
+				// body.translate(body.velocity.mult(timescale)); // more stable
 			}
-			// body.last.velocity.set(body.velocity);
+			body.last.velocity.set(body.velocity);
 
 			body.angularVelocity *= frictionAngular;
 			if (body.angularVelocity){
-				// body.translateAngle((body.angularVelocity + lastAngularVelocity) / 2 * timescale); // trapezoidal rule to take into account acceleration
-				body.translateAngle((body.angularVelocity) * timescale); // more stable
+				body.translateAngle((body.angularVelocity + lastAngularVelocity) / 2 * timescale); // trapezoidal rule to take into account acceleration
+				// body.translateAngle((body.angularVelocity) * timescale); // more stable
 			}
-			// body.last.angularVelocity = body.angularVelocity;
+			body.last.angularVelocity = body.angularVelocity;
 			
 			body.updateBounds();
 		},
@@ -772,6 +772,14 @@ var ter = {
 			}
 		},
 		lineIntersectsBody: function(a1, a2, body) { // tells you if line a1->a2 is intersecting with body, returns true/false
+			if (body.children.length > 0) {
+				for (let child of body.children) {
+					if (ter.Common.lineIntersectsBody(a1, a2, child)) {
+						return true;
+					}
+				}
+				return false;
+			}
 			let ray = a2.sub(a1);
 			let rayNormalized = ray.normalize();
 			let rayAxes = [ rayNormalized, rayNormalized.normal() ];
@@ -867,10 +875,10 @@ var ter = {
 			let lineIntersectsBody = ter.Common.lineIntersectsBody;
 
 			if (bodies === undefined) {
-				let grid = World.dynamicGrid;
+				let grid = ter.World.staticGrid;
 				let size = grid.gridSize;
 				let bounds = { min: start.min(end).div2(size).floor2(), max: start.max(end).div2(size).floor2() };
-				bodies = [];
+				bodies = new Set();
 		
 				for (let x = bounds.min.x; x <= bounds.max.x; x++) {
 					for (let y = bounds.min.y; y <= bounds.max.y; y++) {
@@ -879,8 +887,8 @@ var ter = {
 		
 						if (node) {
 							for (let body of node) {
-								if (!bodies.includes(body) && body.children.length === 0) {
-									bodies.push(body);
+								if (!bodies.has(body)) {
+									bodies.add(body);
 								}
 							}
 						}
@@ -888,8 +896,7 @@ var ter = {
 				}
 			}
 
-			for (let i = 0; i < bodies.length; i++) {
-				let body = bodies[i];
+			for (let body of bodies) {
 				let intersection = lineIntersectsBody(start, end, body);
 				if (intersection) {
 					return true;
@@ -949,7 +956,6 @@ var ter = {
 						continue;
 					}
 				}
-
 				Render.trigger("beforeLayer" + layerId);
 				for (let body of layer) {
 					let { position, vertices, render, bounds, type } = body;
@@ -987,7 +993,12 @@ var ter = {
 						
 						if (sprite && sprite.loaded) { // sprite render
 							ctx.globalAlpha = opacity ?? 1;
-							sprite.render(position, body.angle, ctx, render.spriteScale);
+							if (sprite.clip.enabled) {
+								sprite.renderClipped(position, body.angle, sprite.clip.position, sprite.clip.size, ctx, render.spriteScale);
+							}
+							else {
+								sprite.render(position, body.angle, ctx, render.spriteScale);
+							}
 							ctx.globalAlpha = 1;
 							continue;
 						}
@@ -1377,3 +1388,5 @@ var ter = {
 		return Render;
 	})(),
 }
+
+ter.Render.on("beforeRender", DiscreteAnimation.update);

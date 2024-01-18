@@ -112,6 +112,9 @@ class Body {
 		this.updateAxes();
 		this.updateInertia();
 
+		if (typeof options.render.sprite === "object") {
+			this.render.sprite = new Sprite(options.render.sprite);
+		}
 		if (typeof options.render.sprite === "string") {
 			if (options.render.sprite.indexOf(".") === -1) {
 				options.render.sprite += ".png";
@@ -309,10 +312,10 @@ class Body {
 	angularVelocity = 0;
 	torque = 0;
 
-	// last = {
-	// 	velocity: new vec(0, 0),
-	// 	angularVelocity: 0,
-	// };
+	last = {
+		velocity: new vec(0, 0),
+		angularVelocity: 0,
+	};
 
 	vertices = [];
 	children = [];
