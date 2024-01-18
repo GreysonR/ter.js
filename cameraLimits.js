@@ -7,6 +7,18 @@ ter.Render.camera.limits = {
 
 ter.Render.on("beforeSave", () => { // change camera position so it's within limits
 	const camera = ter.Render.camera;
+	const { position:cameraPosition, fov:FoV } = camera;
+	const boundSize = camera.boundSize;
+	const canvWidth = canvas.width;
+	const canvHeight = canvas.height;
+
+	// update translation and scale so it's up to date for current frame
+	camera.translation = { x: -cameraPosition.x * boundSize/FoV + canvWidth/2, y: -cameraPosition.y * boundSize/FoV + canvHeight/2 };
+	camera.scale = boundSize / FoV;
+
+	// { x: (point.x - camera.translation.x) / camera.scale, y: (point.y - camera.translation.y) / camera.scale }
+	camera.bounds.min.set({ x: -camera.translation.x / camera.scale, y: -camera.translation.y / camera.scale });
+	camera.bounds.max.set({ x: (canvWidth - camera.translation.x) / camera.scale, y: (canvHeight - camera.translation.y) / camera.scale });
 	
 	let offset = new vec(0, 0);
 	offset.sub2(camera.bounds.min.sub(camera.limits.min).min2(new vec(0, 0)));
