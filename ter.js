@@ -6,27 +6,37 @@ var ter = {
 	canvas: false,
 	ctx: false,
 	init: function(options) {
-		this.canvas = options.canvas;
-		this.ctx = options.ctx;
+		// basic settings
+		let scale = PIXI.settings.RESOLUTION = devicePixelRatio ?? 1;
 
-		this.setSize(options.width, options.height);
+		// create PIXI app
+		let { Render } = ter;
+		let app = Render.app = new PIXI.Application({
+			background: options.background ?? "transparent",
+			resizeTo: options.resizeTo ?? window,
+		});
+		document.body.appendChild(app.view);
+		app.ticker.add(Render.update.bind(this));
+
+		let view = app.view;
+		view.style.transformOrigin = "top left";
+		view.style.transform = `scale(${1 / scale}, ${1 / scale})`;
+
+		ter.setSize(app.screen.width, app.screen.height);
+		app.renderer.on("resize", ter.setSize.bind(this));
+
+		this.Performance.render.init();
 	},
 	setSize(width, height) {
 		let pixelRatio = this.Render.pixelRatio;
-		ter.canvas.width =  width  * pixelRatio;
-		ter.canvas.height = height * pixelRatio;
-		ter.canvas.style.transformOrigin = "top left";
-		ter.canvas.style.transform = `scale(${ 1 / pixelRatio })`;
-		ter.Render.camera.boundSize = (Math.min(width, height) || 1) * pixelRatio;
+		ter.Render.camera.boundSize = (Math.sqrt(width ** 2 + height ** 2) || 1) * pixelRatio;
 	},
 	Performance: {
-		enabled: true,
 		getAvgs: true,
 		lastUpdate: performance.now(),
 		fps: 60,
 		delta: 16.67,
 		frame: 0,
-		aliveTime: 0,
 
 		history: {
 			avgFps: 60,
@@ -34,7 +44,11 @@ var ter = {
 			fps: [],
 			delta: [],
 		},
-
+		engine: {
+			delta: 0,
+			lastUpdate: 0,
+		},
+		
 		update: function() {
 			let Performance = ter.Performance;
 			let curTime = performance.now();
@@ -45,9 +59,8 @@ var ter = {
 			Performance.delta = Math.min(200, curTime - Performance.lastUpdate);
 			Performance.fps = 1000 / Performance.delta;
 			Performance.lastUpdate = curTime;
-			Performance.aliveTime += Performance.delta;
 
-			if (!Performance.enabled && Performance.getAvgs) {
+			if (!Performance.render.enabled && Performance.getAvgs) {
 				Performance.history.fps.push(Performance.fps);
 				Performance.history.delta.push(Performance.delta);
 	
@@ -74,49 +87,121 @@ var ter = {
 				Performance.history.avgDelta = delta;
 			}
 		},
-		render: function() {
-			let Performance = ter.Performance;
-			let pixelRatio = ter.Render.pixelRatio;
-			let ctx = ter.ctx;
+		render: {
+			enabled: false,
+			canvas: null,
+			ctx: null,
+			position: new vec(20, 20),
+			init: function() {
+				const width =  90;
+				const height = 40;
 
-			Performance.history.fps.push(Performance.fps);
-			Performance.history.delta.push(Performance.delta);
+				let { Performance, Render } = ter;
+				let { render } = Performance;
+				let scale = devicePixelRatio ?? 1;
 
-			if (Performance.history.fps.length > 100) {
-				Performance.history.fps.shift();
-				Performance.history.delta.shift();
-			}
-			let fps = (() => {
-				let v = 0;
-				for (let i = 0; i < Performance.history.fps.length; i++) {
-					v += Performance.history.fps[i] / Performance.history.fps.length;
-				}
-				return v;
-			})();
-			let delta = (() => {
-				let v = 0;
-				for (let i = 0; i < Performance.history.delta.length; i++) {
-					v += Performance.history.delta[i] / Performance.history.delta.length;
-				}
-				return v;
-			})();
+				let canvas = render.canvas = document.createElement("canvas");
+				let ctx = render.ctx = canvas.getContext("2d");
+				canvas.style.position = "absolute";
+				canvas.style.zIndex = 2;
+				canvas.style.top =  "20px";
+				canvas.style.left = "20px";
+				canvas.width =  scale * width;
+				canvas.height = scale * height;
+				canvas.style.background = "transparent";
+				canvas.style.pointerEvents = "none";
+				canvas.style.transformOrigin = "top left";
+				canvas.style.transform = `scale(${1 / scale}, ${1 / scale})`;
+				document.body.appendChild(canvas);
 
-			Performance.history.avgFps = fps;
-			Performance.history.avgDelta = delta;
+				Render.app.ticker.add((delta) => {
+					ctx.clearRect(0, 0, canvas.width, canvas.height);
+					if (render.enabled) {
+						// update averages
+						Performance.history.fps.push(Performance.fps);
+						let maxLength = 200;
+						while (Performance.history.fps.length > maxLength) {
+							Performance.history.fps.shift();
+						}
 
-			ctx.fillStyle = "#2D2D2D80";
-			ctx.fillRect(20 * pixelRatio, 20 * pixelRatio, 200 * pixelRatio, 70 * pixelRatio);
+						ctx.save();
+						ctx.scale(scale, scale);
 
-			ctx.textAlign = "left";
-			ctx.font = `${ 12 * pixelRatio }px Arial`;
-			ctx.fillStyle = "#C7C8C9";
-			ctx.fillText("FPS", 45 * pixelRatio, 50 * pixelRatio);
-			ctx.fillText("Δ T", 45 * pixelRatio, 70 * pixelRatio);
+						// background
+						ctx.beginPath();
+						Render.roundedRect(width, height, new vec(width/2, height/2), 5, ctx);
+						ctx.fillStyle = "#0D0D0De6";
+						ctx.fill();
 
-			ctx.textAlign = "right";
-			ctx.fillStyle = "#FFFFFF";
-			ctx.fillText(Math.round(fps), 190 * pixelRatio, 50 * pixelRatio);
-			ctx.fillText((Math.round(delta * 100) / 100).toFixed(2) + "ms", 190 * pixelRatio, 70 * pixelRatio);
+
+						// get fps stats
+						let maxFps = 0;
+						let minFps = Infinity;
+						let avgFps = (() => {
+							let v = 0;
+							for (let i = 0; i < Performance.history.fps.length; i++) {
+								let cur = Performance.history.fps[i];
+								v += cur;
+								maxFps = Math.max(maxFps, cur);
+								minFps = Math.min(minFps, cur);
+							}
+							return v / Performance.history.fps.length;
+						})();
+
+						// fps text
+						ctx.beginPath();
+						ctx.fillStyle = "white";
+						ctx.textAlign = "right";
+						ctx.font = "400 12px Arial";
+						ctx.fillText(`${Math.round(avgFps)} fps`, width - 12, 17);
+
+						
+						if (Performance.history.fps.length > 10) { // fps graph
+							let range = 100;
+							let fpsRanges = {
+								min: Math.max(0, Math.min(minFps, avgFps - range)),
+								max: Math.max(maxFps, avgFps + range, 60),
+							}
+							const fpsRange = fpsRanges.max - fpsRanges.min;
+							let bounds = {
+								min: new vec(10, 18),
+								max: new vec(width - 10, height - 4),
+							};
+
+							ctx.beginPath();
+							function getPosition(point, i) {
+								let x = bounds.max.x - (i / Performance.history.fps.length) * (bounds.max.x - bounds.min.x);
+								let y = bounds.max.y - ((point - fpsRanges.min) / fpsRange) * (bounds.max.y - bounds.min.y);
+								return [x, y];
+							}
+							ctx.moveTo(...getPosition(Performance.history.fps[0], 0))
+							for (let i = 1; i < Performance.history.fps.length; i++) {
+								ctx.lineTo(...getPosition(Performance.history.fps[i], i));
+							}
+							ctx.lineWidth = 1;
+							ctx.strokeStyle = "#9C9C9C";
+							ctx.stroke();
+						}
+
+						// colored rect
+						ctx.beginPath();
+						let colors = [[0.75, "#3FF151"], [0.5, "#F5ED32"], [0.25, "#F89A2C"], [0, "#F74D4D"]];
+						let boundMax = 60;
+						ctx.fillStyle = "#808080";
+						for (let color of colors) {
+							if (avgFps >= color[0] * boundMax) {
+								ctx.fillStyle = color[1];
+								break;
+							}
+						}
+						Render.roundedRect(6, 6, new vec(15, 13), 2, ctx);
+						ctx.fill();
+						
+						
+						ctx.restore();
+					}
+				});
+			},
 		}
 	},
 	World: new World(new vec(0, 0), 1000),
@@ -464,7 +549,7 @@ var ter = {
 
 					id: pairId,
 					frame: Performance.frame,
-					start: Performance.aliveTime,
+					start: World.time,
 				}
 
 				if (World.pairs[pairId]) { // Collision active
@@ -720,6 +805,33 @@ var ter = {
 				return x*x + x + y;
 			return y*y + y + x;
 		},
+		parseColor: function(originalColor) {
+			if (originalColor === "transparent") {
+				return ["#000000", 0];
+			}
+			let color;
+			let alpha = 1;
+
+			if (originalColor[0] === "#" && originalColor.length === 9) { // is a hex code with alpha
+				color = originalColor.slice(0, 7);
+				alpha = parseInt(originalColor.slice(7), 16) / 256; // convert to decimel
+			}
+			else if (originalColor[0] === "#" && originalColor.length === 7) { // is a hex code w/0 alpha
+				color = originalColor;
+				alpha = 1;
+			}
+			else if (originalColor.slice(0, 4) === "rgb(") { // rgb
+				color = originalColor.slice(originalColor.indexOf("(") + 1, originalColor.indexOf(")")).split(",");
+				color = "#" + color.map(value => parseInt(value).toString(16).padStart(2, "0")).join("");
+				alpha = 1;
+			}
+			else if (originalColor.slice(0, 5) === "rgba(") { // rgba
+				color = originalColor.slice(originalColor.indexOf("(") + 1, originalColor.indexOf(")")).split(",");
+				alpha = parseInt(color.pop()) / 255;
+				color = "#" + color.map(value => parseInt(value).toString(16).padStart(2, "0")).join("");
+			}
+			return [color, alpha];
+		},
 		merge: function(obj, options) { // deep copies options object onto obj, no return since it's in-place
 			Object.keys(options).forEach(option => {
 				let value = options[option];
@@ -913,278 +1025,209 @@ var ter = {
 					point.y >= bounds.min.y && point.y <= bounds.max.y);
 		},
 	},
-	Render: (() => {
-		let Render = function() {
-			const { canvas, ctx, Performance, Render } = ter;
-			
-			Render.trigger("beforeSave");
-			
-			const camera = Render.camera;
-			const { position:cameraPosition, fov:FoV } = camera;
-			const boundSize = camera.boundSize;
-			const canvWidth = canvas.width;
-			const canvHeight = canvas.height;
-			const bodies = Render.bodies;
-
-			ctx.clearRect(0, 0, canvWidth, canvHeight);
-
-			camera.translation = { x: -cameraPosition.x * boundSize/FoV + canvWidth/2, y: -cameraPosition.y * boundSize/FoV + canvHeight/2 };
-			camera.scale = boundSize / FoV;
-
-			// { x: (point.x - camera.translation.x) / camera.scale, y: (point.y - camera.translation.y) / camera.scale }
-			camera.bounds.min.set({ x: -camera.translation.x / camera.scale, y: -camera.translation.y / camera.scale });
-			camera.bounds.max.set({ x: (canvWidth - camera.translation.x) / camera.scale, y: (canvHeight - camera.translation.y) / camera.scale });
-
-			ctx.save();
-			ctx.translate(camera.translation.x, camera.translation.y);
-			ctx.scale(camera.scale, camera.scale);
-			
-			let cameraBoundSize = camera.bounds.max.sub(camera.bounds.min).mult(0.5);
-
-			Render.trigger("beforeRender");
-			let layers = Object.keys(bodies).sort((a, b) => {
-				a = Number(a);
-				b = Number(b);
-				return a < b ? -1 : a > b ? 1 : 0;
-			});
-			for (let layerId of layers) {
-				// y sort for bodies, sorted by bottom of body
-				let layer = Array.from(bodies[layerId]);
-				layer.sort((a, b) => (a.isStatic || b.isStatic) ? 0 : ((a.position.y + (a.bounds.max.y - a.bounds.min.y)) - (b.position.y + (b.bounds.max.y - b.bounds.min.y))));
-				
-				// let layer = bodies[layerId];
-				if (layer.size === 0) { // delete unused layers
-					// check if there's no events with this layer before deleting it
-					if ((!Render.events["beforeLayer" + layerId] || Render.events["beforeLayer" + layerId].length == 0) && (!Render.events["afterLayer" + layerId] || Render.events["afterLayer" + layerId].length == 0)) {
-						delete Render.bodies[layerId];
-						continue;
-					}
-				}
-				Render.trigger("beforeLayer" + layerId);
-				for (let body of layer) {
-					let { position, vertices, render, bounds, type } = body;
-					let bodyBoundsPosition = new vec(0, 0);
-
-					body.trigger("render");
-					
-					let width, height;
-					if (body.render.sprite) {
-						let sprite = body.render.sprite;
-						width  = Math.max(sprite.width * sprite.scale.x * render.spriteScale.x,  bounds.max.x - bounds.min.x) * 0.5;
-						height = Math.max(sprite.height * sprite.scale.y * render.spriteScale.y, bounds.max.y - bounds.min.y) * 0.5;
-					}
-					else {
-						width  = (bounds.max.x - bounds.min.x) * 0.5;
-						height = (bounds.max.y - bounds.min.y) * 0.5;
-					}
-
-					if (type === "constraint") {
-						let { bodyA, bodyB, offsetA, offsetB } = body;
-						let pointA = bodyA.position.add(offsetA.rotate(bodyA.angle));
-						let pointB = bodyB.position.add(offsetB.rotate(bodyB.angle));
-						bodyBoundsPosition.set(pointA.avg(pointB));
-					}
-					else {
-						bodyBoundsPosition.set(bounds.max.avg(bounds.min));
-					}
-					
-					if (render.alwaysRender || render.visible === true && (Math.abs(cameraPosition.x - bodyBoundsPosition.x) <= cameraBoundSize.x + width && Math.abs(cameraPosition.y - bodyBoundsPosition.y) <= cameraBoundSize.y + height)) {
-						render.inView = true;
-						if (type === "constraint") { // render constraint
-							Render.constraint(body);
-							continue;
-						}
-
-						const { background, border, borderWidth, borderType, lineDash, lineCap, bloom, opacity, sprite, round, } = render;
-						
-						if (sprite && sprite.loaded) { // sprite render
-							ctx.globalAlpha = opacity ?? 1;
-							if (sprite.clip.enabled) {
-								sprite.renderClipped(position, body.angle, sprite.clip.position, sprite.clip.size, ctx, render.spriteScale);
-							}
-							else {
-								sprite.render(position, body.angle, ctx, render.spriteScale);
-							}
-							ctx.globalAlpha = 1;
-							continue;
-						}
-
-						// render body using vertices
-						ctx.globalAlpha = opacity ?? 1;
-						ctx.lineWidth = borderWidth;
-						ctx.strokeStyle = border;
-						ctx.fillStyle = background;
-						ctx.lineJoin = borderType;
-						ctx.lineCap = lineCap || "butt";
-
-						if (bloom) {
-							ctx.shadowColor = border;
-							ctx.shadowBlur = bloom * camera.scale;
-						}
-			
-						if (lineDash) {
-							ctx.setLineDash(lineDash);
-						}
-			
-						ctx.beginPath();
-	
-						if (type === "circle") { // circle render
-							ctx.arc(position.x, position.y, body.radius, 0, Math.PI*2);
-						}
-						else if (type === "rectangle") { // rectangle render
-							if (round > 0) { // rounded vertices
-								Render.roundedPolygon(vertices, round);
-							}
-							else {
-								const { width, height } = body;
-								ctx.translate(position.x, position.y);
-								ctx.rotate(body.angle);
-								ctx.beginPath();
-								ctx.rect(-width/2, -height/2, width, height);
-								ctx.rotate(-body.angle);
-								ctx.translate(-position.x, -position.y);
-							}
-						}
-						else { // vertice render
-							if (round > 0) { // rounded vertices
-								Render.roundedPolygon(vertices, round);
-							}
-							else { // normal vertices
-								Render.vertices(vertices);
-							}
-						}
-
-						if (ctx.fillStyle && ctx.fillStyle !== "transparent") ctx.fill();
-						if (ctx.strokeStyle && ctx.strokeStyle !== "transparent" && borderWidth > 0) ctx.stroke();
-						
-						if (bloom) {
-							ctx.shadowColor = "rgba(0, 0, 0, 0)";
-							ctx.shadowBlur = 0;
-						}
-						if (lineDash) {
-							ctx.setLineDash([]);
-						}
-						ctx.globalAlpha = 1;
-					}
-					else {
-						render.inView = false;
-					}
-				}
-				Render.trigger("afterLayer" + layerId);
-			}
-			
-			if (Render.showBroadphase === true) {
-				Render.broadphase();
-			}
-			if (Render.showBoundingBox === true) {
-				Render.boundingBox();
-			}
-			if (Render.showVertices === true) {
-				Render.allVertices();
-			}
-			if (Render.showCenters === true) {
-				Render.allCenters();
-			}
-
-			if (globalPoints.length > 0) { // Render globalPoints
-				for (let i = 0; i < globalPoints.length; i++) {
-					let point = globalPoints[i];
-					ctx.beginPath();
-					ctx.arc(point.x, point.y, 2 / camera.scale, 0, Math.PI*2);
-					ctx.fillStyle = "#e8e8e8";
-					ctx.fill();
-				}
-			}
-			if (globalVectors.length > 0) { // Render globalVectors
-				for (let i = 0; i < globalVectors.length; i++) {
-					let point = globalVectors[i].position;
-					let vector = globalVectors[i].vector;
-					ctx.beginPath();
-					ctx.moveTo(point.x, point.y);
-					ctx.lineTo(point.x + vector.x * 10 / camera.scale, point.y + vector.y * 10 / camera.scale);
-					ctx.strokeStyle = "#FFAB2E";
-					ctx.lineWidth = 3 / camera.scale;
-					ctx.stroke();
-				}
-			}
-
-			Render.trigger("afterRender");
-			ctx.restore();
-
-			if (Performance.enabled) {
-				Performance.render();
-			}
-			Render.trigger("afterRestore");
-		}
-		Render.bodies = [new Set()];
-
-		Render.vertices = function(vertices) {
-			ctx.moveTo(vertices[0].x, vertices[0].y);
-
-			for (let j = 1; j < vertices.length; j++) {
-				let vertice = vertices[j];
-				ctx.lineTo(vertice.x, vertice.y);
-			}
-
-			ctx.closePath();
-		}
-		Render.constraint = function(constraint) {
-			let { render, bodyA, bodyB, offsetA, offsetB } = constraint;
-			let { border, borderWidth, borderType, lineDash, lineCap, visible, opacity } = render;
-
-			if (typeof opacity === "number" && opacity <= 0 || !visible) return;
-			if (borderWidth > 0 && border !== "transparent" && border !== "none") {
-				ctx.globalAlpha = opacity ?? 1;
-				
-				ctx.beginPath();
-
-				offsetA = offsetA.rotate(bodyA.angle);
-				offsetB = offsetB.rotate(bodyB.angle);
-				ctx.moveTo(bodyA.position.x + offsetA.x, bodyA.position.y + offsetA.y);
-				ctx.lineTo(bodyB.position.x + offsetB.x, bodyB.position.y + offsetB.y);
-
-				if (lineDash) {
-					ctx.setLineDash(lineDash);
-				}
-				
-				ctx.lineWidth = borderWidth;
-				ctx.lineJoin = borderType;
-				ctx.lineCap = lineCap || "butt";
-				ctx.strokeStyle = border;
-				ctx.stroke();
-
-				if (lineDash) {
-					ctx.setLineDash([]);
-				}
-
-				ctx.globalAlpha = 1;
-			}
-		}
-
-		// - Camera
-		Render.camera = {
+	Render: {
+		app: null,
+		camera: {
 			position: new vec(0, 0),
-			fov: 2000,
+			fov: 3000,
 			translation: new vec(0, 0),
 			scale: 1,
-			boundSize: 1,
-			bounds: {
-				min: new vec({ x: 0, y: 0 }),
-				max: new vec({ x: 2000, y: 2000 }),
-			},
-			// ~ Point transformations
-			screenPtToGame: function(point) {
-				let camera = ter.Render.camera;
-				return new vec((point.x * Render.pixelRatio - camera.translation.x) / camera.scale, (point.y * Render.pixelRatio - camera.translation.y) / camera.scale);
-			},
-			gamePtToScreen: function(point) {
-				let camera = ter.Render.camera;
-				return new vec((point.x * camera.scale + camera.translation.x) / Render.pixelRatio, (point.y * camera.scale + camera.translation.y) / Render.pixelRatio);
-			},
-		}
+			boundSize: 1000,
+		},
+		pixelRatio: 1,
+		bodies: new Set(),
+		update: function(delta) {
+			let { Render } = ter;
+			let { app, camera } = Render;
+			let { stage } = app;
+			let { position: cameraPosition, translation, fov, boundSize } = camera;
+
+			ter.Render.trigger("beforeUpdate");
+
+			let screenSize = new vec(app.screen.width, app.screen.height);
+			translation.set({ x: -cameraPosition.x * boundSize/fov + screenSize.x/2, y: -cameraPosition.y * boundSize/fov + screenSize.y/2 });
+			camera.scale = boundSize / fov;
+
+			for (let body of Render.bodies) {
+				if (body.render.graphic) {
+					body.render.graphic.update();
+				}
+			}
+			
+			// update camera position
+			stage.x = translation.x;
+			stage.y = translation.y;
+			stage.scale.x = camera.scale;
+			stage.scale.y = camera.scale;
+
+			if (Render.canvas) {
+				let { ctx, canvas } = Render;
+				let canvWidth = canvas.width;
+				let canvHeight = canvas.height;
+				
+				const { position:cameraPosition, fov } = camera;
+				const boundSize = camera.boundSize;
+				const scale = camera.scale * devicePixelRatio;
+				let translation = new vec({ x: -cameraPosition.x * boundSize/fov + canvWidth/2, y: -cameraPosition.y * boundSize/fov + canvHeight/2 });
+
+				ctx.clearRect(0, 0, canvWidth, canvHeight);
+				ctx.save();
+				ctx.translate(translation.x, translation.y);
+				ctx.scale(scale, scale);
+
+				if (Render.showBroadphase === true) {
+					Render.broadphase();
+				}
+				if (Render.showBoundingBox === true) {
+					Render.boundingBox();
+				}
+				if (Render.showVertices === true) {
+					Render.allVertices();
+				}
+				if (Render.showCenters === true) {
+					Render.allCenters();
+				}
+
+				ctx.restore();
+			}
+			else if (Render.showVertices) {
+				console.warn("No canvas created for debug view, use Render.createDebugView()");
+			}
+
+			ter.Render.trigger("afterUpdate");
+		},
+
+		// - Debug rendering
+		canvas: null,
+		ctx: null,
+		createDebugView() {
+			let { Render } = ter;
+			if (Render.canvas) return;
+
+			let scale = devicePixelRatio ?? 1;
+
+			let canvas = Render.canvas = document.createElement("canvas");
+			Render.ctx = canvas.getContext("2d");
+			canvas.style.position = "absolute";
+			canvas.style.zIndex = 1;
+			canvas.style.top =  "0px";
+			canvas.style.left = "0px";
+			canvas.width  = scale * window.innerWidth;
+			canvas.height = scale * window.innerHeight;
+			canvas.style.background = "transparent";
+			// canvas.style.pointerEvents = "none";
+			canvas.style.transformOrigin = "top left";
+			canvas.style.transform = `scale(${1 / scale}, ${1 / scale})`;
+			document.body.appendChild(canvas);
+
+			Render.app.renderer.on("resize", (width, height) => {
+				let scale = devicePixelRatio ?? 1;
+				canvas.width  = width  * scale;
+				canvas.height = height * scale;
+				canvas.style.transform = `scale(${1 / scale}, ${1 / scale})`;
+			});
+		},
+
+		showCollisions: false,
+		showBoundingBox: false,
+		showVertices: false,
+		showCenters: false,
+		showBroadphase: false,
+		
+		allVertices: function() {
+			const { Render } = ter;
+			const { camera, ctx } = Render;
+			const scale = camera.scale * devicePixelRatio;
+
+			function renderVertices(vertices) {
+				ctx.moveTo(vertices[0].x, vertices[0].y);
+	
+				for (let j = 0; j < vertices.length; j++) {
+					if (j > 0) {
+						let vertice = vertices[j];
+						ctx.lineTo(vertice.x, vertice.y);
+					}
+				}
+	
+				ctx.closePath();
+			}
+
+			ctx.beginPath();
+			let allBodies = ter.World.bodies;
+			for (let i = 0; i < allBodies.length; i++) {
+				let body = allBodies[i];
+				if (body.children.length === 0) {
+					renderVertices(body.vertices);
+				}
+			}
+			ctx.lineWidth = 2 / scale;
+			ctx.strokeStyle = "#FF832A";
+			ctx.stroke();
+		},
+		allCenters: function() {
+			const { ctx } = ter.Render;
+			ctx.fillStyle = "#FF832A";
+			let allBodies = ter.World.bodies;
+			ctx.beginPath();
+			for (let i = 0; i < allBodies.length; i++) {
+				let body = allBodies[i];
+				if (body.children.length === 0 || true) {
+					ctx.moveTo(body.position.x, body.position.y);
+					ctx.arc(body.position.x, body.position.y, 2 / this.camera.scale, 0, Math.PI*2);
+				}
+			}
+			ctx.fill();
+		},
+		boundingBox: function() {
+			const { ctx } = ter.Render;
+			let allBodies = ter.World.bodies;
+			let allConstraints = ter.World.constraints;
+
+			ctx.strokeStyle = "#66666680";
+			ctx.lineWidth = 1 / this.camera.scale;
+
+			for (let i = 0; i < allBodies.length; i++) {
+				let body = allBodies[i];
+				if (!body.children || body.children.length === 0) {
+					let bounds = body.bounds;
+					let width  = bounds.max.x - bounds.min.x;
+					let height = bounds.max.y - bounds.min.y;
+
+					ctx.beginPath();
+					ctx.strokeRect(bounds.min.x, bounds.min.y, width, height);
+				}
+			}
+			ctx.strokeStyle = "#66666630";
+			for (let i = 0; i < allConstraints.length; i++) {
+				let constraint = allConstraints[i];
+				let bounds = constraint.bounds;
+				let width  = bounds.max.x - bounds.min.x;
+				let height = bounds.max.y - bounds.min.y;
+
+				ctx.beginPath();
+				ctx.strokeRect(bounds.min.x, bounds.min.y, width, height);
+			}
+		},
+		broadphase: function(tree = ter.World.dynamicGrid) {
+			const { ctx } = ter.Render;
+			let size = tree.gridSize;
+
+			ctx.lineWidth = 0.4 / this.camera.scale;
+			ctx.strokeStyle = "#D0A356";
+			ctx.fillStyle = "#947849";
+			
+			Object.keys(tree.grid).forEach(n => {
+				let node = tree.grid[n];
+				let pos = tree.unpair(n).mult(size);
+				ctx.strokeRect(pos.x, pos.y, size, size);
+				ctx.globalAlpha = 0.003 * node.length;
+				ctx.fillRect(pos.x, pos.y, size, size);
+				ctx.globalAlpha = 1;
+			});
+		},
 
 		// - Extra render funcs
-		Render.roundedPolygon = function(vertices, round) {
+		roundedPolygon: function(vertices, round, ctx) {
 			if (vertices.length < 3) {
 				console.warn("Render.roundedPolygon needs at least 3 vertices", vertices);
 				return;
@@ -1218,16 +1261,16 @@ var ter = {
 			}
 
 			ctx.closePath();
-		}
-		Render.roundedRect = function(width, height, position, round) {
+		},
+		roundedRect: function(width, height, position, round, ctx) {
 			Render.roundedPolygon([
 				new vec(-width/2, -height/2).add2(position),
 				new vec( width/2, -height/2).add2(position),
 				new vec( width/2,  height/2).add2(position),
 				new vec(-width/2,  height/2).add2(position),
-			], round);
-		}
-		Render.arrow = function(position, direction, size = 10) {
+			], round, ctx);
+		},
+		arrow: function(position, direction, size = 10, ctx) {
 			let endPos = new vec(position.x + direction.x, position.y + direction.y);
 			let sideA = direction.rotate(Math.PI * 3/4).normalize2().mult(size);
 			let sideB = sideA.reflect(direction.normalize());
@@ -1237,162 +1280,37 @@ var ter = {
 			ctx.lineTo(endPos.x + sideA.x, endPos.y + sideA.y);
 			ctx.moveTo(endPos.x, endPos.y);
 			ctx.lineTo(endPos.x + sideB.x, endPos.y + sideB.y);
-		}
-
-		Render.pixelRatio = 1;
-		Render.setPixelRatio = function(ratio) {
-			let { canvas, ctx } = ter;
-			let prevRatio = Render.pixelRatio;
-
-			Render.pixelRatio = ratio;
-			ctx.scale(prevRatio / ratio, prevRatio / ratio);
-			ter.setSize(canvas.width / prevRatio, canvas.height / prevRatio);
 		},
 
 		// - Events
-		Render.events = {
-			beforeRender: [],
-			afterRender: [],
-			beforeSave: [],
-			afterRestore: [],
-		}
-		Render.on = function(event, callback) {
-			if (event.includes("beforeLayer") && !Render.events[event]) {
-				Render.events[event] = [];
-			}
-			if (event.includes("afterLayer") && !Render.events[event]) {
-				Render.events[event] = [];
-			}
-
-			if (event.includes("beforeLayer") || event.includes("afterLayer")) { // Create render layer if it doesn't exit
-				let layer = Number(event.replace("beforeLayer", "").replace("afterLayer", ""));
-				if (!isNaN(layer) && !Render.bodies[layer]) {
-					Render.bodies[layer] = new Set();
-				}
-			}
-
+		events: {
+			beforeUpdate: [],
+			afterUpdate: [],
+		},
+		on: function(event, callback) {
+			let Render = ter.Render;
 			if (Render.events[event]) {
 				Render.events[event].push(callback);
 			}
 			else {
 				console.warn(event + " is not a valid event");
 			}
-		}
-		Render.off = function(event, callback) {
+		},
+		off: function(event, callback) {
+			let Render = ter.Render;
 			event = Render.events[event];
 			if (event.includes(callback)) {
 				event.splice(event.indexOf(callback), 1);
 			}
-		}
-		Render.trigger = function(event) {
+		},
+		trigger: function(event) {
+			let Render = ter.Render;
 			// Trigger each event
 			if (Render.events[event]) {
 				Render.events[event].forEach(callback => {
 					callback();
 				});
 			}
-		}
-
-		// - Backwards compatibility
-		Render.loadImg = function(src) {
-			new Image({ src: src });
-		}
-
-		
-		// - Broadphase
-		Render.showCollisions = false;
-		Render.showBoundingBox = false;
-		Render.boundingBox = function() {
-			let allBodies = ter.World.bodies;
-			let allConstraints = ter.World.constraints;
-
-			ctx.strokeStyle = "#66666680";
-			ctx.lineWidth = 1 / this.camera.scale;
-
-			for (let i = 0; i < allBodies.length; i++) {
-				let body = allBodies[i];
-				if (!body.children || body.children.length === 0) {
-					let bounds = body.bounds;
-					let width  = bounds.max.x - bounds.min.x;
-					let height = bounds.max.y - bounds.min.y;
-
-					ctx.beginPath();
-					ctx.strokeRect(bounds.min.x, bounds.min.y, width, height);
-				}
-			}
-			ctx.strokeStyle = "#66666630";
-			for (let i = 0; i < allConstraints.length; i++) {
-				let constraint = allConstraints[i];
-				let bounds = constraint.bounds;
-				let width  = bounds.max.x - bounds.min.x;
-				let height = bounds.max.y - bounds.min.y;
-
-				ctx.beginPath();
-				ctx.strokeRect(bounds.min.x, bounds.min.y, width, height);
-			}
-		}
-		Render.showVertices = false;
-		Render.allVertices = function() {
-			function renderVertices(vertices) {
-				ctx.moveTo(vertices[0].x, vertices[0].y);
-	
-				for (let j = 0; j < vertices.length; j++) {
-					if (j > 0) {
-						let vertice = vertices[j];
-						ctx.lineTo(vertice.x, vertice.y);
-					}
-				}
-	
-				ctx.closePath();
-			}
-
-			ctx.beginPath();
-			let allBodies = ter.World.bodies;
-			for (let i = 0; i < allBodies.length; i++) {
-				let body = allBodies[i];
-				if (body.children.length === 0) {
-					renderVertices(body.vertices);
-				}
-			}
-			ctx.lineWidth = 1.5 / this.camera.scale;
-			ctx.strokeStyle = "#FF832A";
-			ctx.stroke();
-		}
-		Render.showCenters = false;
-		Render.allCenters = function() {
-			ctx.fillStyle = "#FF832A";
-			let allBodies = ter.World.bodies;
-			for (let i = 0; i < allBodies.length; i++) {
-				let body = allBodies[i];
-				if (body.children.length === 0 || true) {
-					ctx.beginPath();
-					ctx.arc(body.position.x, body.position.y, 2 / this.camera.scale, 0, Math.PI*2);
-					ctx.fill();
-				}
-			}
-		}
-
-		// - Quadtree
-		Render.showBroadphase = false;
-		Render.broadphase = function(tree = ter.World.dynamicGrid) {
-			let size = tree.gridSize;
-
-			ctx.lineWidth = 0.4 / this.camera.scale;
-			ctx.strokeStyle = "#D0A356";
-			ctx.fillStyle = "#947849";
-			
-			Object.keys(tree.grid).forEach(n => {
-				let node = tree.grid[n];
-				let pos = tree.unpair(n).mult(size);
-				ctx.strokeRect(pos.x, pos.y, size, size);
-				ctx.globalAlpha = 0.003 * node.length;
-				ctx.fillRect(pos.x, pos.y, size, size);
-				ctx.globalAlpha = 1;
-			});
-		}
-		
-		return Render;
-	})(),
+		},
+	}
 }
-
-ter.Render.on("beforeRender", DiscreteAnimation.update);
