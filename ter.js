@@ -147,13 +147,22 @@ var ter = {
 							}
 							return v / Performance.history.fps.length;
 						})();
+						let nearAvgFps = (() => {
+							let v = 0;
+							let n = Math.min(Performance.history.fps.length, 20);
+							for (let i = 0; i < n; i++) {
+								let cur = Performance.history.fps[i];
+								v += cur;
+							}
+							return v / n;
+						})();
 
 						// fps text
 						ctx.beginPath();
 						ctx.fillStyle = "white";
 						ctx.textAlign = "right";
 						ctx.font = "400 12px Arial";
-						ctx.fillText(`${Math.round(avgFps)} fps`, width - 12, 17);
+						ctx.fillText(`${Math.round(nearAvgFps)} fps`, width - 12, 17);
 
 						
 						if (Performance.history.fps.length > 10) { // fps graph
@@ -179,6 +188,7 @@ var ter = {
 								ctx.lineTo(...getPosition(Performance.history.fps[i], i));
 							}
 							ctx.lineWidth = 1;
+							ctx.lineJoin = "bevel";
 							ctx.strokeStyle = "#9C9C9C";
 							ctx.stroke();
 						}
@@ -1050,6 +1060,7 @@ var ter = {
 
 			for (let body of Render.bodies) {
 				if (body.render.graphic) {
+					body.trigger("render");
 					body.render.graphic.update();
 				}
 			}
