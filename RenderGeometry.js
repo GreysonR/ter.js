@@ -10,7 +10,7 @@ class RenderGeometry {
 		let graphic = this.graphic = new PIXI.Graphics();
 		let { body } = this;
 		let { render, position, type, vertices } = body;
-		let { background, border, borderWidth, lineJoin, lineDash, lineCap } = render;
+		let { background, border, borderWidth, borderOffset, lineJoin, lineDash, lineCap, round } = render;
 		let { parseColor } = ter.Common;
 		background = parseColor(background);
 		border = parseColor(border);
@@ -24,23 +24,26 @@ class RenderGeometry {
 				alpha: border[1],
 				cap: lineCap,
 				join: lineJoin,
+				alignment: borderOffset,
 			});
 		}
 
 		if (type === "rectangle") {
 			let { width, height } = body;
-			graphic.drawRect(-width/2, -height/2, width, height);
+			
+			if (round > 0) {
+				graphic.drawRoundedRect(-width/2, -height/2, width, height, round);
+			}
+			else {
+				graphic.drawRect(-width/2, -height/2, width, height);
+			}
 		}
 		else if (type === "circle") {
 			let { radius } = body;
 			graphic.drawCircle(0, 0, radius);
 		}
 		else { // manually draw vertices
-			graphic.moveTo(vertices[0].x, vertices[0].y);
-			for (let i = 1; i < vertices.length; ++i) {
-				let vertice = vertices[i];
-				graphic.lineTo(vertice.x, vertice.y);
-			}
+			graphic.drawPolygon(vertices);
 		}
 		if (border[1] > 0) graphic.closePath();
 		if (background[1] > 0) graphic.endFill();

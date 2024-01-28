@@ -209,7 +209,7 @@ class Body {
 				denominator += cross;
 			}
 	
-			return (mass / 6) * (numerator / denominator);
+			return (mass / 6) * (numerator / denominator) * 4;
 		}
 		else {
 			let inertia = 0;
@@ -331,6 +331,7 @@ class Body {
 		alpha: 1,
 		border: "transparent",
 		borderWidth: 3,
+		borderOffset: 0.5,
 		lineJoin: "miter",
 		lineDash: false,
 		lineCap: "butt",

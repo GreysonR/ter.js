@@ -27,7 +27,6 @@ class Sprite {
 		sprite.anchor.set(0.5);
 		sprite.x = position.x;
 		sprite.y = position.y;
-		console.log(sprite);
 
 		if (!this.scale) {
 			width = width ?? sprite.width;

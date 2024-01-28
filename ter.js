@@ -12,8 +12,10 @@ var ter = {
 		// create PIXI app
 		let { Render } = ter;
 		let app = Render.app = new PIXI.Application({
-			background: options.background ?? "transparent",
+			background: options.background ?? 0x0,
+			backgroundAlpha: (options.background && options.background != "transparent") ? 1 : 0,
 			resizeTo: options.resizeTo ?? window,
+			antialias: options.antialias ?? true,
 		});
 		document.body.appendChild(app.view);
 		app.ticker.add(Render.update.bind(this));
@@ -35,12 +37,12 @@ var ter = {
 		getAvgs: true,
 		lastUpdate: performance.now(),
 		fps: 60,
-		delta: 16.67,
+		delta: 1,
 		frame: 0,
 
 		history: {
 			avgFps: 60,
-			avgDelta: 16.67,
+			avgDelta: 1,
 			fps: [],
 			delta: [],
 		},
@@ -300,9 +302,10 @@ var ter = {
 		},
 		preUpdate: function(body, delta) {
 			if (body.isStatic) return;
+			const timescale = delta;
 
 			// apply forces
-			body.velocity.add2(body.force).add2(ter.World.gravity.mult(delta));
+			body.velocity.add2(body.force).add2(ter.World.gravity.mult(timescale));
 			body.angularVelocity += body.torque;
 
 			// clear forces
@@ -375,9 +378,9 @@ var ter = {
 
 			// Get delta
 			if (delta === undefined) {
-				delta = Performance.delta * ter.World.timescale / 16.66667;
+				delta = Performance.delta * ter.World.timescale / 1000;
 			}
-			World.time += delta * 16.66667;
+			World.time += delta;
 			delta /= substeps;
 			Engine.delta = delta;
 
@@ -648,12 +651,12 @@ var ter = {
 				angImpulseB /= numContacts;
 
 				if (!bodyA.isStatic) {
-					bodyA.velocity.sub2(impulse.mult(shareA * delta));
-					bodyA.angularVelocity -= angImpulseA * shareA * delta;
+					bodyA.velocity.sub2(impulse.mult(shareA));
+					bodyA.angularVelocity -= angImpulseA * shareA;
 				}
 				if (!bodyB.isStatic) {
-					bodyB.velocity.add2(impulse.mult(shareB * delta));
-					bodyB.angularVelocity += angImpulseB * shareB * delta;
+					bodyB.velocity.add2(impulse.mult(shareB));
+					bodyB.angularVelocity += angImpulseB * shareB;
 				}
 			}
 		},
@@ -677,7 +680,7 @@ var ter = {
 				
 				if (depth < 1) continue;
 
-				let impulse = normal.mult(depth * 0.9);
+				let impulse = normal.mult(depth - 1);
 				let totalMass = bodyA.mass + bodyB.mass;
 				let shareA = (bodyB.mass / totalMass) || 0;
 				let shareB = (bodyA.mass / totalMass) || 0;
@@ -814,6 +817,25 @@ var ter = {
 			if (x > y)
 				return x*x + x + y;
 			return y*y + y + x;
+		},
+		getCenterOfMass(vertices) {
+			let det = 0;
+			let tempDet = 0;
+			let numVertices = vertices.length;
+	
+			for (let i = 0; i < vertices.length; i++) {
+				let curVert = vertices[i];
+				let nextVert = vertices[(i + 1) % numVertices];
+	
+				tempDet = curVert.x * nextVert.y - nextVert.x * curVert.y;
+				det += tempDet;
+	
+				centroid.add2({ x: (curVert.x + nextVert.x) * tempDet, y: (curVert.y + nextVert.y) * tempDet });
+			}
+	
+			centroid.div2(3 * det);
+
+			return centroid;
 		},
 		parseColor: function(originalColor) {
 			if (originalColor === "transparent") {
