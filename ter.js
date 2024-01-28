@@ -1112,10 +1112,9 @@ var ter = {
 				let canvWidth = canvas.width;
 				let canvHeight = canvas.height;
 				
-				const { position:cameraPosition, fov } = camera;
-				const boundSize = camera.boundSize;
+				const { position:cameraPosition } = camera;
 				const scale = camera.scale * devicePixelRatio;
-				let translation = new vec({ x: -cameraPosition.x * boundSize/fov + canvWidth/2, y: -cameraPosition.y * boundSize/fov + canvHeight/2 });
+				let translation = new vec({ x: -cameraPosition.x * scale + canvWidth/2, y: -cameraPosition.y * scale + canvHeight/2 });
 
 				ctx.clearRect(0, 0, canvWidth, canvHeight);
 				ctx.save();
