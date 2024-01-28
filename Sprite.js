@@ -22,11 +22,13 @@ class Sprite {
 	}
 	createSprite() {
 		// todo: make this async
-		let { width, height, position, src } = this;
+		let { width, height, position, src, body } = this;
+		let layer = body.render.layer;
 		let sprite = this.sprite = PIXI.Sprite.from(Sprite.imgDir + src);
 		sprite.anchor.set(0.5);
 		sprite.x = position.x;
 		sprite.y = position.y;
+		sprite.zIndex = layer;
 
 		if (!this.scale) {
 			width = width ?? sprite.width;
@@ -55,6 +57,9 @@ class Sprite {
 
 		sprite.alpha = alpha;
 		sprite.rotation = angle;
+	}
+	setLayer(layer) {
+		this.sprite.zIndex = layer;
 	}
 	add() {
 		if (!this.sprite) {

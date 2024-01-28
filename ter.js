@@ -19,6 +19,8 @@ var ter = {
 		});
 		document.body.appendChild(app.view);
 		app.ticker.add(Render.update.bind(this));
+		app.stage.filters = [];
+		app.stage.sortableChildren = true
 
 		let view = app.view;
 		view.style.transformOrigin = "top left";
@@ -95,8 +97,8 @@ var ter = {
 			ctx: null,
 			position: new vec(20, 20),
 			init: function() {
-				const width =  90;
-				const height = 40;
+				const width =  100; // 90
+				const height = 50; // 40
 
 				let { Performance, Render } = ter;
 				let { render } = Performance;
@@ -163,8 +165,8 @@ var ter = {
 						ctx.beginPath();
 						ctx.fillStyle = "white";
 						ctx.textAlign = "right";
-						ctx.font = "400 12px Arial";
-						ctx.fillText(`${Math.round(nearAvgFps)} fps`, width - 12, 17);
+						ctx.font = `400 ${12}px Arial`;
+						ctx.fillText(`${Math.round(nearAvgFps)} fps`, width - 12, 5 + 12);
 
 						
 						if (Performance.history.fps.length > 10) { // fps graph
@@ -525,7 +527,7 @@ var ter = {
 							numContacts++;
 						}
 
-						if (support[1] < minDepth) {
+						if (support[1] < minDepth && !bodyB.isStatic) {
 							minDepth = support[1];
 							normal = curNormal.mult(-1);
 							normalPoint = curVertice.avg(nextVertice);
@@ -538,6 +540,7 @@ var ter = {
 
 				findNormal(bodyA, bodyB);
 				findNormal(bodyB, bodyA);
+
 				if (contacts.length === 0) {
 					contacts.push({ vertice: new vec(bodyA.position), body: bodyA });
 				}
@@ -1065,6 +1068,17 @@ var ter = {
 			translation: new vec(0, 0),
 			scale: 1,
 			boundSize: 1000,
+			
+			// ~ Point transformations
+			screenPtToGame: function(point) {
+				let camera = ter.Render.camera;
+				const scale = camera.scale;
+				return new vec((point.x * Render.pixelRatio - camera.translation.x) / scale, (point.y * Render.pixelRatio - camera.translation.y) / scale);
+			},
+			gamePtToScreen: function(point) {
+				let camera = ter.Render.camera;
+				return new vec((point.x * camera.scale + camera.translation.x) / Render.pixelRatio, (point.y * camera.scale + camera.translation.y) / Render.pixelRatio);
+			},
 		},
 		pixelRatio: 1,
 		bodies: new Set(),
@@ -1116,6 +1130,9 @@ var ter = {
 				}
 				if (Render.showVertices === true) {
 					Render.allVertices();
+				}
+				if (Render.showCollisions === true) {
+					Render.allCollisions();
 				}
 				if (Render.showCenters === true) {
 					Render.allCenters();
@@ -1196,6 +1213,31 @@ var ter = {
 			ctx.lineWidth = 2 / scale;
 			ctx.strokeStyle = "#FF832A";
 			ctx.stroke();
+		},
+		allCollisions: function() {
+			const { ctx } = ter.Render;
+			if (globalPoints.length > 0) { // Render globalPoints
+				ctx.beginPath();
+				for (let i = 0; i < globalPoints.length; i++) {
+					let point = globalPoints[i];
+					ctx.moveTo(point.x, point.y);
+					ctx.arc(point.x, point.y, 2 / camera.scale, 0, Math.PI*2);
+					ctx.fillStyle = "#e8e8e8";
+				}
+				ctx.fill();
+			}
+			if (globalVectors.length > 0) { // Render globalVectors
+				ctx.beginPath();
+				for (let i = 0; i < globalVectors.length; i++) {
+					let point = globalVectors[i].position;
+					let vector = globalVectors[i].vector;
+					ctx.moveTo(point.x, point.y);
+					ctx.lineTo(point.x + vector.x * 10 / camera.scale, point.y + vector.y * 10 / camera.scale);
+					ctx.strokeStyle = "#FFAB2E";
+					ctx.lineWidth = 3 / camera.scale;
+				}
+				ctx.stroke();
+			}
 		},
 		allCenters: function() {
 			const { ctx } = ter.Render;

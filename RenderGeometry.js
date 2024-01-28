@@ -10,7 +10,7 @@ class RenderGeometry {
 		let graphic = this.graphic = new PIXI.Graphics();
 		let { body } = this;
 		let { render, position, type, vertices } = body;
-		let { background, border, borderWidth, borderOffset, lineJoin, lineDash, lineCap, round } = render;
+		let { background, border, borderWidth, borderOffset, lineJoin, lineDash, lineCap, round, layer } = render;
 		let { parseColor } = ter.Common;
 		background = parseColor(background);
 		border = parseColor(border);
@@ -49,6 +49,10 @@ class RenderGeometry {
 		if (background[1] > 0) graphic.endFill();
 		graphic.pivot.x = position.x;
 		graphic.pivot.x = position.x;
+		graphic.zIndex = layer;
+	}
+	setLayer(layer) {
+		graphic.zIndex = layer;
 	}
 	destroy() {
 		this.graphic.destroy();
