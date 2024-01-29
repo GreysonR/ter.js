@@ -66,7 +66,7 @@ var ter = {
 				return;
 			}
 
-			Performance.delta = Math.min(200, curTime - Performance.lastUpdate);
+			Performance.delta = Math.min(1000, curTime - Performance.lastUpdate);
 			Performance.fps = 1000 / Performance.delta;
 			Performance.lastUpdate = curTime;
 
@@ -255,7 +255,31 @@ var ter = {
 		update: function(body, delta) {
 			if (!body.isStatic) {
 				if (!body.parent) {
-					this.updateVelocity(body, delta);
+					const timescale = delta;
+					let { velocity: lastVelocity, angularVelocity: lastAngularVelocity } = body.last;
+		
+					let frictionAir = (1 - body.frictionAir) ** timescale;
+					let frictionAngular = (1 - body.frictionAngular) ** timescale;
+		
+					if (isNaN(timescale) || body.velocity.isNaN() || isNaN(frictionAir + frictionAngular)) {
+						return;
+					}
+					
+					body.velocity.mult2(frictionAir);
+					if (body.velocity.x !== 0 || body.velocity.y !== 0){
+						body.translate(body.velocity.add(lastVelocity).mult(timescale / 2)); // trapezoidal rule to take into account acceleration
+						// body.translate(body.velocity.mult(timescale)); // potentially more stable, but less accurate
+					}
+					body.last.velocity.set(body.velocity);
+		
+					body.angularVelocity *= frictionAngular;
+					if (body.angularVelocity){
+						body.translateAngle((body.angularVelocity + lastAngularVelocity) * timescale / 2); // trapezoidal rule to take into account acceleration
+						// body.translateAngle((body.angularVelocity) * timescale); // potentially more stable, but less accurate
+					}
+					body.last.angularVelocity = body.angularVelocity;
+					
+					body.updateBounds();
 				}
 				if (body.children.length === 0 && body.hasCollisions) {
 					ter.World.dynamicGrid.updateBody(body);
@@ -273,40 +297,13 @@ var ter = {
 				bodyB.pairs.splice(bodyB.pairs.indexOf(pair.id), 1);
 				delete World.pairs[pair.id];
 
-				// Trigger collisionEnd
+				// Trigger collisionEnd event
 				bodyA.trigger("collisionEnd", pair);
 				bodyB.trigger("collisionEnd", pair);
 
 				return true;
 			}
 			return false;
-		},
-		updateVelocity: function(body, delta) {
-			const timescale = delta;
-			let { velocity: lastVelocity, angularVelocity: lastAngularVelocity } = body.last;
-
-			let frictionAir = (1 - body.frictionAir) ** timescale;
-			let frictionAngular = (1 - body.frictionAngular) ** timescale;
-
-			if (isNaN(timescale) || body.velocity.isNaN() || isNaN(frictionAir + frictionAngular)) {
-				return;
-			}
-			
-			body.velocity.mult2(frictionAir);
-			if (body.velocity.x !== 0 || body.velocity.y !== 0){
-				body.translate(body.velocity.add(lastVelocity).mult(timescale / 2)); // trapezoidal rule to take into account acceleration
-				// body.translate(body.velocity.mult(timescale)); // more stable
-			}
-			body.last.velocity.set(body.velocity);
-
-			body.angularVelocity *= frictionAngular;
-			if (body.angularVelocity){
-				body.translateAngle((body.angularVelocity + lastAngularVelocity) / 2 * timescale); // trapezoidal rule to take into account acceleration
-				// body.translateAngle((body.angularVelocity) * timescale); // more stable
-			}
-			body.last.angularVelocity = body.angularVelocity;
-			
-			body.updateBounds();
 		},
 		preUpdate: function(body, delta) {
 			if (body.isStatic) return;
@@ -375,7 +372,7 @@ var ter = {
 		delta: 1,
 		substeps: 5,
 		velocityIterations: 1,
-		positionIterations: 1,
+		positionIterations: 5,
 		constraintIterations: 1,
 		maxShare: 1,
 
@@ -397,6 +394,13 @@ var ter = {
 
 			for (let step = 0; step < substeps; step++) {
 				Performance.frame++;
+				
+				// Update positions / angles
+				for (let i = 0; i < bodies.length; i++) {
+					let body = bodies[i];
+					body.trigger("duringUpdate");
+					ter.Bodies.update(body, delta);
+				}
 				
 				// Find collisions
 				globalVectors = [];
@@ -424,13 +428,6 @@ var ter = {
 					Engine.solvePositions();
 				}
 				Engine.solveConstraints(delta);
-				
-				// Update positions / angles
-				for (let i = 0; i < bodies.length; i++) {
-					let body = bodies[i];
-					body.trigger("duringUpdate");
-					ter.Bodies.update(body, delta);
-				}
 			}
 
 			Engine.delta = delta * substeps;
@@ -642,30 +639,28 @@ var ter = {
 					const normalVelocity = relativeVelocity.abs().sub(slop).mult(relativeVelocity.sign()).dot(normal);
 					const tangentVelocity = relativeVelocity.dot(tangent);
 
+					let oAcN = offsetA.cross(normal);
+					let oBcN = offsetB.cross(normal);
+					let share = 1 / (contacts.length * (bodyA.inverseMass + bodyB.inverseMass + bodyA.inverseInertia * oAcN * oAcN  + bodyB.inverseInertia * oBcN * oBcN));
+
 					if (normalVelocity > 0) continue;
 					
-					let normalImpulse = (restitution) * normalVelocity;
+					const normalImpulse = restitution * normalVelocity * share;
+					const tangentImpulse = restitution * tangentVelocity * share;
 
-					// friction
-					let tangentImpulse = tangentVelocity;
+					const curImpulse = normal.mult(normalImpulse).add2(tangent.mult(tangentImpulse * friction));
+					impulse.set(curImpulse);
+					angImpulseA = offsetA.cross(curImpulse) * bodyA.inverseInertia;
+					angImpulseB = offsetB.cross(curImpulse) * bodyB.inverseInertia;
 
-					let curImpulse = normal.mult(normalImpulse).add2(tangent.mult(tangentImpulse * friction));
-					impulse.add2(curImpulse);
-					angImpulseA += offsetA.cross(curImpulse) * bodyA.inverseInertia;
-					angImpulseB += offsetB.cross(curImpulse) * bodyB.inverseInertia;
-				}
-
-				impulse.div2(numContacts);
-				angImpulseA /= numContacts;
-				angImpulseB /= numContacts;
-
-				if (!bodyA.isStatic) {
-					bodyA.velocity.sub2(impulse.mult(shareA));
-					bodyA.angularVelocity -= angImpulseA * shareA;
-				}
-				if (!bodyB.isStatic) {
-					bodyB.velocity.add2(impulse.mult(shareB));
-					bodyB.angularVelocity += angImpulseB * shareB;
+					if (!bodyA.isStatic) {
+						bodyA.velocity.sub2(impulse.mult(1 / bodyA.mass));
+						bodyA.angularVelocity -= angImpulseA / bodyA.mass;
+					}
+					if (!bodyB.isStatic) {
+						bodyB.velocity.add2(impulse.mult(1 / bodyB.mass));
+						bodyB.angularVelocity += angImpulseB / bodyB.mass;
+					}
 				}
 			}
 		},
@@ -678,6 +673,7 @@ var ter = {
 				let pair = pairs[i];
 				if (!pair || Bodies.cleansePair(pair)) continue;
 				let { depth, bodyA, bodyB, normal } = pair;
+				depth = Math.min(depth, 1.5);
 
 				while (bodyA.parent && bodyA.parent !== bodyA) {
 					bodyA = bodyA.parent;
@@ -698,14 +694,14 @@ var ter = {
 				shareB = Math.min(maxShare, shareB);
 				if (bodyA.isStatic) shareB = 1;
 				if (bodyB.isStatic) shareA = 1;
-				if (bodyA.isStatic || bodyB.isStatic) impulse.mult(2);
+				if (bodyA.isStatic || bodyB.isStatic) impulse.mult(0);
 
 				if (!bodyA.isStatic) {
-					let a = impulse.mult(shareA * 0.95);
+					let a = impulse.mult(shareA * 0.95 / bodyA.pairs.length);
 					bodyA.translate(a);
 				}
 				if (!bodyB.isStatic) {
-					let a = impulse.mult(-shareB * 0.95);
+					let a = impulse.mult(-shareB * 0.95 / bodyB.pairs.length);
 					bodyB.translate(a);
 				}
 				pair.depth -= impulse.length;

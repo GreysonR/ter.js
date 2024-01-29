@@ -56,6 +56,8 @@ class Body {
 		// Common.merge is a deep copy, we want a shallow copy of the world
 		this.world = options.world || ter.World;
 		delete options.world;
+
+		// Shallow copy render container
 		if (options.render?.container) {
 			this.render.container = options.render.container;
 			delete options.render.container;
@@ -213,7 +215,7 @@ class Body {
 				denominator += cross;
 			}
 	
-			return (mass / 6) * (numerator / denominator) * 6;
+			return (mass / 6) * (numerator / denominator);
 		}
 		else {
 			let inertia = 0;

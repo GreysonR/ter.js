@@ -51,7 +51,7 @@ class Navmesh {
 		this.margin = margin;
 		
 		/*
-		Render.on("afterRender", () => {
+		Render.on("afterUpdate", () => {
 			// return;
 			// console.time();
 			let path = this.getPath(new vec(player.body.position), new vec(2765, 4000), Render.navmeshArrows);
