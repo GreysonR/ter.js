@@ -4,6 +4,7 @@ class RenderGeometry {
 	static all = new Set();
 	constructor(body) {
 		this.body = body;
+		this.container = body.render.container ?? ter.Render.app.stage;
 		this.create();
 	}
 	create() {
@@ -68,16 +69,16 @@ class RenderGeometry {
 
 		graphic.alpha = alpha;
 		graphic.rotation = angle;
-		graphic.visible = visible
+		graphic.visible = visible;
 	}
 	add() {
 		RenderGeometry.all.add(this);
 		this.graphic.visible = true;
-		ter.Render.app.stage.addChild(this.graphic);
+		this.container.addChild(this.graphic);
 	}
 	delete() {
 		RenderGeometry.all.delete(this);
 		this.graphic.visible = false;
-		ter.Render.app.stage.removeChild(this.graphic);
+		this.container.removeChild(this.graphic);
 	}
 }

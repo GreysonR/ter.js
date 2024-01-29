@@ -56,6 +56,10 @@ class Body {
 		// Common.merge is a deep copy, we want a shallow copy of the world
 		this.world = options.world || ter.World;
 		delete options.world;
+		if (options.render?.container) {
+			this.render.container = options.render.container;
+			delete options.render.container;
+		}
 
 		ter.Common.merge(this, options);
 		
@@ -209,7 +213,7 @@ class Body {
 				denominator += cross;
 			}
 	
-			return (mass / 6) * (numerator / denominator) * 4;
+			return (mass / 6) * (numerator / denominator) * 6;
 		}
 		else {
 			let inertia = 0;
@@ -276,6 +280,19 @@ class Body {
 			}
 		}
 	}
+	setRenderContainer(container) {
+		let render = this.render;
+		let graphic = render.graphic;
+		render.container = container;
+		if (!this.removed) {
+			graphic.delete();
+			graphic.container = container;
+			graphic.add();
+		}
+		else {
+			graphic.container = container;
+		}
+	}
 
 	id = 0;
 	world = ter.World;
@@ -337,6 +354,7 @@ class Body {
 		lineCap: "butt",
 		visible: true,
 		sprite: false,
+		layer: 0,
 	}
 	collisionFilter = {
 		category: 0,
@@ -632,6 +650,9 @@ class Body {
 		else { // not a sprite, use vertices
 			this.render.graphic = new RenderGeometry(this);
 		}
+	}
+	setLayer(layer) {
+		this.graphic.setLayer(layer);
 	}
 
 	events = {

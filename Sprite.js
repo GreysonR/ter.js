@@ -13,6 +13,7 @@ class Sprite {
 		this.width =  width;
 		this.height = height;
 		this.position = position ?? new vec(0, 0);
+		this.container = body.render.container ?? ter.Render.app.stage;
 
 		this.loaded = false;
 		this.loadTexture();
@@ -68,12 +69,12 @@ class Sprite {
 		}
 		Sprite.all.add(this);
 		this.sprite.visible = true;
-		ter.Render.app.stage.addChild(this.sprite);
+		this.container.addChild(this.sprite);
 	}
 	delete() {
 		Sprite.all.delete(this);
 		this.sprite.visible = false;
-		ter.Render.app.stage.removeChild(this.sprite);
+		this.container.removeChild(this.sprite);
 	}
 
 

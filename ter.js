@@ -30,6 +30,12 @@ var ter = {
 		app.renderer.on("resize", ter.setSize.bind(this));
 
 		this.Performance.render.init();
+
+		if (options.ySort) {
+			app.stage.on("sort", function onWillSort(sprite) {
+				sprite.zOrder = sprite.y;
+			});
+		}
 	},
 	setSize(width, height) {
 		let pixelRatio = this.Render.pixelRatio;
