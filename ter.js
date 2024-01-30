@@ -1166,7 +1166,7 @@ var ter = {
 			canvas.width  = scale * window.innerWidth;
 			canvas.height = scale * window.innerHeight;
 			canvas.style.background = "transparent";
-			// canvas.style.pointerEvents = "none";
+			canvas.style.pointerEvents = "none";
 			canvas.style.transformOrigin = "top left";
 			canvas.style.transform = `scale(${1 / scale}, ${1 / scale})`;
 			document.body.appendChild(canvas);
@@ -1303,7 +1303,42 @@ var ter = {
 		},
 
 		// - Extra render funcs
-		roundedPolygon: function(vertices, round, ctx) {
+		roundedPolygon: function(vertices, round, graphic) {
+			if (vertices.length < 3) {
+				console.warn("Render.roundedPolygon needs at least 3 vertices", vertices);
+				return;
+			}
+			function getPoints(i) {
+				let curPt = vertices[i];
+				let lastPt = vertices[(vertices.length + i - 1) % vertices.length];
+				let nextPt = vertices[(i + 1) % vertices.length];
+
+				let lastDiff = lastPt.sub(curPt);
+				let nextDiff = curPt.sub(nextPt);
+				let lastLen = lastDiff.length;
+				let nextLen = nextDiff.length;
+
+				let curRound = Math.min(lastLen / 2, nextLen / 2, round);
+				let cp = curPt;
+				let pt1 = cp.add(lastDiff.normalize().mult(curRound));
+				let pt2 = cp.sub(nextDiff.normalize().mult(curRound));
+
+				return [pt1, cp, pt2];
+			}
+
+			let start = getPoints(0);
+			graphic.moveTo(start[0].x, start[0].y);
+			graphic.quadraticCurveTo(start[1].x, start[1].y, start[2].x, start[2].y);
+
+			for (let i = 1; i < vertices.length; i++) {
+				let cur = getPoints(i);
+				graphic.lineTo(cur[0].x, cur[0].y);
+				graphic.quadraticCurveTo(cur[1].x, cur[1].y, cur[2].x, cur[2].y);
+			}
+
+			graphic.lineTo(start[0].x, start[0].y);
+		},
+		roundedPolygonCtx: function(vertices, round, ctx) {
 			if (vertices.length < 3) {
 				console.warn("Render.roundedPolygon needs at least 3 vertices", vertices);
 				return;
@@ -1339,7 +1374,7 @@ var ter = {
 			ctx.closePath();
 		},
 		roundedRect: function(width, height, position, round, ctx) {
-			Render.roundedPolygon([
+			Render.roundedPolygonCtx([
 				new vec(-width/2, -height/2).add2(position),
 				new vec( width/2, -height/2).add2(position),
 				new vec( width/2,  height/2).add2(position),

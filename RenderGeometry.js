@@ -73,7 +73,7 @@ class RenderGeometry {
 	}
 	add() {
 		RenderGeometry.all.add(this);
-		this.graphic.visible = true;
+		this.graphic.visible = this.body.render.visible;
 		this.container.addChild(this.graphic);
 	}
 	delete() {

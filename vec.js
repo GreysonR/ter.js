@@ -305,6 +305,9 @@ class vec {
 	toObject() {
 		return { x: this.x, y: this.y };
 	}
+	toArray() {
+		return [this.x, this.y];
+	}
 	isNaN() {
 		return isNaN(this.x) || isNaN(this.y);
 	}
