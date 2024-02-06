@@ -15,7 +15,9 @@ class Sprite {
 		this.position = position ?? new vec(0, 0);
 		this.container = body.render.container ?? ter.Render.app.stage;
 
+		this.add = this.add.bind(this);
 		this.loaded = false;
+		this.removed = false;
 		this.loadTexture();
 	}
 	loadTexture() {
@@ -39,6 +41,11 @@ class Sprite {
 		
 		this.loaded = true;
 		this.trigger("load");
+
+		if (this.removed) {
+			sprite.visible = false;
+			this.container.removeChild(this.sprite);
+		}
 	}
 	update = function() {
 		if (!this.loaded) return;
@@ -63,18 +70,22 @@ class Sprite {
 		this.sprite.zIndex = layer;
 	}
 	add() {
-		if (!this.sprite) {
-			this.on("load", this.add.bind(this));
+		if (!this.sprite && !this.removed) {
+			this.on("load", this.add);
 			return;
 		}
 		Sprite.all.add(this);
 		this.sprite.visible = true;
 		this.container.addChild(this.sprite);
+		this.removed = false;
 	}
 	delete() {
 		Sprite.all.delete(this);
-		this.sprite.visible = false;
+		if (this.sprite) this.sprite.visible = false;
 		this.container.removeChild(this.sprite);
+		this.removed = true;
+		
+		this.off("load", this.add);
 	}
 
 

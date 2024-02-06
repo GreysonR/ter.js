@@ -10,6 +10,10 @@ class vec {
 				this.y = x.y;
 			}
 		}
+		else if (typeof x === "number" && y === undefined) {
+			this.x = Math.cos(x);
+			this.y = Math.sin(x);
+		}
 		else {
 			this.x = x;
 			this.y = y;
