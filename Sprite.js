@@ -12,7 +12,7 @@ class Sprite {
 		this.scale = scale;
 		this.width =  width;
 		this.height = height;
-		this.position = new vec(position) ?? new vec(0, 0);
+		this.position = new vec(position ?? { x: 0, y: 0 });
 		this.container = body.render.container ?? ter.Render.app.stage;
 
 		this.add = this.add.bind(this);
