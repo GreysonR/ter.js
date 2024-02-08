@@ -53,7 +53,7 @@ class RenderGeometry {
 		graphic.zIndex = layer;
 	}
 	setLayer(layer) {
-		graphic.zIndex = layer;
+		this.graphic.zIndex = layer;
 	}
 	destroy() {
 		this.graphic.destroy();

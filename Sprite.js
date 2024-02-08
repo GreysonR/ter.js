@@ -8,7 +8,7 @@ class Sprite {
 		let { render } = body;
 		let { sprite } = render;
 		let { src, width, height, position, scale } = sprite;
-		this.src = src;
+		this.src = Sprite.imgDir + src;
 		this.scale = scale;
 		this.width =  width;
 		this.height = height;
@@ -21,13 +21,13 @@ class Sprite {
 		this.loadTexture();
 	}
 	loadTexture() {
-		PIXI.Assets.load(Sprite.imgDir + this.src).then(this.createSprite.bind(this));
+		PIXI.Assets.load(this.src).then(this.createSprite.bind(this));
 	}
 	createSprite() {
-		// todo: make this async
+		// todo: make this async or load all sprites when game is loaded
 		let { width, height, position, src, body } = this;
 		let layer = body.render.layer;
-		let sprite = this.sprite = PIXI.Sprite.from(Sprite.imgDir + src);
+		let sprite = this.sprite = PIXI.Sprite.from(src);
 		sprite.anchor.set(0.5);
 		sprite.x = position.x;
 		sprite.y = position.y;
@@ -81,11 +81,17 @@ class Sprite {
 	}
 	delete() {
 		Sprite.all.delete(this);
-		if (this.sprite) this.sprite.visible = false;
+		if (this.sprite) {
+			this.sprite.visible = false;
+			// this.sprite.destroy(); // maybe make this smarter in the future
+		}
 		this.container.removeChild(this.sprite);
 		this.removed = true;
 		
 		this.off("load", this.add);
+	}
+	destroy() {
+		this.sprite.destroy();
 	}
 
 

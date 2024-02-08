@@ -7,8 +7,9 @@ var ter = {
 	ctx: false,
 	init: function(options) {
 		// basic settings
-		let scale = PIXI.settings.RESOLUTION = devicePixelRatio ?? 1;
-
+		let scale = PIXI.settings.RESOLUTION = PIXI.settings.FILTER_RESOLUTION = devicePixelRatio ?? 1;
+		PIXI.Container.defaultSortableChildren = true
+		
 		// create PIXI app
 		let { Render } = ter;
 		let app = Render.app = new PIXI.Application({
@@ -20,7 +21,7 @@ var ter = {
 		document.body.appendChild(app.view);
 		app.ticker.add(Render.update.bind(this));
 		app.stage.filters = [];
-		app.stage.sortableChildren = true
+		app.stage.sortableChildren = true;
 
 		let view = app.view;
 		view.style.transformOrigin = "top left";
@@ -1085,12 +1086,13 @@ var ter = {
 		pixelRatio: 1,
 		bodies: new Set(),
 		update: function(delta) {
+			ter.Render.trigger("beforeUpdate");
+
 			let { Render } = ter;
 			let { app, camera } = Render;
 			let { stage } = app;
 			let { position: cameraPosition, translation, fov, boundSize } = camera;
 
-			ter.Render.trigger("beforeUpdate");
 
 			let screenSize = new vec(app.screen.width, app.screen.height);
 			translation.set({ x: -cameraPosition.x * boundSize/fov + screenSize.x/2, y: -cameraPosition.y * boundSize/fov + screenSize.y/2 });

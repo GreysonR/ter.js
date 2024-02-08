@@ -25,10 +25,10 @@ const animations = {
 
 		function loop() {
 			if (run) {
-				p = curve(t / Math.max(1, duration));
+				p = curve(t / Math.max(0.0001, duration));
 				if (callback) callback(p);
 
-				let delta = Performance.delta;
+				let delta = Performance.delta / 1000;
 				if (worldTimescale) delta *= ter.World.timescale;
 				t += delta;
 
