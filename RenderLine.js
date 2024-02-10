@@ -31,7 +31,6 @@ class RenderLine {
 				join: lineJoin,
 				alignment: borderOffset,
 			});
-			console.log(borderWidth, border[0], lineCap, lineJoin, borderOffset);
 			graphic.moveTo(pointA.x, pointA.y);
 			graphic.lineTo(pointB.x, pointB.y);
 		}
@@ -55,7 +54,6 @@ class RenderLine {
 		RenderLine.all.add(this);
 		this.graphic.visible = this.body.render.visible;
 		this.container.addChild(this.graphic);
-		console.log("added", this.graphic, this.container);
 	}
 	delete() {
 		RenderLine.all.delete(this);
