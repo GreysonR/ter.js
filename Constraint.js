@@ -3,6 +3,13 @@ class Constraint {
 	constructor(bodyA, bodyB, options = {}) {
 		this.bodyA = bodyA;
 		this.bodyB = bodyB;
+		
+		// Shallow copy render container
+		if (options.render?.container) {
+			this.render.container = options.render.container;
+			delete options.render.container;
+		}
+		
 		ter.Common.merge(this, options);
 		if (!options.length) {
 			this.length = bodyA.position.add(this.offsetA.rotate(bodyA.angle)).sub(bodyB.position.add(this.offsetB.rotate(bodyB.angle))).length;
