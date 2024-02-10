@@ -3,44 +3,55 @@ class Constraint {
 	constructor(bodyA, bodyB, options = {}) {
 		this.bodyA = bodyA;
 		this.bodyB = bodyB;
-
 		ter.Common.merge(this, options);
 		if (!options.length) {
 			this.length = bodyA.position.add(this.offsetA.rotate(bodyA.angle)).sub(bodyB.position.add(this.offsetB.rotate(bodyB.angle))).length;
 		}
 		this.type = "constraint";
-
-		this.bounds = {
-			min: bodyA.position.min(bodyB.position),
-			max: bodyA.position.max(bodyB.position),
-		}
-
+		this.render.graphic = new RenderLine(this);
+		this.updateBounds();
 		this.add();
 	}
+	bounds = { min: new vec(), max: new vec() };
 	delete() {
 		this.removed = true;
 		ter.World.constraints.delete(this);
-		Render.bodies[this.render.layer].delete(this);
+		ter.Render.bodies.delete(this);
+		if (this.render.graphic) {
+			this.render.graphic.delete();
+		}
+		this.trigger("delete");
 	}
 	add() {
 		this.removed = false;
 		ter.World.constraints.push(this);
-		if (!Render.bodies[this.render.layer]) {
-			Render.bodies[this.render.layer] = new Set();
+		ter.Render.bodies.add(this);
+		if (this.render.graphic) {
+			this.render.graphic.add();
 		}
-		Render.bodies[this.render.layer].add(this);
+		this.trigger("add");
 	}
 	updateBounds() {
+		let { pointA, pointB } = this.getPoints();
+		this.bounds.min = pointA.min2(pointB);
+		this.bounds.max = pointA.max2(pointB);
+	}
+	getPoints() {
 		let { bodyA, bodyB, offsetA, offsetB } = this;
 		offsetA = offsetA.rotate(bodyA.angle);
 		offsetB = offsetB.rotate(bodyA.angle);
 
-		this.bounds.min = bodyA.position.add(offsetA).min2(bodyB.position.add(offsetB));
-		this.bounds.max = bodyA.position.add(offsetA).max2(bodyB.position.add(offsetB));
+		let pointA = bodyA.position.add(offsetA);
+		let pointB = bodyB.position.add(offsetB);
+
+		return {
+			pointA: pointA,
+			pointB: pointB
+		};
 	}
 	realLength() {
-		let { bodyA, bodyB, offsetA, offsetB } = this;
-		return bodyA.position.add(offsetA.rotate(bodyA.angle)).sub(bodyB.position.add(offsetB.rotate(bodyB.angle))).length;
+		let { pointA, pointB } = this.getPoints();
+		return pointA.sub(pointB).length;
 	}
 
 	offsetA = new vec(0, 0);
@@ -50,14 +61,46 @@ class Constraint {
 	angularStiffness = 0;
 	ignoreSlack = false;
 	length = 200;
+	
 	render = {
 		border: "#ffffff",
-		borderWidth: 4,
+		borderWidth: 10,
 		borderType: "miter",
-		lineDash: false,
-		lineCap: "butt",
+		lineCap: "round",
+		lineJoin: "round",
+		borderOffset: 0.5,
 		visible: true,
-		opacity: 1,
+		alpha: 1,
 		layer: 0,
+		graphic: null,
+	}
+
+	// Events
+	events = {
+		render: [],
+		delete: [],
+		add: [],
+	}
+	on(event, callback) {
+		if (!this.events[event]) {
+			this.events[event] = [];
+		}
+		this.events[event].push(callback);
+	}
+	off(event, callback) {
+		event = this.events[event];
+		if (event.includes(callback)) {
+			event.splice(event.indexOf(callback), 1);
+		}
+	}
+	trigger(event, arg1, arg2) {
+		let events = this.events[event];
+		for (let i = 0; i < events.length; i++) {
+			events[i](arg1, arg2);
+		}
+
+		if (this.parent) {
+			this.parent.trigger(event, arg1, arg2);
+		}
 	}
 }

@@ -709,6 +709,7 @@ var ter = {
 			}
 		},
 		solveConstraints: function(delta) {
+			delta *= 1000;
 			const constraints = ter.World.constraints;
 			const constraintIterations = ter.Engine.constraintIterations;
 			delta /= constraintIterations;
