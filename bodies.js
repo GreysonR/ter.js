@@ -320,7 +320,7 @@ class Body {
 	axes = [];
 	buckets = [];
 
-	restitution = 0.2;
+	restitution = 0.5;
 	frictionAir = 0.05;
 	frictionAngular = 0.01;
 	friction = 0.01;
@@ -536,6 +536,14 @@ class Body {
 
 		this.updateBounds();
 	}
+	setVelocity(velocity) {
+		if (velocity.isNaN()) {
+			console.error(velocity);
+			throw new Error("Invalid velocity");
+		}
+		if (this.isStatic) return;
+		this.velocity.set(velocity);
+	}
 	setAngle(angle) {
 		if (isNaN(angle)) return;
 		if (angle !== this.angle) {
@@ -654,7 +662,7 @@ class Body {
 		}
 	}
 	setLayer(layer) {
-		this.graphic.setLayer(layer);
+		this.render.graphic.setLayer(layer);
 	}
 
 	events = {
