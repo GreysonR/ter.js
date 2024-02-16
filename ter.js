@@ -128,11 +128,11 @@ var ter = {
 		canCollide: function(filterA, filterB) {
 			let { category: categoryA, mask: maskA } = filterA;
 			let { category: categoryB, mask: maskB } = filterB;
-
-			let canA = maskA === 0 || categoryB === 0 || (maskA & categoryB) !== 0;
-			let canB = maskB === 0 || categoryA === 0 || (maskB & categoryA) !== 0;
-
-			return canA && canB;
+	
+			let canA = maskA === 0 || (maskA & categoryB) !== 0;
+			let canB = maskB === 0 || (maskB & categoryA) !== 0;
+	
+			return canA || canB;
 		},
 
 		rectangle: function(width, height, position, options = {}) {
