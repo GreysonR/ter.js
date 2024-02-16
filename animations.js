@@ -18,17 +18,17 @@ const animations = {
 			loop();
 		}
 	},
-	create: function({ duration = 600, curve = ease.linear, start = 0, delay = 0, onstop, onend, callback, worldTimescale = true }) {
+	create: function({ duration = 0, curve = ease.linear, start = 0, delay = 0, onstop, onend, callback, worldTimescale = true, autoStart = true }) {
 		let t = start * duration;
 		let p = t !== 0 && t !== 1 ? curve(t) : t === 0 ? 0 : 1;
-		let run = true;
+		let run = autoStart;
 
 		function loop() {
 			if (run) {
-				p = curve(t / duration);
+				p = curve(t / Math.max(0.0001, duration));
 				if (callback) callback(p);
 
-				let delta = Performance.delta;
+				let delta = Performance.delta / 1000;
 				if (worldTimescale) delta *= ter.World.timescale;
 				t += delta;
 
@@ -49,16 +49,18 @@ const animations = {
 			}
 		}
 
-		if (delay > 0) {
-			loop.startTime = ter.World.time + delay;
-			if (!worldTimescale) {
-				loop.startTime = Performance.lastUpdate + delay;
+		if (autoStart) {
+			if (delay > 0) {
+				loop.startTime = ter.World.time + delay;
+				if (!worldTimescale) {
+					loop.startTime = Performance.lastUpdate + delay;
+				}
+				loop.worldTimescale = worldTimescale;
+				animations.queued.add(loop);
 			}
-			loop.worldTimescale = worldTimescale;
-			animations.queued.add(loop);
-		}
-		else {
-			animations.running.add(loop);
+			else {
+				animations.running.add(loop);
+			}
 		}
 
 		return {
@@ -78,8 +80,8 @@ const animations = {
 					if (typeof onstop === "function") {
 						onstop(p);
 					}
-					animations.running.delete(this);
-					animations.queued.delete(this);
+					animations.running.delete(loop);
+					animations.queued.delete(loop);
 					return p;
 				}
 			},
@@ -89,10 +91,10 @@ const animations = {
 					
 					let now = worldTimescale ? ter.World.time : Performance.lastUpdate;
 					if (delay > 0 && loop.startTime < now) {
-						animations.queued.add(this);
+						animations.queued.add(loop);
 					}
 					else {
-						animations.running.add(this);
+						animations.running.add(loop);
 					}
 				}
 			},

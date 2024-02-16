@@ -57,6 +57,12 @@ class Body {
 		this.world = options.world || ter.World;
 		delete options.world;
 
+		// Shallow copy render container
+		if (options.render?.container) {
+			this.render.container = options.render.container;
+			delete options.render.container;
+		}
+
 		ter.Common.merge(this, options);
 		
 		if (typeof this.collisionFilter.mask === "string") {
@@ -111,18 +117,6 @@ class Body {
 		this.updateBounds();
 		this.updateAxes();
 		this.updateInertia();
-
-		if (typeof options.render.sprite === "object") {
-			this.render.sprite = new Sprite(options.render.sprite);
-		}
-		if (typeof options.render.sprite === "string") {
-			if (options.render.sprite.indexOf(".") === -1) {
-				options.render.sprite += ".png";
-			}
-			this.render.sprite = new Sprite({
-				src: options.render.sprite,
-			});
-		}
 
 		if (options.angle) {
 			this.angle = 0;
@@ -265,16 +259,6 @@ class Body {
 			}
 		}
 	}
-	setRenderLayer(layer) {
-		if (!this.parent) {
-			Render.bodies[this.render.layer].delete(this);
-			this.render.layer = layer;
-			if (!Render.bodies[this.render.layer]) {
-				Render.bodies[this.render.layer] = new Set();
-			}
-			Render.bodies[this.render.layer].add(this);
-		}
-	}
 	setCollisions(hasCollisions) {
 		let { dynamicGrid, staticGrid } = this.world;
 		if (hasCollisions === this.hasCollisions) return;
@@ -296,6 +280,19 @@ class Body {
 			else {
 				dynamicGrid.removeBody(this);
 			}
+		}
+	}
+	setRenderContainer(container) {
+		let render = this.render;
+		let graphic = render.graphic;
+		render.container = container;
+		if (!this.removed) {
+			graphic.delete();
+			graphic.container = container;
+			graphic.add();
+		}
+		else {
+			graphic.container = container;
 		}
 	}
 
@@ -323,7 +320,7 @@ class Body {
 	axes = [];
 	buckets = [];
 
-	restitution = 0.2;
+	restitution = 0.5;
 	frictionAir = 0.05;
 	frictionAngular = 0.01;
 	friction = 0.01;
@@ -350,18 +347,16 @@ class Body {
 	}
 	render = {
 		background: "#1AD465",
+		alpha: 1,
 		border: "transparent",
 		borderWidth: 3,
-		borderType: "miter",
+		borderOffset: 0.5,
+		lineJoin: "miter",
 		lineDash: false,
 		lineCap: "butt",
 		visible: true,
-		inView: false,
-		alwaysRender: false,
-		opacity: 1,
-		layer: 0,
 		sprite: false,
-		spriteScale: new vec(1, 1),
+		layer: 0,
 	}
 	collisionFilter = {
 		category: 0,
@@ -369,14 +364,15 @@ class Body {
 	}
 
 	delete() {
-		let { Render } = ter;
 		let { world:World } = this;
-		if (!this.parent && Render.bodies[this.render.layer]) {
-			Render.bodies[this.render.layer].delete(this);
-		}
 		if (World.bodies.includes(this)) {
 			this.trigger("delete");
 			this.removed = true;
+			ter.Render.bodies.delete(this);
+
+			if (this.render.graphic) {
+				this.render.graphic.delete();
+			}
 
 			World.bodies.delete(this);
 			if (this.children.length === 0 && this._Grids) {
@@ -398,11 +394,16 @@ class Body {
 		}
 	}
 	add() {
-		let { Render } = ter;
 		let { world:World } = this;
 		if (!World.bodies.includes(this)) {
 			this.trigger("add");
 			this.removed = false;
+
+			ter.Render.bodies.add(this);
+
+			if (this.render.graphic) {
+				this.render.graphic.add();
+			}
 			
 			World.bodies.push(this);
 
@@ -415,53 +416,10 @@ class Body {
 				}
 			}
 
-			if (!this.parent) {
-				if (!Render.bodies[this.render.layer]) {
-					Render.bodies[this.render.layer] = new Set();
-				}
-				Render.bodies[this.render.layer].add(this);
-			}
-
 			for (let i = 0; i < this.children.length; i++) {
 				this.children[i].add();
 			}
 		}
-	}
-	centerSprite(sprite = this.render.sprite) {
-		let options = this;
-		if (sprite) {
-			if (!(sprite.width && sprite.height)) {
-				if (options.width) sprite.width = options.width;
-				if (options.height) sprite.height = options.height;
-				if (options.radius) {
-					sprite.width = options.radius * 2;
-					sprite.height = options.radius * 2;
-				}
-				sprite.on("load", () => {
-					sprite.image.width = sprite.width;
-					sprite.image.height = sprite.height;
-				});
-			}
-			if (sprite.position === undefined) {
-				sprite.position = new vec(0, 0);
-				if (options.width && options.height) {
-					sprite.position.x = -options.width/2;
-					sprite.position.y = -options.height/2;
-				}
-				if (options.radius) {
-					sprite.position.x = -sprite.width  / 2;
-					sprite.position.y = -sprite.height / 2;
-				}
-			}
-		}
-
-		if (this.render.useBuffer && !sprite.useBuffer) {
-			sprite.on("load", () => {
-				sprite.buffer();
-			});
-		}
-
-		return sprite;
 	}
 	resetVertices(forceCCW = false) {
 		this.makeCCW(forceCCW);
@@ -578,6 +536,14 @@ class Body {
 
 		this.updateBounds();
 	}
+	setVelocity(velocity) {
+		if (velocity.isNaN()) {
+			console.error(velocity);
+			throw new Error("Invalid velocity");
+		}
+		if (this.isStatic) return;
+		this.velocity.set(velocity);
+	}
 	setAngle(angle) {
 		if (isNaN(angle)) return;
 		if (angle !== this.angle) {
@@ -681,15 +647,33 @@ class Body {
 		this.torque += force * delta;
 	}
 
+	createRenderShape() {
+		if (typeof this.render.sprite === "string") { // assume it's the sprite src
+			this.render.sprite = {
+				src: this.render.sprite,
+			}
+		}
+
+		if (typeof this.render.sprite === "object") { // assume sprite is an options object
+			this.render.graphic = new Sprite(this);
+		}
+		else { // not a sprite, use vertices
+			this.render.graphic = new RenderGeometry(this);
+		}
+	}
+	setLayer(layer) {
+		this.render.graphic.setLayer(layer);
+	}
+
 	events = {
 		collisionStart: [],
 		collisionActive: [],
 		collisionEnd: [],
 		beforeUpdate: [], // apply forces to current body
 		duringUpdate: [], // clear forces from current body
+		render: [],
 		delete: [],
 		add: [],
-		render: [],
 	}
 	on(event, callback) {
 		if (!this.events[event]) {
@@ -717,9 +701,9 @@ class Body {
 class fromVertices extends Body {
 	constructor(vertices, position, options={}) {
 		super("polygon", options, vertices, position);
+		this.createRenderShape();
 
 		this.setPosition(position, true);
-		this.centerSprite();
 		if (!options.removed) {
 			this.add();
 		}
@@ -736,7 +720,7 @@ class rectangle extends Body {
 
 		this.width = width;
 		this.height = height;
-		this.centerSprite();
+		this.createRenderShape();
 
 		this.setPosition(position, true);
 		if (!options.removed) {
@@ -758,7 +742,7 @@ class polygon extends Body {
 
 		this.radius = radius;
 		this.numSides = numSides;
-		this.centerSprite();
+		this.createRenderShape();
 
 		this.setPosition(position, true);
 		if (!options.removed) {
@@ -780,7 +764,7 @@ class circle extends Body {
 
 		this.radius = radius;
 		this.updateInertia();
-		this.centerSprite();
+		this.createRenderShape();
 
 		this.setPosition(position, true);
 		if (!options.removed) {
