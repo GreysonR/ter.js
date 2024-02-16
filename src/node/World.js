@@ -1,6 +1,9 @@
 "use strict";
 
-class World {
+const Node = require("./Node.js");
+const vec = require("../geometry/vec.js");
+
+module.exports = class World extends Node {
 	gravity = new vec(0, 0);
 	timescale = 1;
 	time = 0;
@@ -15,10 +18,9 @@ class World {
 		this.dynamicGrid = new Grid(gridSize);
 		this.staticGrid = new Grid(gridSize);
 		this.gravity = new vec(gravity);
-		this.getPairs = this.getPairs.bind(this);
 	}
 	
-	getPairs(bodies) {
+	#getPairs(bodies) {
 		let pairs = [];
 		let canCollide = ter.Bodies.canCollide;
 
@@ -74,7 +76,7 @@ class World {
 		let dynamicGrid = this.dynamicGrid;
 		let staticGrid = this.staticGrid;
 		let pair = ter.Common.pairCommon;
-		let getPairs = this.getPairs;
+		let getPairs = this.#getPairs;
 		let pairIds = new Set();
 		let pairs = [];
 

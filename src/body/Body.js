@@ -1,16 +1,7 @@
-"use strict"
+const vec = require("./vec.js");
+const Common = require("../Common")
 
-Array.prototype.delete = function(val) {
-	let index = this.indexOf(val);
-	if (index !== -1) {
-		this.splice(index, 1);
-	}
-}
-Array.prototype.choose = function() {
-	return this[Math.floor(Math.random() * this.length)];
-}
-
-class Body {
+module.exports = class PhysicsBody {
 	static roundVertices(vertices, round, dx = 40) {
 		let newVertices = [];
 		let verticesLength = vertices.length;
@@ -46,14 +37,16 @@ class Body {
 	constructor(type, options, vertices, position) {
 		this.type = type;
 		this.id = ter.Bodies.uniqueId;
+		
+		if (!options.render) options.render = {}; // Makes it easier to check if an option exists in options.render
 
-		if (!options.render) options.render = {};
+		// Set random background color if none specified
 		if (!options.render.background) {
 			let colors = [ "#1AD465", "#FEC64F", "#4FB8FE", "#FF4F4F", "#AD59FF" ];
 			options.render.background = colors[Math.floor(Math.random() * colors.length)];
 		}
 		
-		// Common.merge is a deep copy, we want a shallow copy of the world
+		// Shallow copy the world
 		this.world = options.world || ter.World;
 		delete options.world;
 
@@ -63,45 +56,52 @@ class Body {
 			delete options.render.container;
 		}
 
+		// Merge options with body
 		ter.Common.merge(this, options);
 		
-		if (typeof this.collisionFilter.mask === "string") {
-			this.collisionFilter.mask = parseInt(this.collisionFilter.mask, 2);
-		}
-		if (typeof this.collisionFilter.category === "string") {
-			this.collisionFilter.category = parseInt(this.collisionFilter.category, 2);
+		// Parse collision filter properties
+		for (let filterType in ["mask", "category"]) {
+			if (typeof this.collisionFilter[filterType] === "string") {
+				this.collisionFilter[filterType] = parseInt(this.collisionFilter[filterType], 2);
+			}
 		}
 
+		// Convert vertices to ter.vec
 		this.vertices = vertices.map(v => new vec(v));
+		
+		// round vertices
 		if (options.round && options.round > 0) {
-			// round edges
 			this.vertices = Body.roundVertices(this.vertices, this.round, this.roundQuality);
 		}
-		this.removeDuplicateVertices();
-		this.resetVertices(false);
 
-		if (!this.isConvex() && (!Array.isArray(options.children) || options.children.length === 0)) {
+		// Reset vertices so convex check works properly
+		this.#removeDuplicateVertices();
+		this._resetVertices(false);
+
+		// Dissect into convex polygons if concave
+		if (!this.#isConvex() && (!Array.isArray(options.children) || options.children.length === 0)) {
 			options.children = [];
 
 			let decompVerts = this.vertices.map(v => [v.x, v.y]);
-			decomp.makeCCW(decompVerts);
+			decomp.#makeCCW(decompVerts);
 			let concaveVertices = decomp.quickDecomp(decompVerts);
-			let parentCenter = this.getCenterOfMass();
+			let parentCenter = this.#getCenterOfMass();
 			for (let i = 0; i < concaveVertices.length; i++) {
 				let vertices = concaveVertices[i].map(v => new vec(v[0], v[1]));
-				let center = this.getCenterOfMass(vertices);
-				let body = new fromVertices(vertices, position.add(center).sub(parentCenter), {
+				let center = this.#getCenterOfMass(vertices);
+				let body = new FromVertices(vertices, position.add(center).sub(parentCenter), {
 					isSensor: this.isSensor,
 					isStatic: this.isStatic,
 					hasCollisions: this.hasCollisions,
 				});
-				body.resetVertices(true);
-				body.makeConvex();
+				body._resetVertices(true);
+				body.#makeConvex();
 				
 				options.children.push(body);
 			}
 		}
 
+		// Shallow copy children in options into body
 		let children = options.children;
 		this.children = [];
 		if (Array.isArray(children)) {
@@ -113,17 +113,25 @@ class Body {
 			}
 		}
 
-		this.resetVertices();
-		this.updateBounds();
-		this.updateAxes();
-		this.updateInertia();
+		// Fully reset vertices
+		this._resetVertices();
+		this.#updateBounds();
+		this.#updateAxes();
+		this._updateInertia();
 
+		// Set angle from options
 		if (options.angle) {
 			this.angle = 0;
 			this.setAngle(-options.angle);
 		}
 	}
-	removeDuplicateVertices(minDist = 1) { // remove vertices that are the same
+	/**
+	 * Removes overlapping vertices
+	 * 
+	 * @param {Number} minDist - Minimum distance when points are considered the same
+	 * @returns {void}
+	 */
+	#removeDuplicateVertices(minDist = 1) { // remove vertices that are the same
 		let vertices = this.vertices;
 		for (let i = 0; i < vertices.length; i++) {
 			let curVert = vertices[i];
@@ -141,7 +149,12 @@ class Body {
 			}
 		}
 	}
-	isConvex() {
+	/**
+	 * Determines if the body is convex
+	 * 
+	 * @returns {Boolean} If the body is convex
+	 */
+	#isConvex() {
 		let vertices = this.vertices;
 		let len = vertices.length;
 
@@ -164,8 +177,13 @@ class Body {
 
 		return true;
 	}
-	makeConvex() {
-		if (!this.isConvex()) {
+	/**
+	 * Decomposes a concave body into convex children
+	 * 
+	 * @returns {void}
+	 */
+	#makeConvex() {
+		if (!this.#isConvex()) {
 			let removed = this.removed;
 			this.delete();
 			
@@ -174,12 +192,12 @@ class Body {
 			let verts = vertices.map(v => [v.x, v.y]);
 			decomp.removeCollinearPoints(verts, 0.4);
 			let concaveVertices = decomp.quickDecomp(verts);
-			let parentCenter = this.getCenterOfMass();
+			let parentCenter = this.#getCenterOfMass();
 
 			for (let i = 0; i < concaveVertices.length; i++) {
 				let vertices = concaveVertices[i].map(v => new vec(v[0], v[1]));
-				let center = this.getCenterOfMass(vertices);
-				let body = new fromVertices(vertices, position.add(center).sub(parentCenter));
+				let center = this.#getCenterOfMass(vertices);
+				let body = new FromVertices(vertices, position.add(center).sub(parentCenter));
 				body.delete();
 				body.parent = this;
 				this.children.push(body);
@@ -190,17 +208,28 @@ class Body {
 			}
 		}
 	}
-	updateInertia() {
+
+	/**
+	 * Sets the inertia of the body to what's calculated in `#getInertia()` if the body is not static
+	 * 
+	 * @returns {void}
+	 */
+	_updateInertia() {
 		if (this.isStatic) {
 			this.mass = Infinity;
 			this.inverseMass = 0;
 		}
 		else {
-			this.inertia = this.getInertia();
+			this.inertia = this.#getInertia();
 			this.inverseInertia = 1 / this.inertia;
 		}
 	}
-	getInertia() {
+	/**
+	 * Calculates inertia from the body's vertices
+	 * 
+	 * @returns {Number} The body's inertia
+	 */
+	#getInertia() {
 		let children = this.children;
 		if (children.length === 0) {
 			const { vertices, mass } = this;
@@ -228,7 +257,12 @@ class Body {
 			return inertia;
 		}
 	}
-	getArea() {
+	/**
+	 * Calculates the area of the body if it is convex
+	 * 
+	 * @returns {Number} The area of the body
+	 */
+	#getArea() {
 		let area = 0;
 		let vertices = this.vertices;
 		let len = vertices.length;
@@ -237,6 +271,12 @@ class Body {
 		}
 		return area * 0.5;
 	}
+	/**
+	 * Changes if the body is static
+	 * 
+	 * @param {Boolean} isStatic - If the body should be static
+	 * @returns {void}
+	 */
 	setStatic(isStatic) {
 		let { dynamicGrid, staticGrid } = this.world;
 		let lastStatic = this.isStatic;
@@ -251,6 +291,7 @@ class Body {
 			else {
 				dynamicGrid.removeBody(this);
 			}
+
 			if (isStatic) {
 				staticGrid.addBody(this);
 			}
@@ -259,6 +300,11 @@ class Body {
 			}
 		}
 	}
+	/**
+	 * Changes if the body can collide with other bodies
+	 * @param {Number} hasCollisions - Whether the body can collide with other bodies
+	 * @returns {void}
+	 */
 	setCollisions(hasCollisions) {
 		let { dynamicGrid, staticGrid } = this.world;
 		if (hasCollisions === this.hasCollisions) return;
@@ -282,6 +328,12 @@ class Body {
 			}
 		}
 	}
+	/**
+	 * Changes what the render's container is
+	 * 
+	 * @param {PIXI.Container} container - The PIXI container the body should be rendered in
+	 * @returns {void}
+	 */
 	setRenderContainer(container) {
 		let render = this.render;
 		let graphic = render.graphic;
@@ -363,6 +415,11 @@ class Body {
 		mask: 0,
 	}
 
+	/**
+	 * Removes the body from its world
+	 * 
+	 * @returns {void}
+	 */
 	delete() {
 		let { world:World } = this;
 		if (World.bodies.includes(this)) {
@@ -385,7 +442,7 @@ class Body {
 			}
 
 			for (let i = 0; i < this.pairs.length; i++) {
-				ter.Bodies.cleansePair(this.pairs[i]);
+				ter.Bodies._cleansePair(this.pairs[i]);
 			}
 		}
 
@@ -393,6 +450,12 @@ class Body {
 			this.children[i].delete();
 		}
 	}
+
+	/**
+	 * Adds the body to its world
+	 * 
+	 * @returns {void}
+	 */
 	add() {
 		let { world:World } = this;
 		if (!World.bodies.includes(this)) {
@@ -421,14 +484,111 @@ class Body {
 			}
 		}
 	}
-	resetVertices(forceCCW = false) {
-		this.makeCCW(forceCCW);
-		this.area = this.getArea();
-		this.recenterVertices();
-		this.updateBounds();
-		this.updateAxes();
+
+	/**
+	 * 
+	 * @param {ter.vec} position - The position the body should be
+	 * @param {Boolean} _ignoreChildren - If the body's children should be affected
+	 * @example
+	 * body.setPosition(new ter.vec(100, 100)); // Sets the body's position to (100, 100) 
+	 * @returns {void}
+	 */
+	setPosition(position, _ignoreChildren = false) {
+		if (position.isNaN()) return;
+		let last = this.position;
+		let delta = position.sub(last);
+
+		this.translate(delta, true, _ignoreChildren);
+
+		this.position.x = position.x;
+		this.position.y = position.y;
+
+		this.#updateBounds();
 	}
-	makeCCW(force = false) { // makes vertices go counterclockwise if they're clockwise
+
+	/**
+	 * 
+	 * @param {Number} angle - Angle body should be in radians
+	 * @example
+	 * body.setAngle(Math.PI); // Sets the body's angle to Pi radians, or 180 degrees 
+	 * @returns {void}
+	 */
+	setAngle(angle) {
+		if (isNaN(angle)) return;
+		if (angle !== this.angle) {
+			let delta = ter.Common.angleDiff(angle, this.angle);
+			
+			this.translateAngle(delta);
+		}
+	}
+
+	/**
+	 * Instantly changes the body's velocity to a specific value
+	 * 
+	 * @param {ter.vec} velocity - The velocity the body should go
+	 * @returns {void}
+	 */
+	setVelocity(velocity) {
+		if (velocity.isNaN()) {
+			console.error(velocity);
+			throw new Error("Invalid velocity");
+		}
+		if (this.isStatic) return;
+		this.velocity.set(velocity);
+	}
+
+	/**
+	 * Applies a force to the body, ignoring mass. The body's velocity changes by force * delta
+	 * 
+	 * @param {ter.vec} force - The amount of force to be applied, in px / sec^2
+	 * @param {Number} delta - The amount of time that the force should be applied in seconds, set to 1 if only applying in one instant
+	 * @returns {void}
+	 */
+	applyForce(force, delta = Engine.delta) { // set delta to 1 if you want to apply a force for only 1 frame
+		if (force.isNaN()) return;
+		if (this.isStatic) return;
+		this.force.add2(force.mult(delta));
+	}
+
+	/**
+	 * Applies a rotational force (torque) to the body, ignoring mass. The body's angular velocity changes by force * delta
+	 * 
+	 * @param {Number} force - The amount of torque to be applied, in radians / sec^2
+	 * @param {Number} delta - The amount of time the force should be applied in seconds, set to 1 if only applying instantaneous force
+	 * @returns 
+	 */
+	applyTorque(force, delta = Engine.delta) { // set delta to 1 if you want to apply a force for only 1 frame
+		if (isNaN(force)) return;
+		this.torque += force * delta;
+	}
+
+	/**
+	 * Sets the render layer (z index), changing the order the body is rendered
+	 * @param {Number} layer - The render layer it should be on 
+	 */
+	setLayer(layer) {
+		this.render.graphic.setLayer(layer);
+	}
+	
+	/**
+	 * Ensures vertices are counterclockwise winding and centered, and updates the area, bounding box, and the axes
+	 * 
+	 * @param {Number} forceCCW - If vertices should be forced to be counterclockwise winding by sorting their angles from the center
+	 */
+	_resetVertices(forceCCW = false) {
+		this.#makeCCW(forceCCW);
+		this.area = this.#getArea();
+		this.#recenterVertices();
+		this.#updateBounds();
+		this.#updateAxes();
+	}
+
+	/**
+	 * Tries to ensure the body's vertices are counterclockwise winding, by default by comparing the angles of the first 2 vertices and reversing the vertice array if they're clockwise
+	 * 
+	 * @param {Boolean} force - If all vertices should be completely reordered using their angle from the center 
+	 */
+	#makeCCW(force = false) { // makes vertices go counterclockwise if they're clockwise
 		if (force) { // reorders vertices by angle from center - can change order of vertices
 			let vertices = this.vertices;
 			let center = this.position;
@@ -446,7 +606,12 @@ class Body {
 			}
 		}
 	}
-	getCenterOfMass(vertices = this.vertices) {
+	/**
+	 * Calculates the center of mass of a convex body. Uses algorithm from https://bell0bytes.eu/centroid-convex/
+	 * @param {Array} vertices - Array of vertices (`ter.vec`s) to find the center of 
+	 * @returns 
+	 */
+	#getCenterOfMass(vertices = this.vertices) {
 		let centroid = new vec(0, 0);
 		let children = this.children;
 
@@ -459,7 +624,7 @@ class Body {
 			}
 			centroid.div2(totalArea);
 		}
-		else { /* https://bell0bytes.eu/centroid-convex/ */
+		else {
 			let det = 0;
 			let tempDet = 0;
 			let numVertices = vertices.length;
@@ -479,8 +644,11 @@ class Body {
 
 		return centroid;
 	}
-	recenterVertices() {
-		let center = this.getCenterOfMass();
+	/**
+	 * Shifts vertices so their center is at the body's position 
+	 */
+	#recenterVertices() {
+		let center = this.#getCenterOfMass();
 		let position = this.position;
 		this.center = center;
 		center.sub2(position);
@@ -489,7 +657,10 @@ class Body {
 			this.vertices[i].sub2(center);
 		}
 	}
-	updateBounds() {
+	/**
+	 * Finds the minimum bounds that enclose the body
+	 */
+	#updateBounds() {
 		const vertices = this.vertices;
 		let minX = Infinity, minY = Infinity;
 		let maxX = -Infinity, maxY = -Infinity;
@@ -508,7 +679,10 @@ class Body {
 		this.bounds.max.x = maxX;
 		this.bounds.max.y = maxY;
 	}
-	updateAxes() {
+	/**
+	 * Calculates the body's axes from its vertices
+	 */
+	#updateAxes() {
 		let verts = this.vertices;
 		let axes = [];
 
@@ -524,45 +698,43 @@ class Body {
 
 		this.axes = axes;
 	}
-	setPosition(position, ignoreChildren = false) {
-		if (position.isNaN()) return;
-		let last = this.position;
-		let delta = position.sub(last);
-
-		this.translate(delta, true, ignoreChildren);
-
-		this.position.x = position.x;
-		this.position.y = position.y;
-
-		this.updateBounds();
-	}
-	setVelocity(velocity) {
-		if (velocity.isNaN()) {
-			console.error(velocity);
-			throw new Error("Invalid velocity");
+	/**
+	 * Creates a renderer for the body
+	 */
+	_createRenderShape() {
+		if (typeof this.render.sprite === "string") { // assume it's the sprite src
+			this.render.sprite = {
+				src: this.render.sprite,
+			}
 		}
-		if (this.isStatic) return;
-		this.velocity.set(velocity);
-	}
-	setAngle(angle) {
-		if (isNaN(angle)) return;
-		if (angle !== this.angle) {
-			let delta = ter.Common.angleDiff(angle, this.angle);
-			
-			this.translateAngle(delta);
+
+		if (typeof this.render.sprite === "object") { // assume sprite is an options object
+			this.render.graphic = new Sprite(this);
+		}
+		else { // not a sprite, use vertices
+			this.render.graphic = new RenderGeometry(this);
 		}
 	}
-	translate(delta, silent = false, ignoreChildren = false) {
+
+	/**
+	 * Shifts the body over by the delta
+	 * 
+	 * @param {ter.vec} delta - Distance the body should be shifted
+	 * @param {Boolean} affectPosition - If the body's position should be affected
+	 * @param {Boolean} ignoreChildren - If the body's children should be shifted as well
+	 * @returns {void}
+	 */
+	translate(delta, affectPosition = true, ignoreChildren = false) {
 		if (delta.isNaN()) return;
 		let vertices = this.vertices;
 		for (let i = 0; i < vertices.length; i++) {
 			vertices[i].add2(delta);
 		}
 
-		if (!silent) {
+		if (affectPosition) {
 			this.position.add2(delta);
 		}
-		this.updateBounds();
+		this.#updateBounds();
 
 		let tree = this.world.dynamicGrid;
 		if (this._Grids && this._Grids[tree.id]) {
@@ -573,10 +745,17 @@ class Body {
 			let children = this.children;
 			for (let i = 0; i < children.length; i++) {
 				let child = children[i];
-				child.translate(delta, silent);
+				child.translate(delta, affectPosition);
 			}
 		}
 	}
+	/**
+	 * Rotates the body by `angle`
+	 * 
+	 * @param {Number} angle - The amount the body should be rotated, in radians
+	 * @param {Boolean} silent - If the body's angle should be affected
+	 * @returns {void}
+	 */
 	translateAngle(angle, silent = false) {
 		if (isNaN(angle)) return;
 		let vertices = this.vertices;
@@ -601,8 +780,8 @@ class Body {
 			this.angle += angle;
 		}
 
-		this.updateBounds();
-		this.updateAxes();
+		this.#updateBounds();
+		this.#updateAxes();
 
 		let children = this.children;
 		for (let i = 0; i < children.length; i++) {
@@ -610,12 +789,19 @@ class Body {
 			child.translateAngle(angle, silent);
 		}
 	}
-	getSupport(vector, position=this.position) {
+
+	/**
+	 * Finds the point farthest in a direction
+	 * 
+	 * @param {ter.vec} vector - The normalized direction to find the support point
+	 * @returns {Array} 
+	 */
+	getSupport(vector) {
 		let vertices = this.vertices;
 		let bestDist = 0;
 		let bestVert;
 		for (let i = 0; i < vertices.length; i++) {
-			let dist = vector.dot(vertices[i].sub(position));
+			let dist = vector.dot(vertices[i]);
 
 			if (dist > bestDist) {
 				bestDist = dist;
@@ -625,6 +811,13 @@ class Body {
 
 		return [ bestVert, bestDist ];
 	}
+
+	/**
+	 * Finds if a point is inside the body
+	 * 
+	 * @param {ter.vec} point The point to query
+	 * @returns {Boolean} If the point is inside the body's vertices
+	 */
 	containsPoint(point) {
 		let vertices = this.vertices;
 		for (let i = 0; i < vertices.length; i++) {
@@ -637,138 +830,55 @@ class Body {
 		}
 		return true;
 	}
-	applyForce(force, delta = Engine.delta) { // set delta to 1 if you want to apply a force for only 1 frame
-		if (force.isNaN()) return;
-		if (this.isStatic) return;
-		this.force.add2(force.mult(delta));
-	}
-	applyTorque(force, delta = Engine.delta) { // set delta to 1 if you want to apply a force for only 1 frame
-		if (isNaN(force)) return;
-		this.torque += force * delta;
-	}
 
-	createRenderShape() {
-		if (typeof this.render.sprite === "string") { // assume it's the sprite src
-			this.render.sprite = {
-				src: this.render.sprite,
-			}
-		}
 
-		if (typeof this.render.sprite === "object") { // assume sprite is an options object
-			this.render.graphic = new Sprite(this);
-		}
-		else { // not a sprite, use vertices
-			this.render.graphic = new RenderGeometry(this);
-		}
-	}
-	setLayer(layer) {
-		this.render.graphic.setLayer(layer);
-	}
-
-	events = {
+	#events = {
 		collisionStart: [],
 		collisionActive: [],
 		collisionEnd: [],
-		beforeUpdate: [], // apply forces to current body
-		duringUpdate: [], // clear forces from current body
+		beforeUpdate: [], // use to apply forces to current body
+		duringUpdate: [], // use to clear forces from current body
 		render: [],
 		delete: [],
 		add: [],
 	}
+	/**
+	 * Binds an event to the body
+	 * 
+	 * @param {('collisionStart'|'collisionActive'|'collisionEnd'|'beforeUpdate'|'duringUpdate'|'render'|'delete'|'add')} event - Name of event
+	 * @param {Function} callback - Function triggered when event is fired
+	 */
 	on(event, callback) {
-		if (!this.events[event]) {
-			this.events[event] = [];
+		if (!this.#events[event]) {
+			this.#events[event] = [];
 		}
-		this.events[event].push(callback);
+		this.#events[event].push(callback);
 	}
+	/**
+	 * Unbinds an event from the body. `callback` must be the same function passed to `body.on`
+	 * 
+	 * @param {('collisionStart'|'collisionActive'|'collisionEnd'|'beforeUpdate'|'duringUpdate'|'render'|'delete'|'add')} event - Name of event
+	 * @param {Function} callback - Function to be unbound
+	 */
 	off(event, callback) {
-		event = this.events[event];
+		event = this.#events[event];
 		if (event.includes(callback)) {
 			event.splice(event.indexOf(callback), 1);
 		}
 	}
-	trigger(event, arg1, arg2) {
-		let events = this.events[event];
+	/**
+	 * 
+	 * @param {String} event - Name of event to be triggered
+	 * @param  {...any} args - Arguments to be passed to callbacks
+	 */
+	trigger(event, ...args) {
+		let events = this.#events[event];
 		for (let i = 0; i < events.length; i++) {
-			events[i](arg1, arg2);
+			events[i](...args);
 		}
 
 		if (this.parent) {
-			this.parent.trigger(event, arg1, arg2);
-		}
-	}
-}
-class fromVertices extends Body {
-	constructor(vertices, position, options={}) {
-		super("polygon", options, vertices, position);
-		this.createRenderShape();
-
-		this.setPosition(position, true);
-		if (!options.removed) {
-			this.add();
-		}
-	}
-}
-class rectangle extends Body {
-	constructor(width, height, position, options={}) {
-		super("rectangle", options, [
-			new vec(-width/2, -height/2),
-			new vec( width/2, -height/2),
-			new vec( width/2,  height/2),
-			new vec(-width/2,  height/2),
-		], position);
-
-		this.width = width;
-		this.height = height;
-		this.createRenderShape();
-
-		this.setPosition(position, true);
-		if (!options.removed) {
-			this.add();
-		}
-	}
-}
-class polygon extends Body {
-	constructor(radius, numSides, position, options={}) {
-		super("polygon", options, (() => {
-			let vertices = [];
-			let angle = Math.PI * 2 / numSides;
-			for (let i = 0; i < numSides; i++) {
-				vertices.push(new vec(Math.cos(angle * i) * radius, Math.sin(angle * i) * radius));
-			}
-			return vertices;
-		})(), position);
-
-
-		this.radius = radius;
-		this.numSides = numSides;
-		this.createRenderShape();
-
-		this.setPosition(position, true);
-		if (!options.removed) {
-			this.add();
-		}
-	}
-}
-class circle extends Body {
-	constructor(radius, position, options={}) {
-		super("circle", options, (() => {
-			let vertices = [];
-			let numSides = options.numSides || Math.round(Math.pow(radius, 1/3) * 2.8);
-			let angle = Math.PI * 2 / numSides;
-			for (let i = 0; i < numSides; i++) {
-				vertices.push(new vec(Math.cos(angle * i + angle / 2) * radius, Math.sin(angle * i + angle / 2) * radius));
-			}
-			return vertices;
-		})(), position);
-
-		this.radius = radius;
-		this.updateInertia();
-		this.createRenderShape();
-
-		this.setPosition(position, true);
-		if (!options.removed) {
-			this.add();
+			this.parent.trigger(event, ...args);
 		}
 	}
 }

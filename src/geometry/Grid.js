@@ -1,6 +1,8 @@
 "use strict";
 
-class Grid {
+const { arrayDelete } = require("../core/Common.js");
+
+module.exports = class Grid {
 	static id = 0;
 	grid = {};
 	gridIds = new Set();
@@ -77,7 +79,7 @@ class Grid {
 		for (let n of body._Grids[this.id]) {
 			let node = this.grid[n];
 			if (node) {
-				node.delete(body);
+				arrayDelete(node, body);
 				if (node.length === 0) {
 					delete this.grid[n];
 					this.gridIds.delete(n);
@@ -104,7 +106,7 @@ class Grid {
 		for (let n of point._Grids[this.id]) {
 			let node = this.grid[n];
 			if (node) {
-				node.delete(point);
+				arrayDelete(node, point);
 				if (node.length === 0) {
 					delete this.grid[n];
 					this.gridIds.delete(n);
@@ -139,7 +141,7 @@ class Grid {
 			let node = this.grid[n];
 			curNodes.delete(n);
 			if (!node) continue;
-			node.delete(body);
+			arrayDelete(node, body);
 			if (node.length === 0) {
 				delete this.grid[n];
 				this.gridIds.delete(n);
