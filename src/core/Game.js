@@ -15,7 +15,7 @@ module.exports = class Game {
 
 	constructor(options = {}) {
 		let defaults = { ...Game.defaultOptions };
-		Common.merge(defaults, options);
+		Common.merge(defaults, options, 2);
 		options = defaults;
 
 		this.Engine = new Engine(options.Engine);

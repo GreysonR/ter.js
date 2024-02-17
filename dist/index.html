@@ -9,6 +9,7 @@
 		body {
 			margin: 0;
 			padding: 0;
+			overflow: hidden;
 		}
 	</style>
 </head>
@@ -22,7 +23,11 @@
 	const game = new ter.Game({
 		Render: {
 			background: "#000000",
+		},
+		World: {
+			resizeTo: window,
 		}
 	});
+	console.log(game);
 </script>
 </html>

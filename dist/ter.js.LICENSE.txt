@@ -1,5 +1,7 @@
 /*! ../core/Common.js */
 
+/*! ../geometry/Grid.js */
+
 /*! ../geometry/vec.js */
 
 /*! ../lib/poly-decomp.js */
@@ -17,8 +19,6 @@
 /*! ../render/Render.js */
 
 /*! ../render/RenderMethods */
-
-/*! ./Node.js */
 
 /*! ./core/Common.js */
 

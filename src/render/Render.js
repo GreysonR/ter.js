@@ -15,11 +15,10 @@ module.exports = class Render {
 	pixelRatio = 1;
 	nodes = new Set();
 	constructor(options = {}) {
-		console.warn("render");
 		let defaults = { ...Render.defaultOptions };
 		let resizeTo = options.resizeTo ?? defaults.resizeTo;
 		delete options.resizeTo;
-		Common.merge(defaults, options);
+		Common.merge(defaults, options, 1);
 		options = defaults;
 
 		// Create camera
@@ -117,28 +116,28 @@ module.exports = class Render {
 	}
 
 	// - Events
-	events = {
+	#events = {
 		beforeUpdate: [],
 		afterUpdate: [],
 	}
 	on(event, callback) {
-		if (this.events[event]) {
-			this.events[event].push(callback);
+		if (this.#events[event]) {
+			this.#events[event].push(callback);
 		}
 		else {
 			console.warn(event + " is not a valid event");
 		}
 	}
 	off(event, callback) {
-		event = this.events[event];
+		event = this.#events[event];
 		if (event.includes(callback)) {
 			event.splice(event.indexOf(callback), 1);
 		}
 	}
 	trigger(event) {
 		// Trigger each event
-		if (this.events[event]) {
-			this.events[event].forEach(callback => {
+		if (this.#events[event]) {
+			this.#events[event].forEach(callback => {
 				callback();
 			});
 		}

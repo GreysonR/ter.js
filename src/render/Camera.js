@@ -1,4 +1,5 @@
 const vec = require("../geometry/vec.js");
+
 module.exports = class Camera {
 	position = new vec(0, 0);
 	fov = 2000;

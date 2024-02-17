@@ -1,5 +1,3 @@
-"use strict";
-
 const Node = require("../node/Node.js");
 const Common = require("../core/Common.js")
 const Grid = require("../geometry/Grid.js");
@@ -23,9 +21,8 @@ module.exports = class World extends Node {
 	
 	constructor(options = {}) {
 		super();
-		console.warn("world");
 		let defaults = { ...World.defaultOptions };
-		Common.merge(defaults, options);
+		Common.merge(defaults, options, 1);
 		options = defaults;
 
 		let { gravity, gridSize } = options;

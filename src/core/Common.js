@@ -77,21 +77,33 @@ module.exports = {
 		}
 		return [color, alpha];
 	},
-	merge: function(obj, options) { // deep copies options object onto obj, no return since it's in-place
-		Object.keys(options).forEach(option => {
-			let value = options[option];
+	/**
+	 * Deep copies `objB` onto `objA` in place.
+	 * @param {Object} objA - First object
+	 * @param {Object} objB - 2nd object, copied onto `objA`
+	 * @param {Number} maxDepth - The maximum depth it can copy
+	 * @returns {void}
+	 */
+	merge: function(objA, objB, maxDepth = Infinity) {
+		Object.keys(objB).forEach(option => {
+			let value = objB[option];
 			
 			if (Array.isArray(value)) {
-				obj[option] = [ ...value ];
+				objA[option] = [ ...value ];
 			}
 			else if (typeof value === "object" && value !== null) {
-				if (typeof obj[option] !== "object") {
-					obj[option] = {};
+				if (maxDepth > 1) {
+					if (typeof objA[option] !== "object") {
+						objA[option] = {};
+					}
+					ter.Common.merge(objA[option], value, maxDepth - 1);
 				}
-				ter.Common.merge(obj[option], value);
+				else {
+					objA[option] = value;
+				}
 			}
 			else {
-				obj[option] = value;
+				objA[option] = value;
 			}
 		});
 	},

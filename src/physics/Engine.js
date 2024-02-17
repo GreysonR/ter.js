@@ -24,9 +24,8 @@ module.exports = class Engine {
 	 * @param {Object} options - Options for the engine, see documentation for possible options
 	 */
 	constructor(world, options = {}) {
-		console.warn("engine");
 		let defaults = { ...Engine.defaultOptions };
-		Common.merge(defaults, options);
+		Common.merge(defaults, options, 1);
 		options = defaults;
 		
 		// Shallow copy options
