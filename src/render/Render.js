@@ -25,6 +25,12 @@ module.exports = class Render {
 		this.camera = new Camera();
 
 		let { background, ySort, pixelRatio, antialias } = options;
+
+		// Test if PIXI is loaded
+		try { PIXI.settings; }
+		catch(err) {
+			throw new Error("PIXI is not defined\nHelp: try loading pixi.js before creating a ter app");
+		}
 		
 		// Set basic settings
 		let scale = PIXI.settings.RESOLUTION = PIXI.settings.FILTER_RESOLUTION = this.pixelRatio = pixelRatio;

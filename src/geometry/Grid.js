@@ -139,7 +139,7 @@ module.exports = class Grid {
 
 		for (let n of oldNodes) {
 			let node = this.grid[n];
-			curNodes.delete(n);
+			arrayDelete(curNodes, n);
 			if (!node) continue;
 			arrayDelete(node, body);
 			if (node.length === 0) {

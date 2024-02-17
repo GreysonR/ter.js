@@ -16,8 +16,8 @@ module.exports = class RigidBody extends Node {
 		isSensor: false,
 		hasCollisions: true,
 		collisionFilter: {
-			layer: 0,
-			mask: 0,
+			layer: 0xFFFFFF,
+			mask: 0xFFFFFF,
 		},
 	}
 	static roundVertices(vertices, round, dx = 40) {
@@ -69,13 +69,24 @@ module.exports = class RigidBody extends Node {
 	isSensor = false;
 	hasCollisions = true;
 	collisionFilter = {
-		layer: 0,
-		mask: 0,
+		layer: 0xFFFFFF,
+		mask: 0xFFFFFF,
 	}
 
-	constructor(type, vertices, position, Engine, options = {}) {
-		this.type = type;
-		this.Engine = Engine;
+	/**
+	 * Creates a new RigidBody
+	 * @param {Array} vertices Array of `vec` representing the body's vertices
+	 * @param {vec} position - The position of the body
+	 * @param {Engine} Engine - The engine the body should be simulated in
+	 * @param {Object} options - RigidBody options, see documentation for options
+	 */
+	constructor(vertices, position, options = {}, Engine) {
+		super();
+		if (!this.Engine) this.Engine = Engine;
+		
+		// Shallow clone World
+		this.World = this.Engine.World;
+		delete options.World;
 
 		// Merge options with body
 		Common.merge(this, options);
@@ -143,6 +154,7 @@ module.exports = class RigidBody extends Node {
 			this.angle = 0;
 			this.setAngle(-options.angle);
 		}
+		this.setPosition(position);
 	}
 	
 	//
@@ -284,7 +296,7 @@ module.exports = class RigidBody extends Node {
 		}
 		this.#updateBounds();
 
-		let tree = this.world.dynamicGrid;
+		let tree = this.Engine.World.dynamicGrid;
 		if (this._Grids && this._Grids[tree.id]) {
 			tree.updateBody(this);
 		}
@@ -419,12 +431,13 @@ module.exports = class RigidBody extends Node {
 		velocity: new vec(0, 0),
 		angularVelocity: 0,
 	};
-
+	
 	force = new vec(0, 0);
 	impulse = new vec(0, 0);
 	torque = 0;
-
+	
 	axes = [];
+	rotationPoint = new vec(0, 0);
 
 	_inverseMass = 1;
 	inertia = 1;
@@ -463,7 +476,7 @@ module.exports = class RigidBody extends Node {
 		if (this.isStatic) return;
 
 		// apply forces
-		this.velocity.add2(this.force).add2(ter.World.gravity.mult(delta));
+		this.velocity.add2(this.force).add2(this.Engine.World.gravity.mult(delta));
 		this.angularVelocity += this.torque;
 
 		// clear forces
@@ -477,6 +490,8 @@ module.exports = class RigidBody extends Node {
 	 * @returns {void}
 	 */
 	_update(delta) {
+		this.trigger("duringUpdate");
+
 		if (this.isStatic) return;
 
 		if (!this.parent) {
@@ -504,7 +519,7 @@ module.exports = class RigidBody extends Node {
 			}
 			this._last.angularVelocity = this.angularVelocity;
 			
-			this.updateBounds();
+			this.#updateBounds();
 		}
 		if (this.children.length === 0 && this.hasCollisions) {
 			this.Engine.World.dynamicGrid.updateBody(this);
@@ -748,15 +763,16 @@ module.exports = class RigidBody extends Node {
 
 	/**
 	 * Finds the vertice farthest in a direction
-	 * @param {vec} vector - The normalized direction to find the support point
+	 * @param {vec} vector - Normalized direction to find the support point
+	 * @param {vec} position - Position to base support on
 	 * @returns {Array} 
 	 */
-	_getSupport(vector) {
+	_getSupport(vector, position = this.position) {
 		let vertices = this.vertices;
 		let bestDist = 0;
 		let bestVert;
 		for (let i = 0; i < vertices.length; i++) {
-			let dist = vector.dot(vertices[i]);
+			let dist = vector.dot(vertices[i].sub(position));
 
 			if (dist > bestDist) {
 				bestDist = dist;

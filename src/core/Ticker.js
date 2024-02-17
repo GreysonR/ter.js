@@ -2,7 +2,7 @@ const Common = require("../core/Common.js");
 
 module.exports = class Ticker {
 	static defaultOptions = {
-		pauseOnFreeze: false,
+		pauseOnFreeze: true,
 		freezeThreshold: 0.3,
 	}
 

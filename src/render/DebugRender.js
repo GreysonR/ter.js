@@ -34,15 +34,19 @@ module.exports = class DebugRender {
 			canvas.height = height * scale;
 			canvas.style.transform = `scale(${1 / scale}, ${1 / scale})`;
 		});
+
+		this.update = this.update.bind(this);
+		Game.Render.app.ticker.add(this.update);
 	}
 	update() {
 		let { ctx, canvas, enabled, Game } = this;
-		let { camera } = Game.Render;
+		const { Render } = Game;
+		const { camera, pixelRatio } = Render;
 		let canvWidth = canvas.width;
 		let canvHeight = canvas.height;
 		
 		const { position:cameraPosition } = camera;
-		const scale = camera.scale * devicePixelRatio;
+		const scale = camera.scale * pixelRatio;
 		let translation = new vec({ x: -cameraPosition.x * scale + canvWidth/2, y: -cameraPosition.y * scale + canvHeight/2 });
 
 		ctx.clearRect(0, 0, canvWidth, canvHeight);
@@ -51,24 +55,9 @@ module.exports = class DebugRender {
 		ctx.scale(scale, scale);
 
 		for (let debugType in enabled) {
-			if (typeof this[debugType] === "function") {
+			if (enabled[debugType] && typeof this[debugType] === "function") {
 				this[debugType]();
 			}
-		}
-		if (enabled.broadphase === true) {
-			this.broadphase();
-		}
-		if (enabled.boundingBox === true) {
-			this.boundingBox();
-		}
-		if (enabled.vertices === true) {
-			this.allVertices();
-		}
-		if (enabled.collisions === true) {
-			this.allCollisions();
-		}
-		if (enabled.centers === true) {
-			this.allCenters();
 		}
 
 		ctx.restore();
@@ -77,8 +66,8 @@ module.exports = class DebugRender {
 	
 	vertices() {
 		const { Game, ctx } = this;
-		const { camera } = this;
-		const scale = camera.scale * devicePixelRatio;
+		const { camera, pixelRatio } = Game.Render;
+		const scale = camera.scale * pixelRatio;
 
 		function renderVertices(vertices) {
 			ctx.moveTo(vertices[0].x, vertices[0].y);
@@ -95,8 +84,7 @@ module.exports = class DebugRender {
 
 		ctx.beginPath();
 		let allBodies = Game.World.bodies;
-		for (let i = 0; i < allBodies.length; i++) {
-			let body = allBodies[i];
+		for (let body of allBodies) {
 			if (body.children.length === 0) {
 				renderVertices(body.vertices);
 			}
@@ -107,7 +95,7 @@ module.exports = class DebugRender {
 	}
 	collisions() {
 		const { ctx, Game } = this;
-		const { globalPoints, globalVectors } = Game;
+		const { globalPoints, globalVectors } = Game.World;
 		
 		if (globalPoints.length > 0) { // Render globalPoints
 			ctx.beginPath();
@@ -134,29 +122,29 @@ module.exports = class DebugRender {
 	}
 	centers() {
 		const { ctx, Game } = this;
+		const { camera } = Game.Render;
 		ctx.fillStyle = "#FF832A";
 		let allBodies = Game.World.bodies;
 		ctx.beginPath();
-		for (let i = 0; i < allBodies.length; i++) {
-			let body = allBodies[i];
+		for (let body of allBodies) {
 			if (body.children.length === 0 || true) {
 				ctx.moveTo(body.position.x, body.position.y);
-				ctx.arc(body.position.x, body.position.y, 2 / this.camera.scale, 0, Math.PI*2);
+				ctx.arc(body.position.x, body.position.y, 2 / camera.scale, 0, Math.PI*2);
 			}
 		}
 		ctx.fill();
 	}
 	boundingBox() {
 		const { ctx, Game } = this;
-		const { World } = Game;
+		const { World, Render } = Game;
+		const { camera } = Render;
 		let allBodies = World.bodies;
 		let allConstraints = World.constraints;
 
 		ctx.strokeStyle = "#66666680";
-		ctx.lineWidth = 1 / this.camera.scale;
+		ctx.lineWidth = 1 / camera.scale;
 
-		for (let i = 0; i < allBodies.length; i++) {
-			let body = allBodies[i];
+		for (let body of allBodies) {
 			if (!body.children || body.children.length === 0) {
 				let bounds = body.bounds;
 				let width  = bounds.max.x - bounds.min.x;
@@ -167,8 +155,7 @@ module.exports = class DebugRender {
 			}
 		}
 		ctx.strokeStyle = "#66666630";
-		for (let i = 0; i < allConstraints.length; i++) {
-			let constraint = allConstraints[i];
+		for (let constraint of allConstraints) {
 			let bounds = constraint.bounds;
 			let width  = bounds.max.x - bounds.min.x;
 			let height = bounds.max.y - bounds.min.y;
@@ -177,11 +164,12 @@ module.exports = class DebugRender {
 			ctx.strokeRect(bounds.min.x, bounds.min.y, width, height);
 		}
 	}
-	broadphase(tree = Game.World.dynamicGrid) {
-		const { ctx } = this;
+	broadphase(tree = this.Game.World.dynamicGrid) {
+		const { ctx, Game } = this;
+		const { camera } = Game.Render;
 		let size = tree.gridSize;
 
-		ctx.lineWidth = 0.4 / this.camera.scale;
+		ctx.lineWidth = 0.4 / camera.scale;
 		ctx.strokeStyle = "#D0A356";
 		ctx.fillStyle = "#947849";
 		

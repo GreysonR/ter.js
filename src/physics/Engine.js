@@ -1,6 +1,8 @@
 const vec = require("../geometry/vec.js");
 const Common = require("../core/Common.js");
 const Performance = require("../core/Performance.js");
+const Bodies = require("../bodies/Bodies.js");
+const RigidBody = require("./RigidBody.js");
 
 module.exports = class Engine {
 	static defaultOptions = {
@@ -38,6 +40,8 @@ module.exports = class Engine {
 		}
 		this.World = World;
 		this.Performance = new Performance();
+
+		this.Bodies = Bodies.createBodyFactory(this);
 	}
 
 	/**
@@ -50,7 +54,7 @@ module.exports = class Engine {
 
 		// Get delta
 		if (delta === undefined) {
-			delta = Performance.delta * World.timescale / 1000;
+			delta = Performance.delta * World.timescale;
 		}
 		World.time += delta;
 		delta /= substeps;
@@ -63,9 +67,7 @@ module.exports = class Engine {
 			Performance.frame++;
 			
 			// Update positions / angles
-			for (let i = 0; i < bodies.length; i++) {
-				let body = bodies[i];
-				body.trigger("duringUpdate");
+			for (let body of bodies) {
 				body._update(delta);
 			}
 			
@@ -83,8 +85,8 @@ module.exports = class Engine {
 			}
 
 			// Apply forces
-			for (let i = 0; i < bodies.length; i++) {
-				bodies[i].preUpdate(delta);
+			for (let body of bodies) {
+				body._preUpdate(delta);
 			}
 
 			// Solve for velocities
@@ -106,8 +108,7 @@ module.exports = class Engine {
 	 * @param {RigidBody} bodyB - 2nd body to check
 	 * @returns {Boolean} If the bodies are colliding
 	 */
-	collides = function(bodyA, bodyB) {
-		const World = bodyA.world;
+	collides(bodyA, bodyB) {
 		if (bodyA.isStatic && bodyB.isStatic) return false;
 
 		let collision = true;
@@ -136,8 +137,8 @@ module.exports = class Engine {
 
 		// - find if colliding with SAT
 		// ~ reuse last separation axis
-		if (bodyA.lastSeparations[bodyB.id]) {
-			let axis = bodyA.lastSeparations[bodyB.id];
+		if (bodyA._lastSeparations[bodyB.id]) {
+			let axis = bodyA._lastSeparations[bodyB.id];
 			let supportsA = getAllSupports(bodyA, axis);
 			let supportsB = getAllSupports(bodyB, axis);
 			let overlap = Math.min(supportsA.max - supportsB.min, supportsB.max - supportsA.min);
@@ -146,8 +147,8 @@ module.exports = class Engine {
 				collision = false;
 			}
 			else {
-				delete bodyA.lastSeparations[bodyB.id];
-				delete bodyB.lastSeparations[bodyA.id];
+				delete bodyA._lastSeparations[bodyB.id];
+				delete bodyB._lastSeparations[bodyA.id];
 			}
 		}
 		if (collision) { // last separation didn't work - try all axes
@@ -160,8 +161,8 @@ module.exports = class Engine {
 
 				if (overlap < 0) {
 					collision = false;
-					bodyA.lastSeparations[bodyB.id] = axis;
-					bodyB.lastSeparations[bodyA.id] = axis;
+					bodyA._lastSeparations[bodyB.id] = axis;
+					bodyB._lastSeparations[bodyA.id] = axis;
 					break;
 				}
 			}
@@ -174,15 +175,13 @@ module.exports = class Engine {
 				
 				if (overlap < 0) {
 					collision = false;
-					bodyA.lastSeparations[bodyB.id] = axis;
-					bodyB.lastSeparations[bodyA.id] = axis;
+					bodyA._lastSeparations[bodyB.id] = axis;
+					bodyB._lastSeparations[bodyA.id] = axis;
 					break;
 				}
 			}
 		}
-
-		if (collision === true) {
-		}
+		return collision;
 	}
 
 	/**
@@ -191,7 +190,7 @@ module.exports = class Engine {
 	 * @param {RigidBody} bodyB - 2nd body to pair
 	 */
 	createPair(bodyA, bodyB) {
-		const { World } = this;
+		const { World, Performance } = this;
 		let minDepth = Infinity;
 		let normal;
 		let normalPoint;
@@ -232,12 +231,9 @@ module.exports = class Engine {
 			contacts.push({ vertice: new vec(bodyA.position), body: bodyA });
 		}
 
-		if (Render.showCollisions) {
-			World.globalVectors.push({ position: normalPoint, vector: normal.mult(-1) });
-			World.globalPoints.push(...contacts.map(v => v.vertice));
-		}
-
-		normal = normal.mult(-1);
+		normal.mult2(-1);
+		World.globalVectors.push({ position: normalPoint, vector: new vec(normal) });
+		World.globalPoints.push(...contacts.map(v => v.vertice));
 
 		let pairId = Common.pairCommon(bodyA.id, bodyB.id);
 		let pair = {
@@ -277,10 +273,9 @@ module.exports = class Engine {
 	 * @returns {Boolean} If pair was successfully removed, meaning they are no longer colliding
 	 */
 	cleansePair(pair) {
-		const { Performance } = this;
+		const { Performance, World } = this;
 		if (pair.frame < Performance.frame) {
 			let { bodyA, bodyB } = pair;
-			const World = bodyA.world;
 
 			// Remove pair
 			bodyA.pairs.splice(bodyA.pairs.indexOf(pair.id), 1);
@@ -310,10 +305,10 @@ module.exports = class Engine {
 			let numContacts = contacts.length;
 			if (numContacts === 0) continue;
 
-			while (bodyA.parent && bodyA.parent !== bodyA) {
+			while (bodyA.parent instanceof RigidBody && bodyA.parent !== bodyA) {
 				bodyA = bodyA.parent;
 			}
-			while (bodyB.parent && bodyB.parent !== bodyB) {
+			while (bodyB.parent instanceof RigidBody && bodyB.parent !== bodyB) {
 				bodyB = bodyB.parent;
 			}
 			if (bodyA.isSensor || bodyB.isSensor) continue;
@@ -321,7 +316,7 @@ module.exports = class Engine {
 			const restitution = 1 + Math.max(bodyA.restitution, bodyB.restitution);
 			const relVel = bodyB.velocity.sub(bodyA.velocity);
 			const friction = Math.max(bodyA.friction, bodyB.friction);
-			const slop = Math.max(bodyA.slop, bodyB.slop);
+			const slop = Math.max(bodyA._slop, bodyB._slop);
 
 			if (relVel.dot(normal) < 0) {
 				continue;
@@ -388,8 +383,8 @@ module.exports = class Engine {
 			let pair = pairs[i];
 			if (!pair || this.cleansePair(pair)) continue;
 			let { depth, bodyA, bodyB, normal } = pair;
-			depth = Math.min(depth, 1.5);
-
+			// depth = Math.min(depth, 15);
+			
 			while (bodyA.parent && bodyA.parent !== bodyA) {
 				bodyA = bodyA.parent;
 			}

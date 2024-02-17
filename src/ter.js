@@ -11,7 +11,7 @@ ter.Node = require("./node/Node.js");
 ter.World = require("./node/World.js");
 
 ter.Engine = require("./physics/Engine.js");
-ter.RigidBody = require("./physics/RigidBody.js");
+ter.Bodies = require("./bodies/Bodies.js");
 
 vec = require("./geometry/vec.js");
 ter.Grid = require("./geometry/Grid.js");

@@ -1,6 +1,4 @@
 const vec = require("../geometry/vec.js");
-const World = require("../node/World.js");
-const RigidBody = require("../physics/RigidBody.js");
 
 let Common = module.exports = {
 	clamp: function(x, min, max) { // clamps x so that min <= x <= max
@@ -60,6 +58,7 @@ let Common = module.exports = {
 	 * @returns 
 	 */
 	getCenterOfMass(vertices) {
+		let centroid = new vec(0, 0);
 		let det = 0;
 		let tempDet = 0;
 		let numVertices = vertices.length;
@@ -119,7 +118,9 @@ let Common = module.exports = {
 	 * @param {Number} maxDepth - The maximum depth it can copy
 	 * @returns {void}
 	 */
-	merge: function(objA, objB, maxDepth = Infinity) {
+	merge: function(objA, objB, maxDepth = Infinity, hash = new WeakSet()) {
+		hash.add(objB);
+
 		Object.keys(objB).forEach(option => {
 			let value = objB[option];
 			
@@ -128,10 +129,14 @@ let Common = module.exports = {
 			}
 			else if (typeof value === "object" && value !== null) {
 				if (maxDepth > 1) {
+					if (hash.has(value)) { // Cyclic reference
+						objA[option] = value;
+						return;
+					}
 					if (typeof objA[option] !== "object") {
 						objA[option] = {};
 					}
-					Common.merge(objA[option], value, maxDepth - 1);
+					Common.merge(objA[option], value, maxDepth - 1, hash);
 				}
 				else {
 					objA[option] = value;
@@ -141,6 +146,23 @@ let Common = module.exports = {
 				objA[option] = value;
 			}
 		});
+	},
+	
+	/**
+	 * Finds if a variable is a class in disguise
+	 * @param {*} obj - Variable to check
+	 * @returns {Boolean} If the variable is a class
+	 */
+	isClass: function(obj) {
+		const isCtorClass = obj.constructor
+			&& obj.constructor.toString().substring(0, 5) === 'class'
+		if(obj.prototype === undefined) {
+			return isCtorClass;
+		}
+		const isPrototypeCtorClass = obj.prototype.constructor 
+			&& obj.prototype.constructor.toString
+			&& obj.prototype.constructor.toString().substring(0, 5) === 'class'
+		return isCtorClass || isPrototypeCtorClass;
 	},
 
 	/**

@@ -2,6 +2,7 @@ const Node = require("../node/Node.js");
 const Common = require("../core/Common.js")
 const Grid = require("../geometry/Grid.js");
 const vec = require("../geometry/vec.js");
+const RigidBody = require("../physics/RigidBody.js");
 
 module.exports = class World extends Node {
 	static defaultOptions = {
@@ -13,11 +14,12 @@ module.exports = class World extends Node {
 	timescale = 1;
 	time = 0;
 
-	bodies = [];
+	bodies = new Set();
+	constraints = new Set();
+	pairs = {};
+
 	dynamicGrid;
 	staticGrid;
-	constraints = [];
-	pairs = {};
 	
 	globalPoints = [];
 	globalVectors = [];
@@ -35,11 +37,11 @@ module.exports = class World extends Node {
 	}
 
 	canCollide(filterA, filterB) {
-		let { category: categoryA, mask: maskA } = filterA;
-		let { category: categoryB, mask: maskB } = filterB;
+		let { layer: layerA, mask: maskA } = filterA;
+		let { layer: layerB, mask: maskB } = filterB;
 
-		let canA = maskA === 0 || (maskA & categoryB) !== 0;
-		let canB = maskB === 0 || (maskB & categoryA) !== 0;
+		let canA = (maskA & layerB) !== 0;
+		let canB = (maskB & layerA) !== 0;
 
 		return canA || canB;
 	}
@@ -99,7 +101,6 @@ module.exports = class World extends Node {
 		let dynamicGrid = this.dynamicGrid;
 		let staticGrid = this.staticGrid;
 		let pair = Common.pairCommon;
-		let getPairs = this.#getPairs;
 		let pairIds = new Set();
 		let pairs = [];
 
@@ -110,7 +111,7 @@ module.exports = class World extends Node {
 		for (let id of bucketIds) {
 			let curDynamicBucket = dynamicBuckets[id];
 			let curStaticBucket = staticBuckets[id];
-			let curPairs = getPairs(curDynamicBucket); // pair dynamic bodies
+			let curPairs = this.#getPairs(curDynamicBucket); // pair dynamic bodies
 
 			// add static bodies
 			if (curStaticBucket) {
@@ -157,6 +158,12 @@ module.exports = class World extends Node {
 		super.addChild(...children);
 
 		for (let child of children) {
+			// Add to engine
+			if (child instanceof RigidBody) {
+				this.bodies.add(child);
+			}
+
+			// Add to grids
 			if (child.isStatic) {
 				this.staticGrid.addBody(child);
 			}
@@ -168,7 +175,13 @@ module.exports = class World extends Node {
 	removeChild(...children) {
 		super.removeChild(...children);
 
-		for (let child of children) { // Remove from grids
+		for (let child of children) {
+			// Add to engine
+			if (child instanceof RigidBody) {
+				this.bodies.delete(child);
+			}
+
+			// Remove from grids
 			if (child._Grids) {
 				if (child._Grids[this.staticGrid.id]) {
 					this.staticGrid.removeBody(child);

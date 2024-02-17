@@ -1,3 +1,7 @@
+/*! ../bodies/Bodies.js */
+
+/*! ../bodies/Rectangle.js */
+
 /*! ../core/Common.js */
 
 /*! ../core/Performance.js */
@@ -30,6 +34,8 @@
 
 /*! ../render/RenderMethods */
 
+/*! ./bodies/Bodies.js */
+
 /*! ./core/Common.js */
 
 /*! ./core/Game.js */
@@ -37,6 +43,8 @@
 /*! ./core/GameFunctions.js */
 
 /*! ./core/Performance.js */
+
+/*! ./core/Ticker.js */
 
 /*! ./geometry/Bezier.js */
 
@@ -53,8 +61,6 @@
 /*! ./node/World.js */
 
 /*! ./physics/Engine.js */
-
-/*! ./physics/RigidBody.js */
 
 /*!********************!*\
   !*** ./src/ter.js ***!
@@ -85,6 +91,10 @@
   \*****************************/
 
 /*!******************************!*\
+  !*** ./src/bodies/Bodies.js ***!
+  \******************************/
+
+/*!******************************!*\
   !*** ./src/geometry/Grid.js ***!
   \******************************/
 
@@ -107,6 +117,10 @@
 /*!********************************!*\
   !*** ./src/lib/poly-decomp.js ***!
   \********************************/
+
+/*!*********************************!*\
+  !*** ./src/bodies/Rectangle.js ***!
+  \*********************************/
 
 /*!*********************************!*\
   !*** ./src/core/Performance.js ***!

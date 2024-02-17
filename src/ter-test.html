@@ -25,9 +25,25 @@
 		},
 		World: {
 			resizeTo: window,
-		}
+		},
 	});
 	game.createDebugRender();
 	console.log(game);
+
+	const { Engine, Render } = game;
+	const { camera } = Render;
+	const { Bodies, World } = Engine;
+	var bodyA = Bodies.rectangle(100, 100, new vec(0, -300));
+	bodyA.add();
+	var bodyB = Bodies.rectangle(100, 100, new vec(70, -100));
+	bodyB.add();
+
+	var floor = Bodies.rectangle(1000, 100, new vec(0, 400), {
+		isStatic: true,
+	});
+	floor.add();
+
+	game.DebugRender.enabled.vertices = true;
+	game.DebugRender.enabled.collisions = true;
 </script>
 </html>
