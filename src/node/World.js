@@ -1,23 +1,37 @@
 "use strict";
 
-const Node = require("./Node.js");
+const Node = require("../node/Node.js");
+const Common = require("../core/Common.js")
+const Grid = require("../geometry/Grid.js");
 const vec = require("../geometry/vec.js");
 
 module.exports = class World extends Node {
+	static defaultOptions = {
+		gravity: new vec(800, 0),
+		gridSize: 500,
+	}
+	
 	gravity = new vec(0, 0);
 	timescale = 1;
 	time = 0;
 
 	bodies = [];
 	dynamicGrid;
-	staticGrid; // bucket size MUST be the same as dynamicGrid
+	staticGrid;
 	constraints = [];
 	pairs = {};
 	
-	constructor(gravity = new vec(0, 0), gridSize = 2000) {
+	constructor(options = {}) {
+		super();
+		console.warn("world");
+		let defaults = { ...World.defaultOptions };
+		Common.merge(defaults, options);
+		options = defaults;
+
+		let { gravity, gridSize } = options;
+		this.gravity = new vec(gravity);
 		this.dynamicGrid = new Grid(gridSize);
 		this.staticGrid = new Grid(gridSize);
-		this.gravity = new vec(gravity);
 	}
 	
 	#getPairs(bodies) {
@@ -26,7 +40,7 @@ module.exports = class World extends Node {
 
 		for (let i = 0; i < bodies.length - 1; i++) {
 			let bodyA = bodies[i];
-			if (bodyA.removed) {
+			if (!bodyA.added) {
 				if (bodyA.isStatic) {
 					this.staticGrid.removeBody(bodyA);
 				}
@@ -42,7 +56,7 @@ module.exports = class World extends Node {
 				// Do AABB collision test
 				let bodyB = bodies[j];
 
-				if (bodyB.removed) {
+				if (!bodyB.added) {
 					if (bodyB.isStatic) {
 						this.staticGrid.removeBody(bodyB);
 					}
@@ -128,5 +142,22 @@ module.exports = class World extends Node {
 		}
 
 		return pairs;
+	}
+
+	addChild(...children) {
+		super.addChild(...children);
+
+		
+	}
+	removeChild(...children) {
+		// Remove from grids
+		if (this._Grids) {
+			if (this._Grids[World.staticGrid.id]) {
+				World.staticGrid.removeBody(this);
+			}
+			if (this._Grids[World.dynamicGrid.id]) {
+				World.dynamicGrid.removeBody(this);
+			}
+		}
 	}
 }

@@ -3,29 +3,92 @@
 const vec = require("../geometry/vec.js");
 
 module.exports = class Node {
+	static id = 0;
+	/**
+	 * Generates a unique id for nodes
+	 * @returns {Number} A unique integer id
+	 */
+	static getUniqueId() {
+		return ++Node.id;
+	}
+
 	position = new vec(0, 0);
-	parent = null;
-	children = [];
+	children = new Set();
+	added = false;
 
 	/**
-	 * Sets the node's position to `position`
-	 * 
+	 * Creates a Node
+	 */
+	constructor() {
+		this.id = Node.getUniqueId();
+	}
+
+	/**
+	 * Sets this node's position to `position`
 	 * @param {ter.vec} position - Position the node should be set to
 	 */
 	setPosition(position) {
 		let delta = position.sub(this.position);
 		this.translate(delta);
 	}
-
 	/**
-	 * Shifts the nodes position by `positionDelta`
-	 * 
+	 * Shifts this node's position by `positionDelta`
 	 * @param {ter.vec} positionDelta - Amount to shift the position
 	 */
 	translate(positionDelta) {
 		this.position.add2(positionDelta);
 		for (let child of this.children) {
 			child.translate(delta);
+		}
+	}
+
+	/**
+	 * Adds this node and its children
+	 * @returns {void}
+	 */
+	add() {
+		if (!this.added) {
+			this.trigger("add");
+			this.added = true;
+
+			let children = this.children;
+			for (let i in children) {
+				children[i].add();
+			}
+		}
+	}
+	/**
+	 * Removes this node and its children
+	 * @returns {void}
+	 */
+	delete() {
+		if (this.added) {
+			this.trigger("delete");
+			this.added = false;
+	
+			let children = this.children;
+			for (let i in children) {
+				children[i].delete();
+			}
+		}
+	}
+
+	/**
+	 * Adds all `children` to this node's children
+	 * @param {...Node} children - The child nodes to be added
+	 */
+	addChild(...children) {
+		for (let child of children) {
+			this.children.add(child);
+		}
+	}
+	/**
+	 * Removes all `children` from this node's children
+	 * @param {...Node} children - The child nodes to be removed
+	 */
+	removeChild(...children) {
+		for (let child of children) {
+			this.children.delete(child);
 		}
 	}
 }

@@ -1,4 +1,4 @@
-class vec {
+module.exports = class vec {
 	constructor(x, y) {
 		if (typeof x === "object") {
 			if (Array.isArray(x)) {

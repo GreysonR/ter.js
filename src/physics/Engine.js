@@ -1,6 +1,16 @@
 const vec = require("../geometry/vec.js");
+const Common = require("../core/Common.js");
 
-module.exports = class Physics {
+module.exports = class Engine {
+	static defaultOptions = {
+		delta: 1,
+		substeps: 5,
+		velocityIterations: 1,
+		positionIterations: 5,
+		constraintIterations: 1,
+		maxShare: 1,
+	}
+
 	delta = 1;
 	substeps = 5;
 	velocityIterations = 1;
@@ -10,10 +20,15 @@ module.exports = class Physics {
 
 	/**
 	 * 
-	 * @param {ter.World} world The world the physics engine should run on
-	 * @param {*} options Engine options object. Can contain `substeps`, `velocityIterations`, `positionIterations`, `constraintIterations`, `maxShare`
+	 * @param {ter.World} world - The world the physics engine should run on
+	 * @param {Object} options - Options for the engine, see documentation for possible options
 	 */
 	constructor(world, options = {}) {
+		console.warn("engine");
+		let defaults = { ...Engine.defaultOptions };
+		Common.merge(defaults, options);
+		options = defaults;
+		
 		// Shallow copy options
 		let mutableProperties = [`substeps`, `velocityIterations`, `positionIterations`, `constraintIterations`, `maxShare`];
 		for (let propertyName of mutableProperties) {
@@ -24,6 +39,10 @@ module.exports = class Physics {
 		this.world = world;
 	}
 
+	/**
+	 * Ticks the engine one frame
+	 * @param {Number} delta - (Optional) Engine tick duration, in seconds
+	 */
 	update = function(delta) {
 		const { World, Engine, Performance } = ter;
 		const { bodies } = World;
@@ -47,7 +66,7 @@ module.exports = class Physics {
 			for (let i = 0; i < bodies.length; i++) {
 				let body = bodies[i];
 				body.trigger("duringUpdate");
-				ter.Bodies.update(body, delta);
+				body._update(delta);
 			}
 			
 			// Find collisions
@@ -59,15 +78,13 @@ module.exports = class Physics {
 				let bodyA = pairs[i][0];
 				let bodyB = pairs[i][1];	
 				if (this.collides(bodyA, bodyB)) {
-					this.createPair(boydA, bodyB);
+					this.createPair(bodyA, bodyB);
 				}
 			}
 
 			// Apply forces
 			for (let i = 0; i < bodies.length; i++) {
-				let body = bodies[i];
-				body.trigger("beforeUpdate");
-				ter.Bodies.preUpdate(body, delta);
+				bodies[i].preUpdate(delta);
 			}
 
 			// Solve for velocities
@@ -82,6 +99,12 @@ module.exports = class Physics {
 
 		Engine.delta = delta * substeps;
 	}
+	/**
+	 * Checks if `bodyA` and `bodyB` are allowed collide based on their collision filters
+	 * @param {RigidBody} bodyA - 1st body to check
+	 * @param {RigidBody} bodyB - 2nd body to check
+	 * @returns {Boolean} If the bodies are allowed to collide
+	 */
 	collides = function(bodyA, bodyB) {
 		const World = bodyA.world;
 		if (bodyA.isStatic && bodyB.isStatic) return false;
@@ -128,8 +151,8 @@ module.exports = class Physics {
 		}
 		if (collision) { // last separation didn't work - try all axes
 			// ~ bodyA axes
-			for (let j = 0; j < bodyA.axes.length; j++) {
-				let axis = bodyA.axes[j];
+			for (let j = 0; j < bodyA._axes.length; j++) {
+				let axis = bodyA._axes[j];
 				let supportsA = getAllSupports(bodyA, axis);
 				let supportsB = getAllSupports(bodyB, axis);
 				let overlap = Math.min(supportsA.max - supportsB.min, supportsB.max - supportsA.min);
@@ -142,8 +165,8 @@ module.exports = class Physics {
 				}
 			}
 			// ~ bodyB axes
-			for (let j = 0; j < bodyB.axes.length; j++) {
-				let axis = bodyB.axes[j];
+			for (let j = 0; j < bodyB._axes.length; j++) {
+				let axis = bodyB._axes[j];
 				let supportsA = getAllSupports(bodyB, axis);
 				let supportsB = getAllSupports(bodyA, axis);
 				let overlap = Math.min(supportsA.max - supportsB.min, supportsB.max - supportsA.min);
@@ -160,6 +183,11 @@ module.exports = class Physics {
 		if (collision === true) {
 		}
 	}
+	/**
+	 * Creates a collision pair between `bodyA` and `bodyB`
+	 * @param {RigidBody} bodyA - 1st body to pair
+	 * @param {RigidBody} bodyB - 2nd body to pair
+	 */
 	createPair(bodyA, bodyB) {
 		// - get collision normal by finding point with minimum depth
 		let minDepth = Infinity;
@@ -176,7 +204,7 @@ module.exports = class Physics {
 				let curVertice = vertices[i];
 				let nextVertice = vertices[(i + 1) % vertices.length];
 				let curNormal = curVertice.sub(nextVertice).normal().normalize();
-				let support = bodyB.getSupport(curNormal, curVertice);
+				let support = bodyB._getSupport(curNormal, curVertice);
 
 				if (bodyB.containsPoint(curVertice)) {
 					contacts.push({ vertice: curVertice, body: bodyA });
@@ -239,6 +267,33 @@ module.exports = class Physics {
 
 		World.pairs[pairId] = pair;
 	}
+	/**
+	 * Deletes the collision pair
+	 * @param {collisionPair} pair - The pair to delete
+	 * @returns 
+	 */
+	cleansePair(pair) {
+		const { Performance } = ter;
+		if (pair.frame < Performance.frame) {
+			let { bodyA, bodyB } = pair;
+			const World = bodyA.world;
+
+			// Remove pair
+			bodyA.pairs.splice(bodyA.pairs.indexOf(pair.id), 1);
+			bodyB.pairs.splice(bodyB.pairs.indexOf(pair.id), 1);
+			delete World.pairs[pair.id];
+
+			// Trigger collisionEnd event
+			bodyA.trigger("collisionEnd", pair);
+			bodyB.trigger("collisionEnd", pair);
+
+			return true;
+		}
+		return false;
+	}
+	/**
+	 * Solves new velocities for bodies based on their collision pairs
+	 */
 	solveVelocity = function() {
 		let { pairs } = ter.World;
 		
@@ -293,7 +348,7 @@ module.exports = class Physics {
 
 				let oAcN = offsetA.cross(normal);
 				let oBcN = offsetB.cross(normal);
-				let share = 1 / (contacts.length * (bodyA.inverseMass + bodyB.inverseMass + bodyA.inverseInertia * oAcN * oAcN  + bodyB.inverseInertia * oBcN * oBcN));
+				let share = 1 / (contacts.length * (bodyA._inverseMass + bodyB._inverseMass + bodyA._inverseInertia * oAcN * oAcN  + bodyB._inverseInertia * oBcN * oBcN));
 
 				if (normalVelocity > 0) continue;
 				
@@ -302,8 +357,8 @@ module.exports = class Physics {
 
 				const curImpulse = normal.mult(normalImpulse).add2(tangent.mult(tangentImpulse * friction));
 				impulse.set(curImpulse);
-				angImpulseA = offsetA.cross(curImpulse) * bodyA.inverseInertia;
-				angImpulseB = offsetB.cross(curImpulse) * bodyB.inverseInertia;
+				angImpulseA = offsetA.cross(curImpulse) * bodyA._inverseInertia;
+				angImpulseB = offsetB.cross(curImpulse) * bodyB._inverseInertia;
 
 				if (!bodyA.isStatic) {
 					bodyA.velocity.sub2(impulse.mult(1 / bodyA.mass));
@@ -316,6 +371,9 @@ module.exports = class Physics {
 			}
 		}
 	}
+	/**
+	 * Solves position intersections between bodies based on their collision pairs
+	 */
 	solvePositions = function() {
 		const World = ter.World;
 		const Bodies = ter.Bodies;
@@ -359,6 +417,11 @@ module.exports = class Physics {
 			pair.depth -= impulse.length;
 		}
 	}
+
+	/**
+	 * Solves physics constraints for their new position and velocity
+	 * @param {Number} delta - Engine tick duration, in seconds
+	 */
 	solveConstraints = function(delta) {
 		delta *= 1000;
 		const constraints = ter.World.constraints;
@@ -408,7 +471,7 @@ module.exports = class Physics {
 					let curImpulse = normal.mult(normalImpulse).add2(tangent.mult(tangentImpulse * angularStiffness));
 
 					return {
-						angularImpulse: offset.cross(curImpulse) * body.inverseInertia / 2,
+						angularImpulse: offset.cross(curImpulse) * body._inverseInertia / 2,
 						normalImpulse: curImpulse.mult(0.5),
 					}
 				}

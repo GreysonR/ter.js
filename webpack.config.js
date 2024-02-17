@@ -7,7 +7,7 @@ module.exports = {
 	output: {
 		path: path.resolve(__dirname, "dist"),
 		filename: "ter.js",
-		clean: true,
+		clean: false,
 
 		library: {
 			name: "ter",
@@ -16,7 +16,7 @@ module.exports = {
 		},
 	},
 	optimization: {
-		minimize: false,
+		minimize: true,
 	},
 	devtool: "source-map",
 	devServer: {
@@ -33,7 +33,8 @@ module.exports = {
 		new HtmlWebpackPlugin({
 			title: "ter.js",
 			filename: "index.html",
-			template: "src/index.html",
+			template: "src/ter-test.html",
+			scriptLoading: "blocking",
 		}),
 	]
 }
