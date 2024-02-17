@@ -18,7 +18,6 @@
 <script src="ter.js"></script></body>
 <script src="lib/pixi.min.js"></script>
 <script src="lib/pixi-filters.js"></script>
-<script src="ter.js"></script>
 <script>
 	const game = new ter.Game({
 		Render: {
@@ -28,6 +27,7 @@
 			resizeTo: window,
 		}
 	});
+	game.createDebugRender();
 	console.log(game);
 </script>
 </html>

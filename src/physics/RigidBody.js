@@ -16,7 +16,7 @@ module.exports = class RigidBody extends Node {
 		isSensor: false,
 		hasCollisions: true,
 		collisionFilter: {
-			category: 0,
+			layer: 0,
 			mask: 0,
 		},
 	}
@@ -69,7 +69,7 @@ module.exports = class RigidBody extends Node {
 	isSensor = false;
 	hasCollisions = true;
 	collisionFilter = {
-		category: 0,
+		layer: 0,
 		mask: 0,
 	}
 
@@ -81,7 +81,7 @@ module.exports = class RigidBody extends Node {
 		Common.merge(this, options);
 		
 		// Parse collision filter properties
-		for (let filterType in ["mask", "category"]) {
+		for (let filterType in ["layer", "mask"]) {
 			if (typeof this.collisionFilter[filterType] === "string") {
 				this.collisionFilter[filterType] = parseInt(this.collisionFilter[filterType], 2);
 			}
@@ -106,10 +106,10 @@ module.exports = class RigidBody extends Node {
 			let decompVerts = this.vertices.map(v => [v.x, v.y]);
 			decomp.makeCCW(decompVerts);
 			let concaveVertices = decomp.quickDecomp(decompVerts);
-			let parentCenter = this.#getCenterOfMass();
+			let parentCenter = Common.getCenterOfMass(this.vertices);
 			for (let i = 0; i < concaveVertices.length; i++) {
 				let vertices = concaveVertices[i].map(v => new vec(v[0], v[1]));
-				let center = this.#getCenterOfMass(vertices);
+				let center = Common.getCenterOfMass(vertices);
 				let body = new FromVertices(vertices, position.add(center).sub(parentCenter), {
 					isSensor: this.isSensor,
 					isStatic: this.isStatic,
@@ -153,28 +153,10 @@ module.exports = class RigidBody extends Node {
 	 * @returns {void}
 	 */
 	add() {
-		let { world } = this;
+		let World = this.Engine.World;
 		if (!this.added) {
 			super.add();
-
-			if (this.render.graphic) {
-				this.render.graphic.add();
-			}
-			
-			world.bodies.push(this);
-
-			if (this.children.length === 0 && this.hasCollisions) {
-				if (this.isStatic) {
-					world.staticGrid.addBody(this);
-				}
-				else {
-					world.dynamicGrid.addBody(this);
-				}
-			}
-
-			for (let i = 0; i < this.children.length; i++) {
-				this.children[i].add();
-			}
+			World.addChild(this);
 		}
 	}
 
@@ -254,7 +236,7 @@ module.exports = class RigidBody extends Node {
 
 	/**
 	 * Finds if a point is inside the body
-	 * @param {ter.vec} point The point to query
+	 * @param {vec} point The point to query
 	 * @returns {Boolean} If the point is inside the body's vertices
 	 */
 	containsPoint(point) {
@@ -272,10 +254,10 @@ module.exports = class RigidBody extends Node {
 
 	/**
 	 * Instantly sets body's position to `position`
-	 * @param {ter.vec} position - The position the body should be
+	 * @param {vec} position - The position the body should be
 	 * @param {Boolean} _ignoreChildren - If the body's children should be affected
 	 * @example
-	 * body.setPosition(new ter.vec(100, 100)); // Sets the body's position to (100, 100) 
+	 * body.setPosition(new vec(100, 100)); // Sets the body's position to (100, 100) 
 	 * @returns {void}
 	 */
 	setPosition(position, _ignoreChildren = false) {
@@ -285,7 +267,7 @@ module.exports = class RigidBody extends Node {
 	
 	/**
 	 * Shifts body's position by delta
-	 * @param {ter.vec} delta - Distance the body should be shifted
+	 * @param {vec} delta - Distance the body should be shifted
 	 * @param {Boolean} affectPosition - If the body's position should be affected
 	 * @param {Boolean} ignoreChildren - If the body's children should be shifted as well
 	 * @returns {void}
@@ -374,7 +356,7 @@ module.exports = class RigidBody extends Node {
 
 	/**
 	 * Instantly changes the body's velocity to a specific value
-	 * @param {ter.vec} velocity - The velocity the body should have
+	 * @param {vec} velocity - The velocity the body should have
 	 * @returns {void}
 	 */
 	setVelocity(velocity) {
@@ -388,7 +370,7 @@ module.exports = class RigidBody extends Node {
 
 	/**
 	 * Instantly changes the body's angular velocity to a specific value
-	 * @param {ter.vec} velocity - The angular velocity the body should have
+	 * @param {vec} velocity - The angular velocity the body should have
 	 * @returns {void}
 	 */
 	setAngularVelocity(velocity) {
@@ -402,7 +384,7 @@ module.exports = class RigidBody extends Node {
 
 	/**
 	 * Applies a force to the body, ignoring mass. The body's velocity changes by force * delta
-	 * @param {ter.vec} force - The amount of force to be applied, in px / sec^2
+	 * @param {vec} force - The amount of force to be applied, in px / sec^2
 	 * @param {Number} delta - The amount of time that the force should be applied in seconds, set to 1 if only applying in one instant
 	 * @returns {void}
 	 */
@@ -656,11 +638,11 @@ module.exports = class RigidBody extends Node {
 			let verts = vertices.map(v => [v.x, v.y]);
 			decomp.removeCollinearPoints(verts, 0.4);
 			let concaveVertices = decomp.quickDecomp(verts);
-			let parentCenter = this.#getCenterOfMass();
+			let parentCenter = Common.getCenterOfMass(this.vertices);
 
 			for (let i = 0; i < concaveVertices.length; i++) {
 				let vertices = concaveVertices[i].map(v => new vec(v[0], v[1]));
-				let center = this.#getCenterOfMass(vertices);
+				let center = Common.getCenterOfMass(vertices);
 				let body = new FromVertices(vertices, position.add(center).sub(parentCenter));
 				body.delete();
 				body.parent = this;
@@ -694,49 +676,10 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * Calculates the center of mass of a convex body. Uses algorithm from https://bell0bytes.eu/centroid-convex/
-	 * @param {Array} vertices - Array of vertices (`ter.vec`s) to find the center of 
-	 * @returns 
-	 */
-	#getCenterOfMass(vertices = this.vertices) {
-		let centroid = new vec(0, 0);
-		let children = this.children;
-
-		if (children.length > 0) {
-			let totalArea = 0;
-			for (let i = 0; i < children.length; i++) {
-				let child = children[i];
-				totalArea += child.area;
-				centroid.add2(child.position.sub(this.position).mult2(child.area).add2(this.position));
-			}
-			centroid.div2(totalArea);
-		}
-		else {
-			let det = 0;
-			let tempDet = 0;
-			let numVertices = vertices.length;
-	
-			for (let i = 0; i < vertices.length; i++) {
-				let curVert = vertices[i];
-				let nextVert = vertices[(i + 1) % numVertices];
-	
-				tempDet = curVert.x * nextVert.y - nextVert.x * curVert.y;
-				det += tempDet;
-	
-				centroid.add2({ x: (curVert.x + nextVert.x) * tempDet, y: (curVert.y + nextVert.y) * tempDet });
-			}
-	
-			centroid.div2(3 * det);
-		}
-
-		return centroid;
-	}
-
-	/**
 	 * Shifts vertices so their center is at the body's position 
 	 */
 	#recenterVertices() {
-		let center = this.#getCenterOfMass();
+		let center = Common.getCenterOfMass(this.vertices);
 		let position = this.position;
 		center.sub2(position);
 		
@@ -805,7 +748,7 @@ module.exports = class RigidBody extends Node {
 
 	/**
 	 * Finds the vertice farthest in a direction
-	 * @param {ter.vec} vector - The normalized direction to find the support point
+	 * @param {vec} vector - The normalized direction to find the support point
 	 * @returns {Array} 
 	 */
 	_getSupport(vector) {

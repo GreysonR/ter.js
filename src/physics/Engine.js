@@ -1,5 +1,6 @@
 const vec = require("../geometry/vec.js");
 const Common = require("../core/Common.js");
+const Performance = require("../core/Performance.js");
 
 module.exports = class Engine {
 	static defaultOptions = {
@@ -20,10 +21,10 @@ module.exports = class Engine {
 
 	/**
 	 * 
-	 * @param {ter.World} world - The world the physics engine should run on
+	 * @param {World} World - The world the physics engine should run on
 	 * @param {Object} options - Options for the engine, see documentation for possible options
 	 */
-	constructor(world, options = {}) {
+	constructor(World, options = {}) {
 		let defaults = { ...Engine.defaultOptions };
 		Common.merge(defaults, options, 1);
 		options = defaults;
@@ -35,7 +36,8 @@ module.exports = class Engine {
 				this[propertyName] = options[propertyName];
 			}
 		}
-		this.world = world;
+		this.World = World;
+		this.Performance = new Performance();
 	}
 
 	/**
@@ -43,17 +45,16 @@ module.exports = class Engine {
 	 * @param {Number} delta - (Optional) Engine tick duration, in seconds
 	 */
 	update = function(delta) {
-		const { World, Engine, Performance } = ter;
+		const { World, Performance, substeps } = this;
 		const { bodies } = World;
-		const { substeps } = Engine;
 
 		// Get delta
 		if (delta === undefined) {
-			delta = Performance.delta * ter.World.timescale / 1000;
+			delta = Performance.delta * World.timescale / 1000;
 		}
 		World.time += delta;
 		delta /= substeps;
-		Engine.delta = delta;
+		this.delta = delta;
 
 		// Get timing
 		Performance.update();
@@ -69,8 +70,8 @@ module.exports = class Engine {
 			}
 			
 			// Find collisions
-			globalVectors = [];
-			globalPoints = [];
+			World.globalVectors = [];
+			World.globalPoints = [];
 			
 			const pairs = World.collisionPairs;
 			for (let i = 0; i < pairs.length; i++) {
@@ -88,21 +89,22 @@ module.exports = class Engine {
 
 			// Solve for velocities
 			for (let i = 0; i < this.velocityIterations; i++) {
-				Engine.solveVelocity(delta);
+				this.solveVelocity(delta);
 			}
 			for (let i = 0; i < this.positionIterations; i++) {
-				Engine.solvePositions();
+				this.solvePositions();
 			}
-			Engine.solveConstraints(delta);
+			this.solveConstraints(delta);
 		}
 
-		Engine.delta = delta * substeps;
+		this.delta = delta * substeps;
 	}
+
 	/**
-	 * Checks if `bodyA` and `bodyB` are allowed collide based on their collision filters
+	 * Checks if `bodyA` and `bodyB` are colliding
 	 * @param {RigidBody} bodyA - 1st body to check
 	 * @param {RigidBody} bodyB - 2nd body to check
-	 * @returns {Boolean} If the bodies are allowed to collide
+	 * @returns {Boolean} If the bodies are colliding
 	 */
 	collides = function(bodyA, bodyB) {
 		const World = bodyA.world;
@@ -182,13 +184,14 @@ module.exports = class Engine {
 		if (collision === true) {
 		}
 	}
+
 	/**
 	 * Creates a collision pair between `bodyA` and `bodyB`
 	 * @param {RigidBody} bodyA - 1st body to pair
 	 * @param {RigidBody} bodyB - 2nd body to pair
 	 */
 	createPair(bodyA, bodyB) {
-		// - get collision normal by finding point with minimum depth
+		const { World } = this;
 		let minDepth = Infinity;
 		let normal;
 		let normalPoint;
@@ -197,6 +200,7 @@ module.exports = class Engine {
 		let contacts = [];
 		let numContacts = 0;
 
+		// - get collision normal by finding point/edge pair with minimum depth
 		function findNormal(bodyA, bodyB) {
 			let vertices = bodyA.vertices;
 			for (let i = 0; i < vertices.length; i++) {
@@ -229,8 +233,8 @@ module.exports = class Engine {
 		}
 
 		if (Render.showCollisions) {
-			globalVectors.push({ position: normalPoint, vector: normal.mult(-1) });
-			globalPoints.push(...contacts.map(v => v.vertice));
+			World.globalVectors.push({ position: normalPoint, vector: normal.mult(-1) });
+			World.globalPoints.push(...contacts.map(v => v.vertice));
 		}
 
 		normal = normal.mult(-1);
@@ -266,13 +270,14 @@ module.exports = class Engine {
 
 		World.pairs[pairId] = pair;
 	}
+
 	/**
 	 * Deletes the collision pair
 	 * @param {collisionPair} pair - The pair to delete
-	 * @returns 
+	 * @returns {Boolean} If pair was successfully removed, meaning they are no longer colliding
 	 */
 	cleansePair(pair) {
-		const { Performance } = ter;
+		const { Performance } = this;
 		if (pair.frame < Performance.frame) {
 			let { bodyA, bodyB } = pair;
 			const World = bodyA.world;
@@ -290,15 +295,16 @@ module.exports = class Engine {
 		}
 		return false;
 	}
+
 	/**
 	 * Solves new velocities for bodies based on their collision pairs
 	 */
 	solveVelocity = function() {
-		let { pairs } = ter.World;
+		let { pairs } = this.World;
 		
 		for (let i in pairs) {
 			let pair = pairs[i];
-			if (!pair || ter.Bodies.cleansePair(pair)) continue;
+			if (!pair || this.cleansePair(pair)) continue;
 
 			let { bodyA, bodyB, normal, tangent, contacts } = pair;
 			let numContacts = contacts.length;
@@ -328,7 +334,7 @@ module.exports = class Engine {
 			let totalMass = bodyA.mass + bodyB.mass;
 			let shareA = (bodyB.mass / totalMass) || 0;
 			let shareB = (bodyA.mass / totalMass) || 0;
-			let maxShare = ter.Engine.maxShare;
+			let maxShare = this.maxShare;
 			shareA = Math.min(maxShare, shareA);
 			shareB = Math.min(maxShare, shareB);
 			if (bodyA.isStatic) shareB = 1;
@@ -370,17 +376,17 @@ module.exports = class Engine {
 			}
 		}
 	}
+	
 	/**
 	 * Solves position intersections between bodies based on their collision pairs
 	 */
 	solvePositions = function() {
-		const World = ter.World;
-		const Bodies = ter.Bodies;
+		const { World } = this;
 		let { pairs } = World;
 		
 		for (let i in pairs) {
 			let pair = pairs[i];
-			if (!pair || Bodies.cleansePair(pair)) continue;
+			if (!pair || this.cleansePair(pair)) continue;
 			let { depth, bodyA, bodyB, normal } = pair;
 			depth = Math.min(depth, 1.5);
 
@@ -398,7 +404,7 @@ module.exports = class Engine {
 			let totalMass = bodyA.mass + bodyB.mass;
 			let shareA = (bodyB.mass / totalMass) || 0;
 			let shareB = (bodyA.mass / totalMass) || 0;
-			let maxShare = ter.Engine.maxShare;
+			let maxShare = this.maxShare;
 			shareA = Math.min(maxShare, shareA);
 			shareB = Math.min(maxShare, shareB);
 			if (bodyA.isStatic) shareB = 1;
@@ -423,8 +429,8 @@ module.exports = class Engine {
 	 */
 	solveConstraints = function(delta) {
 		delta *= 1000;
-		const constraints = ter.World.constraints;
-		const constraintIterations = ter.Engine.constraintIterations;
+		const constraints = this.World.constraints;
+		const constraintIterations = this.constraintIterations;
 		delta /= constraintIterations;
 
 		for (let step = 0; step < constraintIterations; step++) {
@@ -442,7 +448,7 @@ module.exports = class Engine {
 				let totalMass = bodyA.mass + bodyB.mass;
 				let shareA = (bodyB.mass / totalMass) || 0;
 				let shareB = (bodyA.mass / totalMass) || 0;
-				let maxShare = ter.Engine.maxShare;
+				let maxShare = this.maxShare;
 				shareA = Math.min(maxShare, shareA);
 				shareB = Math.min(maxShare, shareB);
 				if (bodyA.isStatic) shareB = 1;

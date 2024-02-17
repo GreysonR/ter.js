@@ -1,4 +1,4 @@
-module.exports = {
+let RenderMethods = module.exports = {
 	// ~ Point transformations
 	screenPtToGame: function(point, Render) {
 		const { camera, pixelRatio } = Render;
@@ -12,7 +12,7 @@ module.exports = {
 	},
 	roundedPolygon: function(vertices, round, graphic) {
 		if (vertices.length < 3) {
-			console.warn("Render.roundedPolygon needs at least 3 vertices", vertices);
+			console.warn("RenderMethods.roundedPolygon needs at least 3 vertices", vertices);
 			return;
 		}
 		function getPoints(i) {
@@ -47,7 +47,7 @@ module.exports = {
 	},
 	roundedPolygonCtx: function(vertices, round, ctx) {
 		if (vertices.length < 3) {
-			console.warn("Render.roundedPolygon needs at least 3 vertices", vertices);
+			console.warn("RenderMethods.roundedPolygon needs at least 3 vertices", vertices);
 			return;
 		}
 		function getPoints(i) {
@@ -81,7 +81,7 @@ module.exports = {
 		ctx.closePath();
 	},
 	roundedRect: function(width, height, position, round, ctx) {
-		Render.roundedPolygonCtx([
+		RenderMethods.roundedPolygonCtx([
 			new vec(-width/2, -height/2).add2(position),
 			new vec( width/2, -height/2).add2(position),
 			new vec( width/2,  height/2).add2(position),

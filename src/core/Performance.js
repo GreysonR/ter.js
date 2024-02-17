@@ -36,31 +36,29 @@ module.exports = class Performance {
 		this.fps = 1 / this.delta;
 		this.lastUpdate = curTime;
 
-		if (!this.render.enabled && this.getAvgs) {
-			this.history.fps.push(this.fps);
-			this.history.delta.push(this.delta);
+		this.history.fps.push(this.fps);
+		this.history.delta.push(this.delta);
 
-			if (this.history.fps.length > 200) {
-				this.history.fps.shift();
-				this.history.delta.shift();
-			}
-			let fps = (() => {
-				let v = 0;
-				for (let i = 0; i < this.history.fps.length; i++) {
-					v += this.history.fps[i];
-				}
-				return v / this.history.fps.length;
-			})();
-			let delta = (() => {
-				let v = 0;
-				for (let i = 0; i < this.history.delta.length; i++) {
-					v += this.history.delta[i];
-				}
-				return v / this.history.delta.length;
-			})();
-
-			this.history.avgFps = fps;
-			this.history.avgDelta = delta;
+		if (this.history.fps.length > 200) {
+			this.history.fps.shift();
+			this.history.delta.shift();
 		}
+		let fps = (() => {
+			let v = 0;
+			for (let i = 0; i < this.history.fps.length; i++) {
+				v += this.history.fps[i];
+			}
+			return v / this.history.fps.length;
+		})();
+		let delta = (() => {
+			let v = 0;
+			for (let i = 0; i < this.history.delta.length; i++) {
+				v += this.history.delta[i];
+			}
+			return v / this.history.delta.length;
+		})();
+
+		this.history.avgFps = fps;
+		this.history.avgDelta = delta;
 	}
 };

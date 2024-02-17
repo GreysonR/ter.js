@@ -1,5 +1,9 @@
 /*! ../core/Common.js */
 
+/*! ../core/Performance.js */
+
+/*! ../core/Ticker.js */
+
 /*! ../geometry/Grid.js */
 
 /*! ../geometry/vec.js */
@@ -12,9 +16,15 @@
 
 /*! ../physics/Engine.js */
 
+/*! ../physics/RigidBody.js */
+
 /*! ../render/Camera.js */
 
+/*! ../render/DebugRender.js */
+
 /*! ../render/PerformanceRender */
+
+/*! ../render/PerformanceRender.js */
 
 /*! ../render/Render.js */
 
@@ -66,6 +76,10 @@
   !*** ./src/core/Common.js ***!
   \****************************/
 
+/*!****************************!*\
+  !*** ./src/core/Ticker.js ***!
+  \****************************/
+
 /*!*****************************!*\
   !*** ./src/geometry/vec.js ***!
   \*****************************/
@@ -108,6 +122,10 @@
 
 /*!***********************************!*\
   !*** ./src/core/GameFunctions.js ***!
+  \***********************************/
+
+/*!***********************************!*\
+  !*** ./src/render/DebugRender.js ***!
   \***********************************/
 
 /*!*************************************!*\

@@ -5,7 +5,7 @@ const vec = require("../geometry/vec.js");
 
 module.exports = class World extends Node {
 	static defaultOptions = {
-		gravity: new vec(800, 0),
+		gravity: new vec(0, 500),
 		gridSize: 500,
 	}
 	
@@ -19,6 +19,9 @@ module.exports = class World extends Node {
 	constraints = [];
 	pairs = {};
 	
+	globalPoints = [];
+	globalVectors = [];
+	
 	constructor(options = {}) {
 		super();
 		let defaults = { ...World.defaultOptions };
@@ -30,10 +33,19 @@ module.exports = class World extends Node {
 		this.dynamicGrid = new Grid(gridSize);
 		this.staticGrid = new Grid(gridSize);
 	}
-	
+
+	canCollide(filterA, filterB) {
+		let { category: categoryA, mask: maskA } = filterA;
+		let { category: categoryB, mask: maskB } = filterB;
+
+		let canA = maskA === 0 || (maskA & categoryB) !== 0;
+		let canB = maskB === 0 || (maskB & categoryA) !== 0;
+
+		return canA || canB;
+	}
 	#getPairs(bodies) {
 		let pairs = [];
-		let canCollide = ter.Bodies.canCollide;
+		let canCollide = this.canCollide;
 
 		for (let i = 0; i < bodies.length - 1; i++) {
 			let bodyA = bodies[i];
@@ -83,10 +95,10 @@ module.exports = class World extends Node {
 		return pairs;
 	}
 	get collisionPairs() {
-		let canCollide = ter.Bodies.canCollide;
+		let canCollide = this.canCollide;
 		let dynamicGrid = this.dynamicGrid;
 		let staticGrid = this.staticGrid;
-		let pair = ter.Common.pairCommon;
+		let pair = Common.pairCommon;
 		let getPairs = this.#getPairs;
 		let pairIds = new Set();
 		let pairs = [];
@@ -144,16 +156,26 @@ module.exports = class World extends Node {
 	addChild(...children) {
 		super.addChild(...children);
 
-		
+		for (let child of children) {
+			if (child.isStatic) {
+				this.staticGrid.addBody(child);
+			}
+			else {
+				this.dynamicGrid.addBody(child);
+			}
+		}
 	}
 	removeChild(...children) {
-		// Remove from grids
-		if (this._Grids) {
-			if (this._Grids[World.staticGrid.id]) {
-				World.staticGrid.removeBody(this);
-			}
-			if (this._Grids[World.dynamicGrid.id]) {
-				World.dynamicGrid.removeBody(this);
+		super.removeChild(...children);
+
+		for (let child of children) { // Remove from grids
+			if (child._Grids) {
+				if (child._Grids[this.staticGrid.id]) {
+					this.staticGrid.removeBody(child);
+				}
+				if (child._Grids[this.dynamicGrid.id]) {
+					this.dynamicGrid.removeBody(child);
+				}
 			}
 		}
 	}

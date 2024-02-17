@@ -1,6 +1,6 @@
 "use strict";
 
-class Bezier {
+module.exports = class Bezier {
 	constructor(pt1, cp1, cp2, pt2) { // start, control 1, control 2, end
 		// https://javascript.info/bezier-curve
 		// P = ((1−t)^3 * P1) + (3(1−t)^2 * t * P2) + (3(1−t) * t^2 * P3) + (t^3 * P4)

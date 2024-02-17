@@ -9,8 +9,8 @@ module.exports = class PerformanceRender {
 		this.Performance = Performance;
 
 		// Create canvas
-		const width =  100; // 90
-		const height = 50; // 40
+		const width  = this.width  = 100;
+		const height = this.height = 50;
 		let scale = this.scale = devicePixelRatio ?? 1;
 		let canvas = this.canvas = document.createElement("canvas");
 		this.ctx = canvas.getContext("2d");
@@ -32,7 +32,7 @@ module.exports = class PerformanceRender {
 		Render.app.ticker.add(this.update);
 	}
 	update() {
-		let { canvas, ctx, enabled, Performance, scale } = this;
+		let { canvas, ctx, enabled, Performance, scale, width, height } = this;
 		let { history } = Performance;
 
 		ctx.clearRect(0, 0, canvas.width, canvas.height);

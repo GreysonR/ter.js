@@ -25,7 +25,7 @@ module.exports = class Node {
 
 	/**
 	 * Sets this node's position to `position`
-	 * @param {ter.vec} position - Position the node should be set to
+	 * @param {vec} position - Position the node should be set to
 	 */
 	setPosition(position) {
 		let delta = position.sub(this.position);
@@ -33,7 +33,7 @@ module.exports = class Node {
 	}
 	/**
 	 * Shifts this node's position by `positionDelta`
-	 * @param {ter.vec} positionDelta - Amount to shift the position
+	 * @param {vec} positionDelta - Amount to shift the position
 	 */
 	translate(positionDelta) {
 		this.position.add2(positionDelta);

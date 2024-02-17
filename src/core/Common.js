@@ -1,6 +1,8 @@
 const vec = require("../geometry/vec.js");
+const World = require("../node/World.js");
+const RigidBody = require("../physics/RigidBody.js");
 
-module.exports = {
+let Common = module.exports = {
 	clamp: function(x, min, max) { // clamps x so that min <= x <= max
 		return Math.max(min, Math.min(x, max));
 	},
@@ -16,21 +18,47 @@ module.exports = {
 		}
 		return mod(x - y + m/2, m) - m/2;
 	},
-	pair: function(x, y) { // Elegant pairing function - http://szudzik.com/ElegantPairing.pdf
+
+	/**
+	 * Pairs 2 positive integers, returning a unique number for each possible pairing using elegant pairing - http://szudzik.com/ElegantPairing.pdf
+	 * @param {Number} x - 1st number, must be positive integer
+	 * @param {Number} y - 2nd number, must be positive integer
+	 * @returns {Number} Unique number from those 
+	 */
+	pair: function(x, y) {
 		if (x > y)
 			return x*x + x + y;
 		return y*y + x;
 	},
+	/**
+	 * Takes a paired number and returns the x/y values that created that number
+	 * @param {Number} n Paired number
+	 * @returns {vec} Pair of x/y that created that pair
+	 */
 	unpair: function(n) {
 		let z = Math.floor(Math.sqrt(n));
 		let l = n - z * z;
 		return l < z ? new vec(l, z) : new vec(z, l - z);
 	},
+
+	/**
+	 * Pairs 2 positive integers, returning a unique number for each possible pairing using elegant pairing - http://szudzik.com/ElegantPairing.pdf
+	 * Returns the same value if x/y are switched
+	 * @param {Number} x - 1st number, must be positive integer
+	 * @param {Number} y - 2nd number, must be positive integer
+	 * @returns {Number} Unique number from those 
+	 */
 	pairCommon: function(x, y) { // Elegant pairing function, but gives the same result if x/y are switched
 		if (x > y)
 			return x*x + x + y;
 		return y*y + y + x;
 	},
+
+	/**
+	 * Calculates the center of mass of a convex body. Uses algorithm from https://bell0bytes.eu/centroid-convex/
+	 * @param {Array} vertices - Array of `vec`s to find the center of 
+	 * @returns 
+	 */
 	getCenterOfMass(vertices) {
 		let det = 0;
 		let tempDet = 0;
@@ -50,6 +78,12 @@ module.exports = {
 
 		return centroid;
 	},
+
+	/**
+	 * Parses a color into its base hex code and alpha. Supports hex, hex with alpha, rgb, and rgba
+	 * @param {String} originalColor - Color to be parsed
+	 * @returns {Array} Array of [hex code, alpha] of parsed color
+	 */
 	parseColor: function(originalColor) {
 		if (originalColor === "transparent") {
 			return ["#000000", 0];
@@ -77,6 +111,7 @@ module.exports = {
 		}
 		return [color, alpha];
 	},
+
 	/**
 	 * Deep copies `objB` onto `objA` in place.
 	 * @param {Object} objA - First object
@@ -96,7 +131,7 @@ module.exports = {
 					if (typeof objA[option] !== "object") {
 						objA[option] = {};
 					}
-					ter.Common.merge(objA[option], value, maxDepth - 1);
+					Common.merge(objA[option], value, maxDepth - 1);
 				}
 				else {
 					objA[option] = value;
@@ -107,6 +142,15 @@ module.exports = {
 			}
 		});
 	},
+
+	/**
+	 * Checks if line `a1`->`a2` is intersecting line `b1`->`b2`, and at what point
+	 * @param {vec} a1 - Start of line 1
+	 * @param {vec} a2 - End of line 1
+	 * @param {vec} b1 - Start of line 2
+	 * @param {vec} b2 - End of line 2
+	 * @returns {vec} Point of intersection, or null if they don't intersect
+	 */
 	lineIntersects: function(a1, a2, b1, b2) { // tells you if lines a1->a2 and b1->b2 are intersecting, and at what point
 		if (a1.x === a2.x || a1.y === a2.y) {
 			a1 = new vec(a1);
@@ -137,13 +181,21 @@ module.exports = {
 			return pt;
 		}
 		else {
-			return false;
+			return null;
 		}
 	},
+
+	/**
+	 * Tests if line `a1`->`a2` is intersecting `body`
+	 * @param {vec} a1 - Start of line
+	 * @param {vec} a2 - End of line
+	 * @param {RigidBody} body - Body to test
+	 * @returns {Boolean} If the line is intersecting the body
+	 */
 	lineIntersectsBody: function(a1, a2, body) { // tells you if line a1->a2 is intersecting with body, returns true/false
 		if (body.children.length > 0) {
 			for (let child of body.children) {
-				if (ter.Common.lineIntersectsBody(a1, a2, child)) {
+				if (Common.lineIntersectsBody(a1, a2, child)) {
 					return true;
 				}
 			}
@@ -181,34 +233,69 @@ module.exports = {
 		// SAT using ray axes and body axes
 		return SAT(rayVertices, body.vertices, rayAxes) && SAT(rayVertices, body.vertices, body.axes);
 	},
-	raycast: function(start, end, bodies) { // raycast that gets you all info: { boolean collision, int distance, vec point, Body body, int verticeIndex }
-		let lineIntersects = ter.Common.lineIntersects;
-		let minDist = Infinity;
-		let minPt = null;
-		let minBody = null;
-		let minVert = -1;
 
-		if (bodies === undefined) {
-			let grid = World.dynamicGrid;
-			let size = grid.gridSize;
-			let bounds = { min: start.min(end).div2(size).floor2(), max: start.max(end).div2(size).floor2() };
-			bodies = [];
-	
-			for (let x = bounds.min.x; x <= bounds.max.x; x++) {
-				for (let y = bounds.min.y; y <= bounds.max.y; y++) {
-					let n = grid.pair(new vec(x, y));
-					let node = grid.grid[n];
-	
-					if (node) {
-						for (let body of node) {
-							if (!bodies.includes(body) && body.children.length === 0) {
-								bodies.push(body);
-							}
+	/**
+	 * Finds the static bodies around the ray from `start` to `end`. Useful for getting bodies when calling `Common.raycast` or `Common.raycastSimple`
+	 * @param {vec} start - Start of ray
+	 * @param {vec} end - End of ray
+	 * @param {World} World - World to get bodies from
+	 */
+	getRayNearbyStaticBodies(start, end, World) {
+		let grid = World.staticGrid;
+		let size = grid.gridSize;
+		let bounds = { min: start.min(end).div2(size).floor2(), max: start.max(end).div2(size).floor2() };
+		bodies = new Set();
+
+		for (let x = bounds.min.x; x <= bounds.max.x; x++) {
+			for (let y = bounds.min.y; y <= bounds.max.y; y++) {
+				let n = grid.pair(new vec(x, y));
+				let node = grid.grid[n];
+
+				if (node) {
+					for (let body of node) {
+						if (!bodies.has(body)) {
+							bodies.add(body);
 						}
 					}
 				}
 			}
 		}
+	},
+	getRayNearbyDynamicBodies(start, end, World) {
+		let grid = World.dynamicGrid;
+		let size = grid.gridSize;
+		let bounds = { min: start.min(end).div2(size).floor2(), max: start.max(end).div2(size).floor2() };
+		bodies = new Set();
+
+		for (let x = bounds.min.x; x <= bounds.max.x; x++) {
+			for (let y = bounds.min.y; y <= bounds.max.y; y++) {
+				let n = grid.pair(new vec(x, y));
+				let node = grid.grid[n];
+
+				if (node) {
+					for (let body of node) {
+						if (!bodies.has(body)) {
+							bodies.add(body);
+						}
+					}
+				}
+			}
+		}
+	},
+
+	/**
+	 * 
+	 * @param {vec} start - Start of ray
+	 * @param {vec} end - End of ray
+	 * @param {Array} bodies - (Optional) Array of bodies to test
+	 * @returns {Object} { collision: Boolean, distance: Number, point: vec, body: RigidBody, verticeIndex: Number }
+	 */
+	raycast: function(start, end, bodies) {
+		let lineIntersects = Common.lineIntersects;
+		let minDist = Infinity;
+		let minPt = null;
+		let minBody = null;
+		let minVert = -1;
 
 		for (let i = 0; i < bodies.length; i++) {
 			let body = bodies[i];
@@ -241,29 +328,7 @@ module.exports = {
 		};
 	},
 	raycastSimple: function(start, end, bodies) { // raycast that only tells you if there is a collision (usually faster), returns true/false
-		let lineIntersectsBody = ter.Common.lineIntersectsBody;
-
-		if (bodies === undefined) {
-			let grid = ter.World.staticGrid;
-			let size = grid.gridSize;
-			let bounds = { min: start.min(end).div2(size).floor2(), max: start.max(end).div2(size).floor2() };
-			bodies = new Set();
-	
-			for (let x = bounds.min.x; x <= bounds.max.x; x++) {
-				for (let y = bounds.min.y; y <= bounds.max.y; y++) {
-					let n = grid.pair(new vec(x, y));
-					let node = grid.grid[n];
-	
-					if (node) {
-						for (let body of node) {
-							if (!bodies.has(body)) {
-								bodies.add(body);
-							}
-						}
-					}
-				}
-			}
-		}
+		let lineIntersectsBody = Common.lineIntersectsBody;
 
 		for (let body of bodies) {
 			let intersection = lineIntersectsBody(start, end, body);
@@ -281,10 +346,16 @@ module.exports = {
 		return (point.x >= bounds.min.x && point.x <= bounds.max.x && 
 				point.y >= bounds.min.y && point.y <= bounds.max.y);
 	},
+
+	/**
+	 * Deletes first instance of `value` from `array`
+	 * @param {Array} array Array item is deleted from
+	 * @param {*} value Value deleted from array
+	 */
 	arrayDelete(array, value) {
-		let index = this.indexOf(val);
+		let index = array.indexOf(value);
 		if (index !== -1) {
-			this.splice(index, 1);
+			array.splice(index, 1);
 		}
 	}
 }
