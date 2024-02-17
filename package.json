@@ -1,15 +1,14 @@
 {
-  "name": "webpack-test",
-  "version": "1.0.0",
+  "name": "ter",
+  "version": "2.1.3",
   "description": "",
-  "main": "index.js",
   "scripts": {
     "build": "webpack",
     "dev": "webpack serve"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "GreysonR",
+  "license": "UNLICENSED",
   "devDependencies": {
     "html-webpack-plugin": "^5.6.0",
     "webpack": "^5.90.2",
