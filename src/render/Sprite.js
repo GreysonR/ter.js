@@ -1,122 +1,191 @@
-"use strict";
+const Common = require("../core/Common.js");
+const Node = require("../node/Node.js");
+const vec = require("../geometry/vec.js");
 
-class Sprite {
+// todo: load all sprites when game is loaded
+// todo: properly delete sprites when bodies no longer used
+
+module.exports = class Sprite extends Node {
+	static imageDir = "./img/";
+	static defaultOptions = {
+		container: null, // {PIXI Container}
+		layer: 0, // {Number}
+		position: new vec(0, 0), // {vec}
+		angle: 0, // {Number} [0, 2PI]
+
+		visible: true,
+		alpha: 1,
+		src: "",
+		
+		scale: new vec(1, 1),
+		width:  undefined,
+		heigth: undefined,
+	}
 	static all = new Set();
-	static imgDir = "./img/";
-	constructor(body) {
-		this.body = body;
-		let { render } = body;
-		let { sprite } = render;
-		let { src, width, height, position, scale } = sprite;
-		this.src = Sprite.imgDir + src;
-		this.scale = scale;
-		this.width =  width;
-		this.height = height;
-		this.position = new vec(position ?? { x: 0, y: 0 });
-		this.container = body.render.container ?? ter.Render.app.stage;
 
+	loaded = false;
+
+	constructor(options) {
+		super();
+		let defaults = { ...Sprite.defaultOptions };
+		Common.merge(defaults, options, 1);
+		options = defaults;
+		Common.merge(this, options, 1);
+
+		this.src = Sprite.imageDir + this.src;
+		this.position = new vec(this.position ?? { x: 0, y: 0 });
 		this.add = this.add.bind(this);
-		this.loaded = false;
-		this.removed = false;
-		this.loadTexture();
+
+		this.create();
 	}
-	loadTexture() {
-		PIXI.Assets.load(this.src).then(this.createSprite.bind(this));
-	}
-	createSprite() {
-		// todo: make this async or load all sprites when game is loaded
-		let { width, height, position, src, body } = this;
-		let layer = body.render.layer;
+	create() {
+		let { width, height, layer, position, angle, src } = this;
 		let sprite = this.sprite = PIXI.Sprite.from(src);
-		sprite.anchor.set(0.5);
-		sprite.x = position.x;
-		sprite.y = position.y;
-		sprite.zIndex = layer;
-
-		if (!this.scale) {
-			width = width ?? sprite.width;
-			height = height ?? sprite.height;
-			this.scale = new vec(width / sprite.width, height / sprite.height);
-		}
-		
 		this.loaded = true;
-		this.trigger("load");
+		sprite.anchor.set(0.5);
 
-		if (this.removed) {
-			sprite.visible = false;
-			this.container.removeChild(this.sprite);
+		if (width != undefined && height != undefined) {
+			this.setSize(width, height);
 		}
-	}
-	update = function() {
-		if (!this.loaded) return;
-		let { position: spritePos, sprite, body, scale, width, height } = this;
-		let { position, angle, render, spriteScale } = body;
-		let { alpha } = render;
-		
-		let curPosition = position.add(spritePos.rotate(angle));
-		sprite.x = curPosition.x;
-		sprite.y = curPosition.y;
-		
-		width = width ?? sprite.width;
-		height = height ?? sprite.height;
-		let curScale = scale.mult(spriteScale ?? 1);
-		sprite.scale.x = curScale.x;
-		sprite.scale.y = curScale.y;
 
-		sprite.alpha = alpha;
-		sprite.rotation = angle;
+		// Update alpha
+		this.setAlpha(this.alpha);
+
+		// Update layer
+		this.setLayer(layer);
+
+		// Translate to position
+		let translateDelta = new vec(position);
+		this.position.set(new vec(0, 0));
+		this.translate(translateDelta);
+		
+		// Rotate to angle
+		this.angle = 0;
+		this.translateAngle(angle);
+
+		
+		this.trigger("load");
 	}
+	
+	/**
+	 * Sets the render layer (z index)
+	 * @param {Number} layer - The render layer (z index) for the render
+	 */
 	setLayer(layer) {
+		this.layer = layer;
+		if (!this.loaded) return;
 		this.sprite.zIndex = layer;
 	}
+
+	/**
+	 * Sets the sprite's scale
+	 * @param {vec} scale - The new scale
+	 */
+	setScale(scale) {
+		this.scale.set(scale);
+
+		if (!this.loaded) return;
+		let { sprite } = this;
+		sprite.scale.x = this.scale.x;
+		sprite.scale.y = this.scale.y;
+	}
+
+	/**
+	 * Sets the sprite's width and height
+	 * @param {Number} width - The new width
+	 * @param {Number} height - The new height
+	 */
+	setSize(width, height) {
+		if (width != undefined) this.width = width;
+		if (height != undefined) this.height = height;
+
+		if (!this.loaded) return;
+		let { sprite } = this;
+		sprite.width =  this.width;
+		sprite.height = this.height;
+	}
+
+	/**
+	 * Sets the sprite's alpha
+	 * @param {Number} alpha - The opacity, between 0 and 1 inclusive
+	 */
+	setAlpha(alpha) {
+		this.alpha = alpha;
+		if (!this.loaded) return;
+		this.sprite.alpha = alpha;
+	}
+
+	/**
+	 * Changes if the sprite is visible
+	 * @param {Boolean} visible - If the sprite is visible
+	 */
+	setVisible(visible) {
+		this.visible = visible;
+		if (!this.loaded) return;
+		this.sprite.visible = visible;
+	}
+
+	/**
+	 * Shifts the sprite's position by `delta`
+	 * @param {vec} delta - Amount sprite is shifted by
+	 */
+	translate(delta) {
+		super.translate(delta);
+
+		if (!this.loaded) return;
+		let { sprite } = this;
+		sprite.position.x += delta.x;
+		sprite.position.y += delta.y;
+	}
+	
+	/**
+	 * Rotates the sprite relative to current angle
+	 * @param {Number} angle - Amount to rotate sprite, in radians
+	 */
+	translateAngle(angle) {
+		super.translateAngle(angle);
+
+		if (!this.loaded) return;
+		let { sprite } = this;
+		sprite.rotation += angle;
+	}
+
+	/**
+	 * Adds the sprite to the world
+	 */
 	add() {
-		if (!this.sprite && !this.removed) {
+		if (!this.sprite && this.added) {
 			this.on("load", this.add);
 			return;
 		}
+
+		super.add();
 		Sprite.all.add(this);
-		this.sprite.visible = true;
 		this.container.addChild(this.sprite);
-		this.removed = false;
 	}
+	
+	/**
+	 * Removes the sprite from the world
+	 */
 	delete() {
+		super.delete();
 		Sprite.all.delete(this);
-		if (this.sprite) {
-			this.sprite.visible = false;
-			// this.sprite.destroy(); // maybe make this smarter in the future
-		}
 		this.container.removeChild(this.sprite);
-		this.removed = true;
 		
 		this.off("load", this.add);
 	}
+	
+	/**
+	 * Destroys the sprite. Use when you know the sprite will no longer be used
+	 */
 	destroy() {
 		this.sprite.destroy();
 	}
 
 
-	events = {
+	#events = {
 		load: [],
-	}
-	on(event, callback) {
-		if (event === "load" && this.loaded) {
-			callback();
-			return;
-		}
-
-		if (this.events[event]) {
-			this.events[event].push(callback);
-		}
-	}
-	off(event, callback) {
-		event = this.events[event];
-		if (event.includes(callback)) {
-			event.splice(event.indexOf(callback), 1);
-		}
-	}
-	trigger(event) {
-		this.events[event].forEach(callback => {
-			callback();
-		});
+		add: [],
+		delete: [],
 	}
 }

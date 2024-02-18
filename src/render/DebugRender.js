@@ -85,9 +85,7 @@ module.exports = class DebugRender {
 		ctx.beginPath();
 		let allBodies = Game.World.bodies;
 		for (let body of allBodies) {
-			if (body.children.length === 0) {
-				renderVertices(body.vertices);
-			}
+			renderVertices(body.vertices);
 		}
 		ctx.lineWidth = 2 / scale;
 		ctx.strokeStyle = "#FF832A";
@@ -127,7 +125,7 @@ module.exports = class DebugRender {
 		let allBodies = Game.World.bodies;
 		ctx.beginPath();
 		for (let body of allBodies) {
-			if (body.children.length === 0 || true) {
+			if (body.children.size === 0 || true) {
 				ctx.moveTo(body.position.x, body.position.y);
 				ctx.arc(body.position.x, body.position.y, 2 / camera.scale, 0, Math.PI*2);
 			}
@@ -145,7 +143,7 @@ module.exports = class DebugRender {
 		ctx.lineWidth = 1 / camera.scale;
 
 		for (let body of allBodies) {
-			if (!body.children || body.children.length === 0) {
+			if (!body.children || body.children.size === 0) {
 				let bounds = body.bounds;
 				let width  = bounds.max.x - bounds.min.x;
 				let height = bounds.max.y - bounds.min.y;

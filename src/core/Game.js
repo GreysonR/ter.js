@@ -5,6 +5,7 @@ const Engine = require("../physics/Engine.js");
 const Common = require("../core/Common.js");
 const PerformanceRender = require("../render/PerformanceRender.js");
 const Ticker = require("../core/Ticker.js");
+const Bodies = require("../bodies/Bodies.js");
 
 module.exports = class Game {
 	static defaultOptions = {
@@ -23,6 +24,7 @@ module.exports = class Game {
 		this.Engine = new Engine(this.World, options.Engine);
 		this.Render = new Render(options.Render);
 		this.Ticker = new Ticker(this, options.Ticker);
+		this.Bodies = Bodies.createBodyFactory(this.Engine);
 	}
 	createDebugRender() {
 		this.DebugRender = new DebugRender(this);

@@ -8,6 +8,8 @@
 
 /*! ../core/Ticker.js */
 
+/*! ../geometry/Bezier.js */
+
 /*! ../geometry/Grid.js */
 
 /*! ../geometry/vec.js */
@@ -30,37 +32,49 @@
 
 /*! ../render/PerformanceRender.js */
 
+/*! ../render/PolygonRender */
+
+/*! ../render/PolygonRender.js */
+
 /*! ../render/Render.js */
 
 /*! ../render/RenderMethods */
 
-/*! ./bodies/Bodies.js */
+/*! ../render/Sprite */
 
-/*! ./core/Common.js */
+/*! ../render/Sprite.js */
 
-/*! ./core/Game.js */
+/*! ./RigidBody.js */
 
-/*! ./core/GameFunctions.js */
+/*! ./bodies/Bodies */
 
-/*! ./core/Performance.js */
+/*! ./core/Common */
 
-/*! ./core/Ticker.js */
+/*! ./core/Game */
 
-/*! ./geometry/Bezier.js */
+/*! ./core/GameFunctions */
 
-/*! ./geometry/Grid.js */
+/*! ./core/Performance */
 
-/*! ./geometry/vec.js */
+/*! ./core/Ticker */
 
-/*! ./lib/poly-decomp.js */
+/*! ./geometry/Bezier */
 
-/*! ./lib/simplexNoise.js */
+/*! ./geometry/Grid */
 
-/*! ./node/Node.js */
+/*! ./geometry/vec */
 
-/*! ./node/World.js */
+/*! ./lib/poly-decomp */
 
-/*! ./physics/Engine.js */
+/*! ./lib/simplexNoise */
+
+/*! ./node/Node */
+
+/*! ./node/World */
+
+/*! ./physics/Engine */
+
+/*! ./render/RenderTypes */
 
 /*!********************!*\
   !*** ./src/ter.js ***!
@@ -106,6 +120,10 @@
   !*** ./src/render/Render.js ***!
   \******************************/
 
+/*!******************************!*\
+  !*** ./src/render/Sprite.js ***!
+  \******************************/
+
 /*!*******************************!*\
   !*** ./src/physics/Engine.js ***!
   \*******************************/
@@ -141,6 +159,14 @@
 /*!***********************************!*\
   !*** ./src/render/DebugRender.js ***!
   \***********************************/
+
+/*!***********************************!*\
+  !*** ./src/render/RenderTypes.js ***!
+  \***********************************/
+
+/*!*************************************!*\
+  !*** ./src/render/PolygonRender.js ***!
+  \*************************************/
 
 /*!*************************************!*\
   !*** ./src/render/RenderMethods.js ***!

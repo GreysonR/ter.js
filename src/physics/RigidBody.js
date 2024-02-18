@@ -2,6 +2,9 @@ const vec = require("../geometry/vec.js");
 const Node = require("../node/Node.js");
 const Common = require("../core/Common.js");
 const decomp = require("../lib/poly-decomp.js");
+const PolygonRender = require("../render/PolygonRender.js");
+const Sprite = require("../render/Sprite.js");
+const Bezier = require("../geometry/Bezier.js");
 
 module.exports = class RigidBody extends Node {
 	static defaultOptions = { // not used, but consistent with other classes for documentation
@@ -74,22 +77,32 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
+	 * @constructor
 	 * Creates a new RigidBody
 	 * @param {Array} vertices Array of `vec` representing the body's vertices
 	 * @param {vec} position - The position of the body
 	 * @param {Engine} Engine - The engine the body should be simulated in
 	 * @param {Object} options - RigidBody options, see documentation for options
 	 */
-	constructor(vertices, position, options = {}, Engine) {
+	constructor(Engine, vertices, position, options = {}) {
 		super();
 		if (!this.Engine) this.Engine = Engine;
 		
-		// Shallow clone World
+		// Shallow copy World
 		this.World = this.Engine.World;
 		delete options.World;
 
+		// Shallow copy render
+		if (options.render) {
+			this.addChild(options.render);
+			delete options.render;
+		}
+
+		// Merge collision filters
+		if (typeof options.collisionFilter === "object") Common.merge(this.collisionFilter, options.collisionFilter, 1);
+
 		// Merge options with body
-		Common.merge(this, options);
+		Common.merge(this, options, 1);
 		
 		// Parse collision filter properties
 		for (let filterType in ["layer", "mask"]) {
@@ -103,47 +116,12 @@ module.exports = class RigidBody extends Node {
 		
 		// round vertices
 		if (options.round && options.round > 0) {
-			this.vertices = Body.roundVertices(this.vertices, this.round, this.roundQuality);
+			this.vertices = RigidBody.roundVertices(this.vertices, this.round, this.roundQuality);
 		}
 
 		// Reset vertices so convex check works properly
 		this.#removeDuplicateVertices();
 		this._resetVertices(false);
-
-		// Dissect into convex polygons if concave
-		if (!this.#isConvex() && (!Array.isArray(options.children) || options.children.length === 0)) {
-			options.children = [];
-
-			let decompVerts = this.vertices.map(v => [v.x, v.y]);
-			decomp.makeCCW(decompVerts);
-			let concaveVertices = decomp.quickDecomp(decompVerts);
-			let parentCenter = Common.getCenterOfMass(this.vertices);
-			for (let i = 0; i < concaveVertices.length; i++) {
-				let vertices = concaveVertices[i].map(v => new vec(v[0], v[1]));
-				let center = Common.getCenterOfMass(vertices);
-				let body = new FromVertices(vertices, position.add(center).sub(parentCenter), {
-					isSensor: this.isSensor,
-					isStatic: this.isStatic,
-					hasCollisions: this.hasCollisions,
-				});
-				body._resetVertices(true);
-				body.#makeConvex();
-				
-				options.children.push(body);
-			}
-		}
-
-		// Shallow copy children in options into body
-		let children = options.children;
-		this.children = [];
-		if (Array.isArray(children)) {
-			for (let i = 0; i < children.length; i++) {
-				let child = children[i];
-				child.delete();
-				child.parent = this;
-				this.children.push(child);
-			}
-		}
 
 		// Fully reset vertices
 		this._resetVertices();
@@ -162,7 +140,7 @@ module.exports = class RigidBody extends Node {
 	//
 	/**
 	 * Adds the body to its world
-	 * @returns {void}
+	 * @returns {RigidBody} `this`
 	 */
 	add() {
 		let World = this.Engine.World;
@@ -170,11 +148,12 @@ module.exports = class RigidBody extends Node {
 			super.add();
 			World.addChild(this);
 		}
+		return this;
 	}
 
 	/**
 	 * Removes the body from its world
-	 * @returns {void}
+	 * @returns {RigidBody} `this`
 	 */
 	delete() {
 		let World = this.Engine.World;
@@ -186,6 +165,46 @@ module.exports = class RigidBody extends Node {
 				this.Engine.cleansePair(this.pairs[i]);
 			}
 		}
+		return this;
+	}
+
+	/**
+	 * Adds a polygon render to body
+	 * @param {PIXI.Container} container - Container polygon render is added to
+	 * @param {Object} options - Options for polygon render, see documentation for possible options
+	 * @returns {RigidBody} `this`
+	 */
+	addPolygonRender(container, options) {
+		let render = new PolygonRender({
+			container: container,
+			position: new vec(this.position),
+			vertices: this.vertices,
+			
+			...options
+		});
+		if (this.added) render.add();
+		this.addChild(render);
+		
+		return this;
+	}
+
+	/**
+	 * Adds a sprite to body
+	 * @param {PIXI.Container} container - Container polygon render is added to
+	 * @param {Object} options - Sprite options, see documentation for possible options
+	 * @returns {RigidBody} `this`
+	 */
+	addSprite(container, options) {
+		let render = new Sprite({
+			container: container,
+			position: new vec(this.position),
+			
+			...options
+		});
+		if (this.added) render.add();
+		this.addChild(render);
+		
+		return this;
 	}
 	
 	/**
@@ -269,7 +288,7 @@ module.exports = class RigidBody extends Node {
 	 * @param {vec} position - The position the body should be
 	 * @param {Boolean} _ignoreChildren - If the body's children should be affected
 	 * @example
-	 * body.setPosition(new vec(100, 100)); // Sets the body's position to (100, 100) 
+	 * body.setPosition(new vec(100, 100)); // Sets body's position to (100, 100) 
 	 * @returns {void}
 	 */
 	setPosition(position, _ignoreChildren = false) {
@@ -303,8 +322,7 @@ module.exports = class RigidBody extends Node {
 
 		if (!ignoreChildren) {
 			let children = this.children;
-			for (let i = 0; i < children.length; i++) {
-				let child = children[i];
+			for (let child of children) {
 				child.translate(delta, affectPosition);
 			}
 		}
@@ -314,14 +332,13 @@ module.exports = class RigidBody extends Node {
 	 * Rotates the body to `angle` - Absolute
 	 * @param {Number} angle - Angle body should be in radians
 	 * @example
-	 * body.setAngle(Math.PI); // Sets the body's angle to Pi radians, or 180 degrees 
+	 * body.setAngle(Math.PI); // Sets body's angle to Pi radians, or 180 degrees 
 	 * @returns {void}
 	 */
 	setAngle(angle) {
 		if (isNaN(angle)) return;
 		if (angle !== this.angle) {
 			let delta = Common.angleDiff(angle, this.angle);
-			
 			this.translateAngle(delta);
 		}
 	}
@@ -359,10 +376,8 @@ module.exports = class RigidBody extends Node {
 		this.#updateBounds();
 		this.#updateAxes();
 
-		let children = this.children;
-		for (let i = 0; i < children.length; i++) {
-			let child = children[i];
-			child.translateAngle(angle, silent);
+		for (let child of this.children) {
+			child.translateAngle?.(angle, silent);
 		}
 	}
 
@@ -410,7 +425,7 @@ module.exports = class RigidBody extends Node {
 	 * Applies a rotational force (torque) to the body, ignoring mass. The body's angular velocity changes by force * delta
 	 * @param {Number} force - The amount of torque to be applied, in radians / sec^2
 	 * @param {Number} delta - The amount of time the force should be applied in seconds, set to 1 if only applying instantaneous force
-	 * @returns 
+	 * @returns {void}
 	 */
 	applyTorque(force, delta = Engine.delta) { // set delta to 1 if you want to apply a force for only 1 frame
 		if (isNaN(force)) return;
@@ -434,6 +449,7 @@ module.exports = class RigidBody extends Node {
 	
 	force = new vec(0, 0);
 	impulse = new vec(0, 0);
+	center = new vec(0, 0);
 	torque = 0;
 	
 	axes = [];
@@ -494,34 +510,33 @@ module.exports = class RigidBody extends Node {
 
 		if (this.isStatic) return;
 
-		if (!this.parent) {
-			const timescale = delta;
-			let { velocity: lastVelocity, angularVelocity: lastAngularVelocity } = this._last;
+		const timescale = delta;
+		let { velocity: lastVelocity, angularVelocity: lastAngularVelocity } = this._last;
 
-			let frictionAir = (1 - this.frictionAir) ** timescale;
-			let frictionAngular = (1 - this.frictionAngular) ** timescale;
+		let frictionAir = (1 - this.frictionAir) ** timescale;
+		let frictionAngular = (1 - this.frictionAngular) ** timescale;
 
-			if (isNaN(timescale) || this.velocity.isNaN() || isNaN(frictionAir + frictionAngular)) {
-				return;
-			}
-			
-			this.velocity.mult2(frictionAir);
-			if (this.velocity.x !== 0 || this.velocity.y !== 0){
-				this.translate(this.velocity.add(lastVelocity).mult(timescale / 2)); // trapezoidal rule to take into account acceleration
-				// body.translate(body.velocity.mult(timescale)); // potentially more stable, but less accurate
-			}
-			this._last.velocity.set(this.velocity);
-
-			this.angularVelocity *= frictionAngular;
-			if (this.angularVelocity){
-				this.translateAngle((this.angularVelocity + lastAngularVelocity) * timescale / 2); // trapezoidal rule to take into account acceleration
-				// body.translateAngle((body.angularVelocity) * timescale); // potentially more stable, but less accurate
-			}
-			this._last.angularVelocity = this.angularVelocity;
-			
-			this.#updateBounds();
+		if (isNaN(timescale) || this.velocity.isNaN() || isNaN(frictionAir + frictionAngular)) {
+			return;
 		}
-		if (this.children.length === 0 && this.hasCollisions) {
+		
+		this.velocity.mult2(frictionAir);
+		if (this.velocity.x !== 0 || this.velocity.y !== 0){
+			this.translate(this.velocity.add(lastVelocity).mult(timescale / 2)); // trapezoidal rule to take into account acceleration
+			// body.translate(body.velocity.mult(timescale)); // potentially more stable, but less accurate
+		}
+		this._last.velocity.set(this.velocity);
+
+		this.angularVelocity *= frictionAngular;
+		if (this.angularVelocity){
+			this.translateAngle((this.angularVelocity + lastAngularVelocity) * timescale / 2); // trapezoidal rule to take into account acceleration
+			// body.translateAngle((body.angularVelocity) * timescale); // potentially more stable, but less accurate
+		}
+		this._last.angularVelocity = this.angularVelocity;
+		
+		this.#updateBounds();
+
+		if (this.hasCollisions) {
 			this.Engine.World.dynamicGrid.updateBody(this);
 		}
 	}
@@ -545,32 +560,19 @@ module.exports = class RigidBody extends Node {
 	 * @returns {Number} The body's inertia
 	 */
 	#getInertia() {
-		let children = this.children;
-		if (children.length === 0) {
-			const { vertices, mass } = this;
-			
-			let numerator = 0;
-			let denominator = 0;
-	
-			for (var i = 0; i < vertices.length; i++) {
-				let j = (i + 1) % vertices.length;
-				let cross = Math.abs(vertices[j].cross(vertices[i]));
-				numerator += cross * (vertices[j].dot(vertices[j]) + vertices[j].dot(vertices[i]) + vertices[i].dot(vertices[i]));
-				denominator += cross;
-			}
-	
-			return (mass / 6) * (numerator / denominator);
-		}
-		else {
-			let inertia = 0;
+		const { vertices, mass } = this;
+		
+		let numerator = 0;
+		let denominator = 0;
 
-			for (let i = 0; i < children.length; i++) {
-				let child = children[i];
-				inertia += child.inertia;
-			}
-
-			return inertia;
+		for (var i = 0; i < vertices.length; i++) {
+			let j = (i + 1) % vertices.length;
+			let cross = Math.abs(vertices[j].cross(vertices[i]));
+			numerator += cross * (vertices[j].dot(vertices[j]) + vertices[j].dot(vertices[i]) + vertices[i].dot(vertices[i]));
+			denominator += cross;
 		}
+
+		return (mass / 6) * (numerator / denominator);
 	}
 	/**
 	 * Sets the inertia of the body to what's calculated in `#getInertia()` if the body is not static
@@ -653,7 +655,7 @@ module.exports = class RigidBody extends Node {
 			let verts = vertices.map(v => [v.x, v.y]);
 			decomp.removeCollinearPoints(verts, 0.4);
 			let concaveVertices = decomp.quickDecomp(verts);
-			let parentCenter = Common.getCenterOfMass(this.vertices);
+			let parentCenter = this.#getCenterOfMass();
 
 			for (let i = 0; i < concaveVertices.length; i++) {
 				let vertices = concaveVertices[i].map(v => new vec(v[0], v[1]));
@@ -668,6 +670,12 @@ module.exports = class RigidBody extends Node {
 				this.add();
 			}
 		}
+	}
+
+	#getCenterOfMass() {
+		let center = Common.getCenterOfMass(this.vertices);
+		this.center.set(center);
+		return center;
 	}
 
 	/**
@@ -694,7 +702,7 @@ module.exports = class RigidBody extends Node {
 	 * Shifts vertices so their center is at the body's position 
 	 */
 	#recenterVertices() {
-		let center = Common.getCenterOfMass(this.vertices);
+		let center = this.#getCenterOfMass();
 		let position = this.position;
 		center.sub2(position);
 		

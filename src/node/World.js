@@ -60,7 +60,7 @@ module.exports = class World extends Node {
 				}
 				continue;
 			}
-			if (!bodyA.hasCollisions || bodyA.children.length > 0)
+			if (!bodyA.hasCollisions)
 				continue;
 			
 			for (let j = i + 1; j < bodies.length; j++) {
@@ -117,7 +117,7 @@ module.exports = class World extends Node {
 			if (curStaticBucket) {
 				for (let j = 0; j < curDynamicBucket.length; j++) {
 					let bodyA = curDynamicBucket[j];
-					if (!bodyA.hasCollisions || bodyA.children.length > 0)
+					if (!bodyA.hasCollisions)
 						continue;
 					for (let k = 0; k < curStaticBucket.length; k++) {
 						let bodyB = curStaticBucket[k];

@@ -13,6 +13,7 @@ module.exports = class Node {
 	}
 
 	position = new vec(0, 0);
+	angle = 0;
 	children = new Set();
 	added = false;
 
@@ -25,6 +26,8 @@ module.exports = class Node {
 
 	/**
 	 * Sets this node's position to `position`
+	 * @example
+	 * node.setPosition(new vec(100, 100)); // Sets node's position to (100, 100) 
 	 * @param {vec} position - Position the node should be set to
 	 */
 	setPosition(position) {
@@ -41,6 +44,37 @@ module.exports = class Node {
 			child.translate(delta);
 		}
 	}
+	
+	/**
+	 * Sets the node's angle to `angle`
+	 * @param {Number} angle - Angle body should be in radians
+	 * @example
+	 * node.setAngle(Math.PI); // Sets node's angle to Pi radians, or 180 degrees 
+	 * @returns {void}
+	 */
+	setAngle(angle) {
+		if (isNaN(angle)) return;
+		if (angle !== this.angle) {
+			let delta = Common.angleDiff(angle, this.angle);
+			this.translateAngle(delta);
+		}
+	}
+	
+	/**
+	 * Rotates the body by `angle`- Relative
+	 * @param {Number} angle - The amount the body should be rotated, in radians
+	 * @param {Boolean} silent - If the body's angle should be affected
+	 * @returns {void}
+	 */
+	translateAngle(angle) {
+		if (isNaN(angle)) return;
+
+		this.angle += angle;
+
+		for (let child of this.children) {
+			child.translateAngle?.(angle);
+		}
+	}
 
 	/**
 	 * Adds this node and its children
@@ -51,9 +85,8 @@ module.exports = class Node {
 			this.trigger("add");
 			this.added = true;
 
-			let children = this.children;
-			for (let i in children) {
-				children[i].add();
+			for (let child of this.children) {
+				child.add();
 			}
 		}
 	}
@@ -66,9 +99,8 @@ module.exports = class Node {
 			this.trigger("delete");
 			this.added = false;
 	
-			let children = this.children;
-			for (let i in children) {
-				children[i].delete();
+			for (let child of this.children) {
+				child.delete();
 			}
 		}
 	}

@@ -40,8 +40,6 @@ module.exports = class Engine {
 		}
 		this.World = World;
 		this.Performance = new Performance();
-
-		this.Bodies = Bodies.createBodyFactory(this);
 	}
 
 	/**

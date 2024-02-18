@@ -9,29 +9,35 @@ module.exports = class Render {
 		ySort: false,
 		resizeTo: window,
 		antialias: true,
+		getBoundSize: function(width, height) {
+			return Math.sqrt(width ** 2 + height ** 2) || 1;
+		}
 	}
 	app = null;
 	camera = null;
 	pixelRatio = 1;
 	nodes = new Set();
 	constructor(options = {}) {
-		let defaults = { ...Render.defaultOptions };
-		let resizeTo = options.resizeTo ?? defaults.resizeTo;
-		delete options.resizeTo;
-		Common.merge(defaults, options, 1);
-		options = defaults;
-
-		// Create camera
-		this.camera = new Camera();
-
-		let { background, ySort, pixelRatio, antialias } = options;
-
 		// Test if PIXI is loaded
 		try { PIXI.settings; }
 		catch(err) {
 			throw new Error("PIXI is not defined\nHelp: try loading pixi.js before creating a ter app");
 		}
-		
+
+		// Load options
+		let defaults = { ...Render.defaultOptions };
+		let resizeTo = options.resizeTo ?? defaults.resizeTo;
+		delete options.resizeTo;
+		Common.merge(defaults, options, 1);
+		options = defaults;
+		let { background, ySort, pixelRatio, antialias, getBoundSize } = options;
+
+		// Create camera
+		this.camera = new Camera();
+
+		// Setup bound size
+		this.getBoundSize = getBoundSize;
+
 		// Set basic settings
 		let scale = PIXI.settings.RESOLUTION = PIXI.settings.FILTER_RESOLUTION = this.pixelRatio = pixelRatio;
 		PIXI.Container.defaultSortableChildren = true
@@ -44,15 +50,16 @@ module.exports = class Render {
 			antialias: antialias ?? true,
 		});
 		document.body.appendChild(app.view);
-		app.ticker.add(this.update.bind(this)); // Start rendedr
-		app.stage.filters = []; // Makes working with filters easier
-		app.stage.sortableChildren = true; // Important to make sure render layers work
+		app.ticker.add(this.update.bind(this)); // Start render
+		app.stage.filters = []; // Makes working with pixi filters easier
+		app.stage.sortableChildren = true; // Important so render layers work
 
 		// Set up pixel ratio scaling
 		let view = app.view;
 		view.style.transformOrigin = "top left";
 		view.style.transform = `scale(${1 / scale}, ${1 / scale})`;
 
+		// Make sure canvas stays correct size
 		this.setSize(app.screen.width, app.screen.height);
 		app.renderer.on("resize", this.setSize.bind(this));
 
@@ -65,7 +72,7 @@ module.exports = class Render {
 	}
 	setSize(width, height) {
 		let pixelRatio = this.pixelRatio;
-		this.camera.boundSize = (Math.sqrt(width ** 2 + height ** 2) || 1) * pixelRatio;
+		this.camera.boundSize = this.getBoundSize(width, height) * pixelRatio;
 	}
 	setPixelRatio(pixelRatio) {
 		this.pixelRatio = pixelRatio;

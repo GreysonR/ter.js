@@ -21,7 +21,10 @@
 <script>
 	const game = new ter.Game({
 		Render: {
-			background: "#000000",
+			background: "#002A32",
+			getBoundSize: function(width, height) {
+				return Math.min(width, height);
+			}
 		},
 		World: {
 			resizeTo: window,
@@ -30,17 +33,30 @@
 	game.createDebugRender();
 	console.log(game);
 
-	const { Engine, Render } = game;
+	const { Engine, Render, Bodies } = game;
 	const { camera } = Render;
-	const { Bodies, World } = Engine;
-	var bodyA = Bodies.rectangle(100, 100, new vec(0, -300));
+	const { World } = Engine;
+	var bodyA = Bodies.Rectangle(100, 100, new vec(0, -300))
+		.addPolygonRender(Render.app.stage, {
+			border: "#4B8F8C",
+			borderWidth: 4,
+			borderOffset: 0.5,
+			round: 10,
+		}).add();
 	bodyA.add();
-	var bodyB = Bodies.rectangle(100, 100, new vec(70, -100));
-	bodyB.add();
 
-	var floor = Bodies.rectangle(1000, 100, new vec(0, 400), {
+	var bodyB = Bodies.Rectangle(100, 100, new vec(60, -160), {
+		round: 10
+	}).addSprite(Render.app.stage, {
+		src: "burstShot.png"
+	}).add();
+	bodyB.applyTorque(5.5, 1);
+
+	var floor = Bodies.Rectangle(1000, 100, new vec(0, 400), {
 		isStatic: true,
-	});
+	}).addPolygonRender(Render.app.stage, {
+		background: "#E0F2E9",
+	}).add();
 	floor.add();
 
 	game.DebugRender.enabled.vertices = true;
