@@ -1,7 +1,6 @@
 const vec = require("../geometry/vec.js");
 const Common = require("../core/Common.js");
 const Performance = require("../core/Performance.js");
-const Bodies = require("../bodies/Bodies.js");
 const RigidBody = require("./RigidBody.js");
 
 module.exports = class Engine {
@@ -253,10 +252,16 @@ module.exports = class Engine {
 			pair.start = World.pairs[pairId].start;
 			bodyA.trigger("collisionActive", pair);
 			bodyB.trigger("collisionActive", pair);
+
+			bodyA.trigger("bodyInside", bodyB);
+			bodyB.trigger("bodyInside", bodyA);
 		}
 		else { // No collision between these bodies last frame, so collision just started
 			bodyA.trigger("collisionStart", pair);
 			bodyB.trigger("collisionStart", pair);
+
+			bodyA.trigger("bodyEnter", bodyB);
+			bodyB.trigger("bodyEnter", bodyA);
 			
 			bodyA.pairs.push(pairId);
 			bodyB.pairs.push(pairId);
@@ -283,6 +288,9 @@ module.exports = class Engine {
 			// Trigger collisionEnd event
 			bodyA.trigger("collisionEnd", pair);
 			bodyB.trigger("collisionEnd", pair);
+
+			bodyA.trigger("bodyExit", bodyB);
+			bodyB.trigger("bodyExit", bodyA);
 
 			return true;
 		}

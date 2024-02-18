@@ -472,6 +472,11 @@ module.exports = class RigidBody extends Node {
 		collisionStart: [],
 		collisionActive: [],
 		collisionEnd: [],
+
+		bodyEnter: [],
+		bodyInside: [],
+		bodyExit: [],
+		
 		beforeUpdate: [], // use to apply forces to current body
 		duringUpdate: [], // use to clear forces from current body
 		delete: [],
