@@ -5,6 +5,7 @@ const decomp = require("../lib/poly-decomp.js");
 const PolygonRender = require("../render/PolygonRender.js");
 const Sprite = require("../render/Sprite.js");
 const Bezier = require("../geometry/Bezier.js");
+const Bounds = require("../geometry/Bounds.js");
 
 module.exports = class RigidBody extends Node {
 	static defaultOptions = { // not used, but consistent with other classes for documentation
@@ -118,6 +119,9 @@ module.exports = class RigidBody extends Node {
 		if (options.round && options.round > 0) {
 			this.vertices = RigidBody.roundVertices(this.vertices, this.round, this.roundQuality);
 		}
+
+		// Create bounds
+		this.bounds = new Bounds(this.vertices);
 
 		// Reset vertices so convex check works properly
 		this.#removeDuplicateVertices();
@@ -313,7 +317,7 @@ module.exports = class RigidBody extends Node {
 		if (affectPosition) {
 			this.position.add2(delta);
 		}
-		this.#updateBounds();
+		this.bounds.update(this.vertices);
 
 		let tree = this.Engine.World.dynamicGrid;
 		if (this._Grids && this._Grids[tree.id]) {
@@ -373,7 +377,7 @@ module.exports = class RigidBody extends Node {
 			this.angle += angle;
 		}
 
-		this.#updateBounds();
+		this.bounds.update(this.vertices);
 		this.#updateAxes();
 
 		for (let child of this.children) {
@@ -463,10 +467,7 @@ module.exports = class RigidBody extends Node {
 	_lastSeparations = {};
 	_slop = 0.001;
 
-	bounds = {
-		min: new vec({ x: 0, y: 0 }),
-		max: new vec({ x: 1, y: 1 })
-	}
+	bounds = null;
 
 	#events = {
 		collisionStart: [],
@@ -539,7 +540,7 @@ module.exports = class RigidBody extends Node {
 		}
 		this._last.angularVelocity = this.angularVelocity;
 		
-		this.#updateBounds();
+		this.bounds.update(this.vertices);
 
 		if (this.hasCollisions) {
 			this.Engine.World.dynamicGrid.updateBody(this);
@@ -717,29 +718,6 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * Finds the minimum bounds that enclose the body
-	 */
-	#updateBounds() {
-		const vertices = this.vertices;
-		let minX = Infinity, minY = Infinity;
-		let maxX = -Infinity, maxY = -Infinity;
-
-		for (let i = 0; i < vertices.length; i++) {
-			let v = vertices[i];
-
-			if (v.x < minX) minX = v.x;
-			if (v.x > maxX) maxX = v.x;
-			if (v.y < minY) minY = v.y;
-			if (v.y > maxY) maxY = v.y;
-		}
-
-		this.bounds.min.x = minX;
-		this.bounds.min.y = minY;
-		this.bounds.max.x = maxX;
-		this.bounds.max.y = maxY;
-	}
-
-	/**
 	 * Ensures vertices are counterclockwise winding and centered, and updates the area, bounding box, and the axes
 	 * @param {Number} forceCCW - If vertices should be forced to be counterclockwise winding by sorting their angles from the center
 	 */
@@ -747,7 +725,7 @@ module.exports = class RigidBody extends Node {
 		this.#makeCCW(forceCCW);
 		this.area = this.#getArea();
 		this.#recenterVertices();
-		this.#updateBounds();
+		this.bounds.update(this.vertices);
 		this.#updateAxes();
 	}
 

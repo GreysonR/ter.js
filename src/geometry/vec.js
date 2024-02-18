@@ -149,7 +149,12 @@ module.exports = class vec {
 		return this.x * vec2.x + this.y * vec2.y;
 	}
 	cross(vec2) {
-		return this.x * vec2.y - this.y * vec2.x;
+		if (typeof vec2 === "number") {
+			return new vec(-vec2 * this.y, vec2 * this.x);
+		}
+		else {
+			return this.x * vec2.y - this.y * vec2.x;
+		}
 	}
 	avg(vec2, weight = 0.5) {
 		let weight2 = 1 - weight;

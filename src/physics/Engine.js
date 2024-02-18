@@ -210,7 +210,7 @@ module.exports = class Engine {
 					numContacts++;
 				}
 
-				if (support[1] < minDepth && !bodyB.isStatic) {
+				if (support[1] < minDepth) {
 					minDepth = support[1];
 					normal = curNormal.mult(-1);
 					normalPoint = curVertice.avg(nextVertice);
@@ -352,28 +352,27 @@ module.exports = class Engine {
 				const normalVelocity = relativeVelocity.abs().sub(slop).mult(relativeVelocity.sign()).dot(normal);
 				const tangentVelocity = relativeVelocity.dot(tangent);
 
+				if (normalVelocity > 0) continue;
 				let oAcN = offsetA.cross(normal);
 				let oBcN = offsetB.cross(normal);
-				let share = 1 / (contacts.length * (bodyA._inverseMass + bodyB._inverseMass + bodyA._inverseInertia * oAcN * oAcN  + bodyB._inverseInertia * oBcN * oBcN));
-
-				if (normalVelocity > 0) continue;
+				let share = 1 / (contacts.length * (bodyA._inverseMass + bodyB._inverseMass + bodyA._inverseInertia * oAcN * oAcN + bodyB._inverseInertia * oBcN * oBcN));
 				
 				const normalImpulse = restitution * normalVelocity * share;
 				const tangentImpulse = restitution * tangentVelocity * share;
 
 				const curImpulse = normal.mult(normalImpulse).add2(tangent.mult(tangentImpulse * friction));
-				impulse.set(curImpulse);
-				angImpulseA = offsetA.cross(curImpulse) * bodyA._inverseInertia;
-				angImpulseB = offsetB.cross(curImpulse) * bodyB._inverseInertia;
-
-				if (!bodyA.isStatic) {
-					bodyA.velocity.sub2(impulse.mult(1 / bodyA.mass));
-					bodyA.angularVelocity -= angImpulseA / bodyA.mass;
-				}
-				if (!bodyB.isStatic) {
-					bodyB.velocity.add2(impulse.mult(1 / bodyB.mass));
-					bodyB.angularVelocity += angImpulseB / bodyB.mass;
-				}
+				impulse.add2(curImpulse);
+				angImpulseA += offsetA.cross(curImpulse) * bodyA._inverseInertia;
+				angImpulseB += offsetB.cross(curImpulse) * bodyB._inverseInertia;
+			}
+			
+			if (!bodyA.isStatic) {
+				bodyA.velocity.sub2(impulse.mult(1 / bodyA.mass));
+				bodyA.angularVelocity -= angImpulseA / bodyA.mass;
+			}
+			if (!bodyB.isStatic) {
+				bodyB.velocity.add2(impulse.mult(1 / bodyB.mass));
+				bodyB.angularVelocity += angImpulseB / bodyB.mass;
 			}
 		}
 	}

@@ -29,6 +29,11 @@
 		World: {
 			resizeTo: window,
 		},
+		Engine: {
+			positionIterations: 1,
+			velocityIterations: 1,
+			substeps: 1,
+		},
 	});
 	game.createDebugRender();
 	console.log(game);
@@ -36,30 +41,50 @@
 	const { Engine, Render, Bodies } = game;
 	const { camera } = Render;
 	const { World } = Engine;
-	var bodyA = Bodies.Rectangle(100, 100, new vec(0, -300))
-		.addPolygonRender(Render.app.stage, {
-			border: "#4B8F8C",
-			borderWidth: 4,
-			borderOffset: 0.5,
-			round: 10,
-		}).add();
-	bodyA.add();
-
-	var bodyB = Bodies.Rectangle(100, 100, new vec(60, -160), {
-		round: 10
-	}).addSprite(Render.app.stage, {
-		src: "burstShot.png"
-	}).add();
-	bodyB.applyTorque(5.5, 1);
 
 	var floor = Bodies.Rectangle(1000, 100, new vec(0, 400), {
 		isStatic: true,
 	}).addPolygonRender(Render.app.stage, {
-		background: "#E0F2E9",
+		// background: "#E0F2E9",
+		border: "#E0F2E9",
+		borderWidth: 2,
 	}).add();
-	floor.add();
 
-	game.DebugRender.enabled.vertices = true;
+
+	function stack() {
+		for (let i = 1; --i >= 0;) {
+			Bodies.Rectangle(300, 300, new vec(300, 0 - i * 50))
+				.addPolygonRender(Render.app.stage, {
+					// background: "#4B8F8C"
+					border: "#4B8F8C",
+					borderWidth: 2,
+				})
+				.add();
+		}
+	}
+
+	function basic() {
+		game.DebugRender.enabled.vertices = true;
+		var bodyA = Bodies.Rectangle(100, 100, new vec(0, -300))
+			.addPolygonRender(Render.app.stage, {
+				border: "#4B8F8C",
+				borderWidth: 4,
+				borderOffset: 0.5,
+				round: 10,
+			}).add();
+		bodyA.add();
+
+		var bodyB = Bodies.Rectangle(100, 100, new vec(60, -160), {
+			round: 10
+		}).addSprite(Render.app.stage, {
+			src: "burstShot.png"
+		}).add();
+		bodyB.applyTorque(5.5, 1);
+	}
+
+	window.addEventListener("load", stack);
+
+	// game.DebugRender.enabled.vertices = true;
 	game.DebugRender.enabled.collisions = true;
 </script>
 </html>
