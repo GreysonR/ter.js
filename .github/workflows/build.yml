@@ -1,20 +1,31 @@
-name: GitHub Actions Demo
-run-name: ${{ github.actor }} is building 
-on: [push]
+name: NodeJS with Webpack
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        node-version: [18.x]
+
     steps:
-      - name: Checkout the repository
-        uses: actions/checkout@ter-v2
+    - uses: actions/checkout@v3
 
-      - name: Install Dependencies
-        run: npm install
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
 
-      - name: Build webpack for production
-        run: npm run build-prod
+    - name: Build
+      run: |
+        npm install
+        npm run build-prod
 
-      - name: Build documentation
-        uses: npm run build-docs
+    - name: Build documentation
+      uses: npm run build-docs
