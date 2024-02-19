@@ -2,13 +2,18 @@ const Node = require("../node/Node.js");
 const vec = require("../geometry/vec.js");
 const Common = require("../core/Common.js");
 
+/**
+ * @class PolygonRender
+ * @extends Node
+ * @description A polygon render object
+ */
 module.exports = class PolygonRender extends Node {
 	static defaultOptions = {
 		container: null, // {PIXI Container}
-		layer: 0, // {Number}
+		layer: 0, // number
 		position: new vec(0, 0), // {vec}
-		angle: 0, // {Number} [0, 2PI]
-		type: "polygon", // "polygon" | "rectangle" | "circle"
+		angle: 0, // number [0, 2PI]
+		subtype: "polygon", // "polygon" | "rectangle" | "circle"
 		vertices: [],
 
 		visible: true,
@@ -20,16 +25,16 @@ module.exports = class PolygonRender extends Node {
 		lineCap: "butt",
 		lineJoin: "miter",
 		
-		// type: "rectangle" only options
+		// subtype: "rectangle" only options
 		width: 100,
 		heigth: 100,
 		round: 0,
 
-		// type: "circle" only options
+		// subtype: "circle" only options
 		radius: 50,
 	}
 	static all = new Set();
-
+	nodeType = "PolygonRender";
 	constructor(options = {}) {
 		super();
 		let defaults = { ...PolygonRender.defaultOptions };
@@ -41,7 +46,7 @@ module.exports = class PolygonRender extends Node {
 	}
 	create() {
 		let graphic = this.graphic = new PIXI.Graphics();
-		let { position, angle, type, vertices } = this;
+		let { position, angle, subtype, vertices } = this;
 		let { layer, alpha, background, border, borderWidth, lineCap, lineJoin, borderOffset, round } = this;
 		let { parseColor } = Common;
 		
@@ -60,7 +65,7 @@ module.exports = class PolygonRender extends Node {
 			});
 		}
 
-		if (type === "rectangle") {
+		if (subtype === "rectangle") {
 			let { width, height } = this;
 			
 			if (round > 0) {
@@ -70,7 +75,7 @@ module.exports = class PolygonRender extends Node {
 				graphic.drawRect(-width/2, -height/2, width, height);
 			}
 		}
-		else if (type === "circle") {
+		else if (subtype === "circle") {
 			let { radius } = this;
 			graphic.drawCircle(0, 0, radius);
 		}
@@ -101,7 +106,7 @@ module.exports = class PolygonRender extends Node {
 
 	/**
 	 * Sets the render layer (z index)
-	 * @param {Number} layer - The render layer (z index) for the render
+	 * @param number layer - The render layer (z index) for the render
 	 */
 	setLayer(layer) {
 		this.layer = layer;
@@ -110,7 +115,7 @@ module.exports = class PolygonRender extends Node {
 
 	/**
 	 * Sets the render's alpha
-	 * @param {Number} alpha - The opacity, between 0 and 1 inclusive
+	 * @param number alpha - The opacity, between 0 and 1 inclusive
 	 */
 	setAlpha(alpha) {
 		this.alpha = alpha;
@@ -119,7 +124,7 @@ module.exports = class PolygonRender extends Node {
 
 	/**
 	 * Changes if the render is visible
-	 * @param {Boolean} visible - If the render is visible
+	 * @param {boolean} visible - If the render is visible
 	 */
 	setVisible(visible) {
 		this.visible = visible;
@@ -140,7 +145,7 @@ module.exports = class PolygonRender extends Node {
 
 	/**
 	 * Rotates the render relative to current angle
-	 * @param {Number} angle - Amount to rotate render, in radians
+	 * @param number angle - Amount to rotate render, in radians
 	 */
 	translateAngle(angle) {
 		let { graphic } = this;

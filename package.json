@@ -1,15 +1,21 @@
 {
   "name": "ter",
-  "version": "2.1.8",
+  "version": "2.1.9",
   "description": "",
   "scripts": {
     "build": "webpack",
-    "dev": "webpack serve"
+    "dev": "webpack serve",
+    "build-documentation": "documentation build src/ter.js -f html --theme node_modules/documentation-devseed-theme -o docs",
+    "build-docs": "jsdoc -c jsdoc.json"
   },
   "keywords": [],
   "author": "GreysonR",
   "license": "UNLICENSED",
   "devDependencies": {
+    "@webdoc/cli": "^2.2.0",
+    "docdash": "^2.0.2",
+    "documentation": "^14.0.3",
+    "documentation-devseed-theme": "^0.1.7",
     "html-webpack-plugin": "^5.6.0",
     "webpack": "^5.90.2",
     "webpack-cli": "^5.1.4",

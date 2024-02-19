@@ -1,5 +1,8 @@
 const vec = require("../geometry/vec.js");
 
+/**
+ * @namespace Common
+ */
 let Common = module.exports = {
 	clamp: function(x, min, max) { // clamps x so that min <= x <= max
 		return Math.max(min, Math.min(x, max));
@@ -18,10 +21,10 @@ let Common = module.exports = {
 	},
 
 	/**
-	 * Pairs 2 positive integers, returning a unique number for each possible pairing using elegant pairing - http://szudzik.com/ElegantPairing.pdf
-	 * @param {Number} x - 1st number, must be positive integer
-	 * @param {Number} y - 2nd number, must be positive integer
-	 * @returns {Number} Unique number from those 
+	 * @description Pairs 2 positive integers, returning a unique number for each possible pairing using elegant pairing - http://szudzik.com/ElegantPairing.pdf
+	 * @param number x - 1st number, must be positive integer
+	 * @param number y - 2nd number, must be positive integer
+	 * @returns number Unique number from those 
 	 */
 	pair: function(x, y) {
 		if (x > y)
@@ -30,7 +33,7 @@ let Common = module.exports = {
 	},
 	/**
 	 * Takes a paired number and returns the x/y values that created that number
-	 * @param {Number} n Paired number
+	 * @param number n Paired number
 	 * @returns {vec} Pair of x/y that created that pair
 	 */
 	unpair: function(n) {
@@ -42,9 +45,9 @@ let Common = module.exports = {
 	/**
 	 * Pairs 2 positive integers, returning a unique number for each possible pairing using elegant pairing - http://szudzik.com/ElegantPairing.pdf
 	 * Returns the same value if x/y are switched
-	 * @param {Number} x - 1st number, must be positive integer
-	 * @param {Number} y - 2nd number, must be positive integer
-	 * @returns {Number} Unique number from those 
+	 * @param number x - 1st number, must be positive integer
+	 * @param number y - 2nd number, must be positive integer
+	 * @returns number Unique number from those 
 	 */
 	pairCommon: function(x, y) { // Elegant pairing function, but gives the same result if x/y are switched
 		if (x > y)
@@ -55,7 +58,7 @@ let Common = module.exports = {
 	/**
 	 * Calculates the center of mass of a convex body. Uses algorithm from https://bell0bytes.eu/centroid-convex/
 	 * @param {Array} vertices - Array of `vec`s to find the center of 
-	 * @returns 
+	 * @returns {void}
 	 */
 	getCenterOfMass(vertices) {
 		let centroid = new vec(0, 0);
@@ -80,7 +83,7 @@ let Common = module.exports = {
 
 	/**
 	 * Parses a color into its base hex code and alpha. Supports hex, hex with alpha, rgb, and rgba
-	 * @param {String} originalColor - Color to be parsed
+	 * @param string originalColor - Color to be parsed
 	 * @returns {Array} Array of [hex code, alpha] of parsed color
 	 */
 	parseColor: function(originalColor) {
@@ -115,7 +118,7 @@ let Common = module.exports = {
 	 * Deep copies `objB` onto `objA` in place.
 	 * @param {Object} objA - First object
 	 * @param {Object} objB - 2nd object, copied onto `objA`
-	 * @param {Number} maxDepth - The maximum depth it can copy
+	 * @param number maxDepth - The maximum depth it can copy
 	 * @returns {void}
 	 */
 	merge: function(objA, objB, maxDepth = Infinity, hash = new WeakSet()) {
@@ -151,7 +154,7 @@ let Common = module.exports = {
 	/**
 	 * Finds if a variable is a class in disguise
 	 * @param {*} obj - Variable to check
-	 * @returns {Boolean} If the variable is a class
+	 * @returns {boolean} If the variable is a class
 	 */
 	isClass: function(obj) {
 		const isCtorClass = obj.constructor
@@ -212,7 +215,7 @@ let Common = module.exports = {
 	 * @param {vec} a1 - Start of line
 	 * @param {vec} a2 - End of line
 	 * @param {RigidBody} body - Body to test
-	 * @returns {Boolean} If the line is intersecting the body
+	 * @returns {boolean} If the line is intersecting the body
 	 */
 	lineIntersectsBody: function(a1, a2, body) { // tells you if line a1->a2 is intersecting with body, returns true/false
 		if (body.children.length > 0) {
@@ -309,8 +312,8 @@ let Common = module.exports = {
 	 * 
 	 * @param {vec} start - Start of ray
 	 * @param {vec} end - End of ray
-	 * @param {Array} bodies - (Optional) Array of bodies to test
-	 * @returns {Object} { collision: Boolean, distance: Number, point: vec, body: RigidBody, verticeIndex: Number }
+	 * @param {Array} [bodies] - (Optional) Array of bodies to test
+	 * @returns {Object} { collision: boolean, distance: Number, point: vec, body: RigidBody, verticeIndex: Number }
 	 */
 	raycast: function(start, end, bodies) {
 		let lineIntersects = Common.lineIntersects;

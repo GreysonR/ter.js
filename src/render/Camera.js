@@ -1,5 +1,9 @@
 const vec = require("../geometry/vec.js");
 
+/**
+ * Handles the game's camera
+ * @class Camera
+ */
 module.exports = class Camera {
 	position = new vec(0, 0);
 	fov = 2000;

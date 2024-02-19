@@ -2,6 +2,10 @@ const Camera = require("../render/Camera.js");
 const Common = require("../core/Common.js");
 const vec = require("../geometry/vec.js");
 
+/**
+ * Main render object that handles the camera, pixel ratio, resizing, what is rendered, etc
+ * @class Render
+ */
 module.exports = class Render {
 	static defaultOptions = {
 		background: false,

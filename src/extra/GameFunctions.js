@@ -1,6 +1,9 @@
 const vec = require("../geometry/vec.js");
 
-module.exports = {
+/**
+ * @namespace
+ */
+let GameFunctions = module.exports = {
 	// returns an array of index(es) that make up edges of voronoi region. 2 points if it's between 2 vertices, 1 point if it's between axes, 0 points if it's inside body
 	getVoronoiRegion: function(body, point) { 
 		let { vertices } = body;

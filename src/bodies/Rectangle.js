@@ -17,14 +17,14 @@ module.exports = class Rectangle extends RigidBody {
 
 		this.width = width;
 		this.height = height;
-		this.type = "rectangle";
+		this.nodeType = "Rectangle";
 	}
 	addPolygonRender(container, options) {
 		let render = new PolygonRender({
 			container: container,
 			position: new vec(this.position),
 			vertices: this.vertices,
-			type: "rectangle",
+			subtype: "rectangle",
 			width: this.width,
 			height: this.height,
 			

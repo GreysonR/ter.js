@@ -1,5 +1,9 @@
 const RenderMethods = require("../render/RenderMethods");
 
+/**
+ * Handles rendering performance stats
+ * @class PerformanceRender
+ */
 module.exports = class PerformanceRender {
 	enabled = false;
 	canvas = null;

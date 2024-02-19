@@ -1,5 +1,9 @@
 const vec = require("../geometry/vec");
 
+/**
+ * @class Bounds
+ * AABB bounds
+ */
 module.exports = class Bounds {
 	min = new vec(0, 0);
 	max = new vec(0, 0);

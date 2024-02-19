@@ -7,6 +7,10 @@ const PerformanceRender = require("../render/PerformanceRender.js");
 const Ticker = require("../core/Ticker.js");
 const Bodies = require("../bodies/Bodies.js");
 
+/**
+ * Game object that handles physics, rendering, world, ticker, and more
+ * @class Game
+ */
 module.exports = class Game {
 	static defaultOptions = {
 		World: World.defaultOptions,

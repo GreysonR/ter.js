@@ -3,6 +3,10 @@ const Common = require("../core/Common.js");
 const Performance = require("../core/Performance.js");
 const RigidBody = require("./RigidBody.js");
 
+/**
+ * The physics engine
+ * @class Engine
+ */
 module.exports = class Engine {
 	static defaultOptions = {
 		delta: 1,
@@ -43,7 +47,7 @@ module.exports = class Engine {
 
 	/**
 	 * Ticks the engine one frame
-	 * @param {Number} delta - (Optional) Engine tick duration, in seconds
+	 * @param number [delta] - (Optional) Engine tick duration, in seconds
 	 */
 	update = function(delta) {
 		const { World, Performance, substeps } = this;
@@ -103,7 +107,7 @@ module.exports = class Engine {
 	 * Checks if `bodyA` and `bodyB` are colliding
 	 * @param {RigidBody} bodyA - 1st body to check
 	 * @param {RigidBody} bodyB - 2nd body to check
-	 * @returns {Boolean} If the bodies are colliding
+	 * @returns {boolean} If the bodies are colliding
 	 */
 	collides(bodyA, bodyB) {
 		if (bodyA.isStatic && bodyB.isStatic) return false;
@@ -273,7 +277,7 @@ module.exports = class Engine {
 	/**
 	 * Deletes the collision pair
 	 * @param {collisionPair} pair - The pair to delete
-	 * @returns {Boolean} If pair was successfully removed, meaning they are no longer colliding
+	 * @returns {boolean} If pair was successfully removed, meaning they are no longer colliding
 	 */
 	cleansePair(pair) {
 		const { Performance, World } = this;
@@ -298,7 +302,9 @@ module.exports = class Engine {
 	}
 
 	/**
-	 * Solves new velocities for bodies based on their collision pairs
+	 * Solves velocity constriants on current collision pairs
+	 * Also clears collision pairs that are no longer valid (they haven't collided this frame)
+	 * @returns {void}
 	 */
 	solveVelocity = function() {
 		let { pairs } = this.World;
@@ -425,7 +431,8 @@ module.exports = class Engine {
 
 	/**
 	 * Solves physics constraints for their new position and velocity
-	 * @param {Number} delta - Engine tick duration, in seconds
+	 * @param number delta - Engine tick duration, in seconds
+	 * @returns {void}
 	 */
 	solveConstraints = function(delta) {
 		delta *= 1000;

@@ -30,15 +30,6 @@ module.exports = {
     makeCCW: polygonMakeCCW
 };
 
-/**
- * Compute the intersection between two lines.
- * @static
- * @method lineInt
- * @param  {Array}  l1          Line vector 1
- * @param  {Array}  l2          Line vector 2
- * @param  {Number} precision   Precision to use when checking if the lines are parallel
- * @return {Array}              The intersection point.
- */
 function lineInt(l1,l2,precision){
     precision = precision || 0;
     var i = [0,0]; // point
@@ -57,15 +48,6 @@ function lineInt(l1,l2,precision){
     return i;
 }
 
-/**
- * Checks if two line segments intersects.
- * @method segmentsIntersect
- * @param {Array} p1 The start vertex of the first line segment.
- * @param {Array} p2 The end vertex of the first line segment.
- * @param {Array} q1 The start vertex of the second line segment.
- * @param {Array} q2 The end vertex of the second line segment.
- * @return {Boolean} True if the two line segments intersect
- */
 function lineSegmentsIntersect(p1, p2, q1, q2){
 	var dx = p2[0] - p1[0];
 	var dy = p2[1] - p1[1];
@@ -83,15 +65,6 @@ function lineSegmentsIntersect(p1, p2, q1, q2){
 	return (s>=0 && s<=1 && t>=0 && t<=1);
 }
 
-/**
- * Get the area of a triangle spanned by the three given points. Note that the area will be negative if the points are not given in counter-clockwise order.
- * @static
- * @method area
- * @param  {Array} a
- * @param  {Array} b
- * @param  {Array} c
- * @return {Number}
- */
 function triangleArea(a,b,c){
     return (((b[0] - a[0])*(c[1] - a[1]))-((c[0] - a[0])*(b[1] - a[1])));
 }
@@ -115,15 +88,6 @@ function isRightOn(a,b,c) {
 var tmpPoint1 = [],
     tmpPoint2 = [];
 
-/**
- * Check if three points are collinear
- * @method collinear
- * @param  {Array} a
- * @param  {Array} b
- * @param  {Array} c
- * @param  {Number} [thresholdAngle=0] Threshold angle to use when comparing the vectors. The function will return true if the angle between the resulting vectors is less than this value. Use zero for max precision.
- * @return {Boolean}
- */
 function collinear(a,b,c,thresholdAngle) {
     if(!thresholdAngle){
         return triangleArea(a, b, c) === 0;
@@ -150,44 +114,21 @@ function sqdist(a,b){
     return dx * dx + dy * dy;
 }
 
-/**
- * Get a vertex at position i. It does not matter if i is out of bounds, this function will just cycle.
- * @method at
- * @param  {Number} i
- * @return {Array}
- */
 function polygonAt(polygon, i){
     var s = polygon.length;
     return polygon[i < 0 ? i % s + s : i % s];
 }
 
-/**
- * Clear the polygon data
- * @method clear
- * @return {Array}
- */
 function polygonClear(polygon){
     polygon.length = 0;
 }
 
-/**
- * Append points "from" to "to"-1 from an other polygon "poly" onto this one.
- * @method append
- * @param {Polygon} poly The polygon to get points from.
- * @param {Number}  from The vertex index in "poly".
- * @param {Number}  to The end vertex index in "poly". Note that this vertex is NOT included when appending.
- * @return {Array}
- */
 function polygonAppend(polygon, poly, from, to){
     for(var i=from; i<to; i++){
         polygon.push(poly[i]);
     }
 }
 
-/**
- * Make sure that the polygon vertices are ordered counter-clockwise.
- * @method makeCCW
- */
 function polygonMakeCCW(polygon){
     var br = 0,
         v = polygon;
@@ -208,10 +149,6 @@ function polygonMakeCCW(polygon){
     }
 }
 
-/**
- * Reverse the vertices in the polygon
- * @method reverse
- */
 function polygonReverse(polygon){
     var tmp = [];
     var N = polygon.length;
@@ -223,12 +160,6 @@ function polygonReverse(polygon){
     }
 }
 
-/**
- * Check if a point in the polygon is a reflex point
- * @method isReflex
- * @param  {Number}  i
- * @return {Boolean}
- */
 function polygonIsReflex(polygon, i){
     return isRight(polygonAt(polygon, i - 1), polygonAt(polygon, i), polygonAt(polygon, i + 1));
 }
@@ -236,13 +167,6 @@ function polygonIsReflex(polygon, i){
 var tmpLine1=[],
     tmpLine2=[];
 
-/**
- * Check if two vertices in the polygon can see each other
- * @method canSee
- * @param  {Number} a Vertex index 1
- * @param  {Number} b Vertex index 2
- * @return {Boolean}
- */
 function polygonCanSee(polygon, a,b) {
     var p, dist, l1=tmpLine1, l2=tmpLine2;
 
@@ -269,13 +193,6 @@ function polygonCanSee(polygon, a,b) {
     return true;
 }
 
-/**
- * Check if two vertices in the polygon can see each other
- * @method canSee2
- * @param  {Number} a Vertex index 1
- * @param  {Number} b Vertex index 2
- * @return {Boolean}
- */
 function polygonCanSee2(polygon, a,b) {
     // for each edge
     for (var i = 0; i !== polygon.length; ++i) {
@@ -290,14 +207,6 @@ function polygonCanSee2(polygon, a,b) {
     return true;
 }
 
-/**
- * Copy the polygon from vertex i to vertex j.
- * @method copy
- * @param  {Number} i
- * @param  {Number} j
- * @param  {Polygon} [targetPoly]   Optional target polygon to save in.
- * @return {Polygon}                The resulting copy.
- */
 function polygonCopy(polygon, i,j,targetPoly){
     var p = targetPoly || [];
     polygonClear(p);
@@ -323,12 +232,6 @@ function polygonCopy(polygon, i,j,targetPoly){
     return p;
 }
 
-/**
- * Decomposes the polygon into convex pieces. Returns a list of edges [[p1,p2],[p2,p3],...] that cuts the polygon.
- * Note that this algorithm has complexity O(N^4) and will be very slow for polygons with many vertices.
- * @method getCutEdges
- * @return {Array}
- */
 function polygonGetCutEdges(polygon) {
     var min=[], tmp1=[], tmp2=[], tmpPoly = [];
     var nDiags = Number.MAX_VALUE;
@@ -357,11 +260,6 @@ function polygonGetCutEdges(polygon) {
     return min;
 }
 
-/**
- * Decomposes the polygon into one or more convex sub-Polygons.
- * @method decomp
- * @return {Array} An array or Polygon objects.
- */
 function polygonDecomp(polygon){
     var edges = polygonGetCutEdges(polygon);
     if(edges.length > 0){
@@ -371,12 +269,6 @@ function polygonDecomp(polygon){
     }
 }
 
-/**
- * Slices the polygon given one or more cut edges. If given one, this function will return two polygons (false on failure). If many, an array of polygons.
- * @method slice
- * @param {Array} cutEdges A list of edges, as returned by .getCutEdges()
- * @return {Array}
- */
 function polygonSlice(polygon, cutEdges){
     if(cutEdges.length === 0){
 		return [polygon];
@@ -417,13 +309,6 @@ function polygonSlice(polygon, cutEdges){
     }
 }
 
-/**
- * Checks that the line segments of this polygon do not intersect each other.
- * @method isSimple
- * @param  {Array} path An array of vertices e.g. [[0,0],[0,1],...]
- * @return {Boolean}
- * @todo Should it check all segments with all others?
- */
 function polygonIsSimple(polygon){
     var path = polygon, i;
     // Check
@@ -462,17 +347,6 @@ function getIntersectionPoint(p1, p2, q1, q2, delta){
     }
 }
 
-/**
- * Quickly decompose the Polygon into convex sub-polygons.
- * @method quickDecomp
- * @param  {Array} result
- * @param  {Array} [reflexVertices]
- * @param  {Array} [steinerPoints]
- * @param  {Number} [delta]
- * @param  {Number} [maxlevel]
- * @param  {Number} [level]
- * @return {Array}
- */
 function polygonQuickDecomp(polygon, result,reflexVertices,steinerPoints,delta,maxlevel,level){
     maxlevel = maxlevel || 100;
     level = level || 0;
@@ -617,12 +491,6 @@ function polygonQuickDecomp(polygon, result,reflexVertices,steinerPoints,delta,m
     return result;
 }
 
-/**
- * Remove collinear points in the polygon.
- * @method removeCollinearPoints
- * @param  {Number} [precision] The threshold angle to use when determining whether two edges are collinear. Use zero for finest precision.
- * @return {Number}           The number of points removed
- */
 function polygonRemoveCollinearPoints(polygon, precision){
     var num = 0;
     for(var i=polygon.length-1; polygon.length>3 && i>=0; --i){
@@ -635,11 +503,6 @@ function polygonRemoveCollinearPoints(polygon, precision){
     return num;
 }
 
-/**
- * Remove duplicate points in the polygon.
- * @method removeDuplicatePoints
- * @param  {Number} [precision] The threshold to use when determining whether two points are the same. Use zero for best precision.
- */
 function polygonRemoveDuplicatePoints(polygon, precision){
     for(var i=polygon.length-1; i>=1; --i){
         var pi = polygon[i];
@@ -652,29 +515,11 @@ function polygonRemoveDuplicatePoints(polygon, precision){
     }
 }
 
-/**
- * Check if two scalars are equal
- * @static
- * @method eq
- * @param  {Number} a
- * @param  {Number} b
- * @param  {Number} [precision]
- * @return {Boolean}
- */
 function scalar_eq(a,b,precision){
     precision = precision || 0;
     return Math.abs(a-b) <= precision;
 }
 
-/**
- * Check if two points are equal
- * @static
- * @method points_eq
- * @param  {Array} a
- * @param  {Array} b
- * @param  {Number} [precision]
- * @return {Boolean}
- */
 function points_eq(a,b,precision){
     return scalar_eq(a[0],b[0],precision) && scalar_eq(a[1],b[1],precision);
 }

@@ -22,5 +22,5 @@ ter.Bounds = require("./geometry/Bounds");
 ter.simplexNoise = require("./lib/simplexNoise");
 ter.polyDecomp = require("./lib/poly-decomp");
 
-ter.BehaviorTree = require("./extra/BehaviorTree");
+ter.BehaviorTree = require("./behaviorTree/BehaviorTree");
 ter.Functions = require("./extra/GameFunctions");

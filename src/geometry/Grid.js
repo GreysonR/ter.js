@@ -2,6 +2,10 @@
 
 const { arrayDelete } = require("../core/Common.js");
 
+/**
+ * A broadphase grid that can handle bodies and points
+ * @class Grid
+ */
 module.exports = class Grid {
 	static id = 0;
 	grid = {};

@@ -2,11 +2,16 @@
 
 const vec = require("../geometry/vec.js");
 
+/**
+ * @class Node
+ * @description Generic node object
+ */
 module.exports = class Node {
 	static id = 0;
 	/**
-	 * Generates a unique id for nodes
-	 * @returns {Number} A unique integer id
+	 * @memberof Node
+	 * @description Generates a unique id for nodes
+	 * @returns number A unique integer id
 	 */
 	static getUniqueId() {
 		return ++Node.id;
@@ -17,15 +22,14 @@ module.exports = class Node {
 	children = new Set();
 	added = false;
 
-	/**
-	 * Creates a Node
-	 */
 	constructor() {
 		this.id = Node.getUniqueId();
 	}
 
 	/**
-	 * Sets this node's position to `position`
+	 * @memberof Node
+	 * @method setPosition
+	 * @description Sets this node's position to `position`
 	 * @example
 	 * node.setPosition(new vec(100, 100)); // Sets node's position to (100, 100) 
 	 * @param {vec} position - Position the node should be set to
@@ -35,7 +39,9 @@ module.exports = class Node {
 		this.translate(delta);
 	}
 	/**
-	 * Shifts this node's position by `positionDelta`
+	 * @memberof Node
+	 * @method translate
+	 * @description Shifts this node's position by `positionDelta`
 	 * @param {vec} positionDelta - Amount to shift the position
 	 */
 	translate(positionDelta) {
@@ -46,8 +52,10 @@ module.exports = class Node {
 	}
 	
 	/**
-	 * Sets the node's angle to `angle`
-	 * @param {Number} angle - Angle body should be in radians
+	 * @memberof Node
+	 * @method setAngle
+	 * @description Sets the node's angle to `angle`
+	 * @param number angle - Angle body should be in radians
 	 * @example
 	 * node.setAngle(Math.PI); // Sets node's angle to Pi radians, or 180 degrees 
 	 * @returns {void}
@@ -61,9 +69,11 @@ module.exports = class Node {
 	}
 	
 	/**
-	 * Rotates the body by `angle`- Relative
-	 * @param {Number} angle - The amount the body should be rotated, in radians
-	 * @param {Boolean} silent - If the body's angle should be affected
+	 * @memberof Node
+	 * @method translateAngle
+	 * @description Rotates the body by `angle`- Relative
+	 * @param number angle - The amount the body should be rotated, in radians
+	 * @param {boolean} silent - If the body's angle should be affected
 	 * @returns {void}
 	 */
 	translateAngle(angle) {
@@ -77,7 +87,9 @@ module.exports = class Node {
 	}
 
 	/**
-	 * Adds this node and its children
+	 * @memberof Node
+	 * @method add
+	 * @description Adds this node and its children
 	 * @returns {void}
 	 */
 	add() {
@@ -91,7 +103,9 @@ module.exports = class Node {
 		}
 	}
 	/**
-	 * Removes this node and its children
+	 * @memberof Node
+	 * @method delete
+	 * @description Removes this node and its children
 	 * @returns {void}
 	 */
 	delete() {
@@ -106,7 +120,9 @@ module.exports = class Node {
 	}
 
 	/**
-	 * Adds all `children` to this node's children
+	 * @memberof Node
+	 * @method addChild
+	 * @description all `children` to this node's children
 	 * @param {...Node} children - The child nodes to be added
 	 */
 	addChild(...children) {
@@ -115,7 +131,9 @@ module.exports = class Node {
 		}
 	}
 	/**
-	 * Removes all `children` from this node's children
+	 * @memberof Node
+	 * @method removeChild
+	 * @description Removes all `children` from this node's children
 	 * @param {...Node} children - The child nodes to be removed
 	 */
 	removeChild(...children) {
@@ -129,6 +147,13 @@ module.exports = class Node {
 		delete: [],
 		add: [],
 	}
+	/**
+	 * @memberof Node
+	 * @method on
+	 * @description Bind a callback to an event
+	 * @param string event - The name of the event
+	 * @param {Function} callback - The callback run when event is fired
+	 */
 	on(event, callback) {
 		if (this.#events[event]) {
 			this.#events[event].push(callback);
@@ -137,12 +162,25 @@ module.exports = class Node {
 			console.warn(event + " is not a valid event");
 		}
 	}
+	/**
+	 * @memberof Node
+	 * @method off
+	 * @description Unbinds a callback from an event
+	 * @param string event - The name of the event
+	 * @param {Function} callback - The function to unbind
+	 */
 	off(event, callback) {
 		event = this.#events[event];
 		if (event.includes(callback)) {
 			event.splice(event.indexOf(callback), 1);
 		}
 	}
+	/**
+	 * @memberof Node
+	 * @method trigger
+	 * @description Triggers an event
+	 * @param string event - Name of the event
+	 */
 	trigger(event) {
 		// Trigger each event
 		if (this.#events[event]) {

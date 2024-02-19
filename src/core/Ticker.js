@@ -1,5 +1,9 @@
 const Common = require("../core/Common.js");
 
+/**
+ * A game ticker that handles updating the engine every frame.
+ * @class Ticker
+ */
 module.exports = class Ticker {
 	static defaultOptions = {
 		pauseOnFreeze: true,

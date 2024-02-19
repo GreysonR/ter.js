@@ -1,3 +1,7 @@
+/**
+ * Creates a debug rendering context
+ * @class DebugRender
+ */
 module.exports = class DebugRender {
 	// - Debug rendering
 	canvas = null;

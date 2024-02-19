@@ -5,13 +5,18 @@ const vec = require("../geometry/vec.js");
 // todo: load all sprites when game is loaded
 // todo: properly delete sprites when bodies no longer used
 
+/**
+ * @class Sprite
+ * @extends Node
+ * A sprite render object
+ */
 module.exports = class Sprite extends Node {
 	static imageDir = "./img/";
 	static defaultOptions = {
 		container: null, // {PIXI Container}
-		layer: 0, // {Number}
+		layer: 0, // number
 		position: new vec(0, 0), // {vec}
-		angle: 0, // {Number} [0, 2PI]
+		angle: 0, // number [0, 2PI]
 
 		visible: true,
 		alpha: 1,
@@ -24,7 +29,7 @@ module.exports = class Sprite extends Node {
 	static all = new Set();
 
 	loaded = false;
-
+	nodeType = "Sprite";
 	constructor(options) {
 		super();
 		let defaults = { ...Sprite.defaultOptions };
@@ -69,7 +74,7 @@ module.exports = class Sprite extends Node {
 	
 	/**
 	 * Sets the render layer (z index)
-	 * @param {Number} layer - The render layer (z index) for the render
+	 * @param number layer - The render layer (z index) for the render
 	 */
 	setLayer(layer) {
 		this.layer = layer;
@@ -92,8 +97,8 @@ module.exports = class Sprite extends Node {
 
 	/**
 	 * Sets the sprite's width and height
-	 * @param {Number} width - The new width
-	 * @param {Number} height - The new height
+	 * @param number width - The new width
+	 * @param number height - The new height
 	 */
 	setSize(width, height) {
 		if (width != undefined) this.width = width;
@@ -107,7 +112,7 @@ module.exports = class Sprite extends Node {
 
 	/**
 	 * Sets the sprite's alpha
-	 * @param {Number} alpha - The opacity, between 0 and 1 inclusive
+	 * @param number alpha - The opacity, between 0 and 1 inclusive
 	 */
 	setAlpha(alpha) {
 		this.alpha = alpha;
@@ -117,7 +122,7 @@ module.exports = class Sprite extends Node {
 
 	/**
 	 * Changes if the sprite is visible
-	 * @param {Boolean} visible - If the sprite is visible
+	 * @param {boolean} visible - If the sprite is visible
 	 */
 	setVisible(visible) {
 		this.visible = visible;
@@ -140,7 +145,7 @@ module.exports = class Sprite extends Node {
 	
 	/**
 	 * Rotates the sprite relative to current angle
-	 * @param {Number} angle - Amount to rotate sprite, in radians
+	 * @param number angle - Amount to rotate sprite, in radians
 	 */
 	translateAngle(angle) {
 		super.translateAngle(angle);

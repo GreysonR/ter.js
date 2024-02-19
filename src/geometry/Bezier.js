@@ -1,5 +1,9 @@
 "use strict";
 
+/**
+ * A bezier curve 
+ * @class Bezier
+ */
 module.exports = class Bezier {
 	constructor(pt1, cp1, cp2, pt2) { // start, control 1, control 2, end
 		// https://javascript.info/bezier-curve

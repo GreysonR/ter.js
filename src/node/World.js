@@ -4,6 +4,11 @@ const Grid = require("../geometry/Grid.js");
 const vec = require("../geometry/vec.js");
 const RigidBody = require("../physics/RigidBody.js");
 
+/**
+ * The game world
+ * @class World
+ * @extends Node
+ */
 module.exports = class World extends Node {
 	static defaultOptions = {
 		gravity: new vec(0, 500),
