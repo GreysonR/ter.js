@@ -21,10 +21,10 @@ let Common = module.exports = {
 	},
 
 	/**
-	 * @description Pairs 2 positive integers, returning a unique number for each possible pairing using elegant pairing - http://szudzik.com/ElegantPairing.pdf
-	 * @param number x - 1st number, must be positive integer
-	 * @param number y - 2nd number, must be positive integer
-	 * @returns number Unique number from those 
+	 * Pairs 2 positive integers, returning a unique number for each possible pairing using elegant pairing - http://szudzik.com/ElegantPairing.pdf
+	 * @param {number} x - 1st number, must be positive integer
+	 * @param {number} y - 2nd number, must be positive integer
+	 * @return {number} Unique number from those 
 	 */
 	pair: function(x, y) {
 		if (x > y)
@@ -33,8 +33,8 @@ let Common = module.exports = {
 	},
 	/**
 	 * Takes a paired number and returns the x/y values that created that number
-	 * @param number n Paired number
-	 * @returns {vec} Pair of x/y that created that pair
+	 * @param {number} n Paired number
+	 * @return {vec} Pair of x/y that created that pair
 	 */
 	unpair: function(n) {
 		let z = Math.floor(Math.sqrt(n));
@@ -45,9 +45,9 @@ let Common = module.exports = {
 	/**
 	 * Pairs 2 positive integers, returning a unique number for each possible pairing using elegant pairing - http://szudzik.com/ElegantPairing.pdf
 	 * Returns the same value if x/y are switched
-	 * @param number x - 1st number, must be positive integer
-	 * @param number y - 2nd number, must be positive integer
-	 * @returns number Unique number from those 
+	 * @param {number} x - 1st number, must be positive integer
+	 * @param {number} y - 2nd number, must be positive integer
+	 * @return {number} Unique number from those 
 	 */
 	pairCommon: function(x, y) { // Elegant pairing function, but gives the same result if x/y are switched
 		if (x > y)
@@ -58,7 +58,7 @@ let Common = module.exports = {
 	/**
 	 * Calculates the center of mass of a convex body. Uses algorithm from https://bell0bytes.eu/centroid-convex/
 	 * @param {Array} vertices - Array of `vec`s to find the center of 
-	 * @returns {void}
+	 * @return {void}
 	 */
 	getCenterOfMass(vertices) {
 		let centroid = new vec(0, 0);
@@ -83,8 +83,8 @@ let Common = module.exports = {
 
 	/**
 	 * Parses a color into its base hex code and alpha. Supports hex, hex with alpha, rgb, and rgba
-	 * @param string originalColor - Color to be parsed
-	 * @returns {Array} Array of [hex code, alpha] of parsed color
+	 * @param {string} originalColor - Color to be parsed
+	 * @return {Array} Array of [hex code, alpha] of parsed color
 	 */
 	parseColor: function(originalColor) {
 		if (originalColor === "transparent") {
@@ -118,8 +118,8 @@ let Common = module.exports = {
 	 * Deep copies `objB` onto `objA` in place.
 	 * @param {Object} objA - First object
 	 * @param {Object} objB - 2nd object, copied onto `objA`
-	 * @param number maxDepth - The maximum depth it can copy
-	 * @returns {void}
+	 * @param {number} maxDepth - The maximum depth it can copy
+	 * @return {void}
 	 */
 	merge: function(objA, objB, maxDepth = Infinity, hash = new WeakSet()) {
 		hash.add(objB);
@@ -154,7 +154,7 @@ let Common = module.exports = {
 	/**
 	 * Finds if a variable is a class in disguise
 	 * @param {*} obj - Variable to check
-	 * @returns {boolean} If the variable is a class
+	 * @return {boolean} If the variable is a class
 	 */
 	isClass: function(obj) {
 		const isCtorClass = obj.constructor
@@ -174,7 +174,7 @@ let Common = module.exports = {
 	 * @param {vec} a2 - End of line 1
 	 * @param {vec} b1 - Start of line 2
 	 * @param {vec} b2 - End of line 2
-	 * @returns {vec} Point of intersection, or null if they don't intersect
+	 * @return {vec} Point of intersection, or null if they don't intersect
 	 */
 	lineIntersects: function(a1, a2, b1, b2) { // tells you if lines a1->a2 and b1->b2 are intersecting, and at what point
 		if (a1.x === a2.x || a1.y === a2.y) {
@@ -215,7 +215,7 @@ let Common = module.exports = {
 	 * @param {vec} a1 - Start of line
 	 * @param {vec} a2 - End of line
 	 * @param {RigidBody} body - Body to test
-	 * @returns {boolean} If the line is intersecting the body
+	 * @return {boolean} If the line is intersecting the body
 	 */
 	lineIntersectsBody: function(a1, a2, body) { // tells you if line a1->a2 is intersecting with body, returns true/false
 		if (body.children.length > 0) {
@@ -313,7 +313,7 @@ let Common = module.exports = {
 	 * @param {vec} start - Start of ray
 	 * @param {vec} end - End of ray
 	 * @param {Array} [bodies] - (Optional) Array of bodies to test
-	 * @returns {Object} { collision: boolean, distance: Number, point: vec, body: RigidBody, verticeIndex: Number }
+	 * @return {Object} { collision: boolean, distance: Number, point: vec, body: RigidBody, verticeIndex: Number }
 	 */
 	raycast: function(start, end, bodies) {
 		let lineIntersects = Common.lineIntersects;

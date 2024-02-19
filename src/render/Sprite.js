@@ -6,11 +6,10 @@ const vec = require("../geometry/vec.js");
 // todo: properly delete sprites when bodies no longer used
 
 /**
- * @class Sprite
- * @extends Node
  * A sprite render object
+ * @extends Node
  */
-module.exports = class Sprite extends Node {
+class Sprite extends Node {
 	static imageDir = "./img/";
 	static defaultOptions = {
 		container: null, // {PIXI Container}
@@ -74,7 +73,7 @@ module.exports = class Sprite extends Node {
 	
 	/**
 	 * Sets the render layer (z index)
-	 * @param number layer - The render layer (z index) for the render
+	 * @param {number} layer - The render layer (z index) for the render
 	 */
 	setLayer(layer) {
 		this.layer = layer;
@@ -97,8 +96,8 @@ module.exports = class Sprite extends Node {
 
 	/**
 	 * Sets the sprite's width and height
-	 * @param number width - The new width
-	 * @param number height - The new height
+	 * @param {number} width - The new width
+	 * @param {number} height - The new height
 	 */
 	setSize(width, height) {
 		if (width != undefined) this.width = width;
@@ -112,7 +111,7 @@ module.exports = class Sprite extends Node {
 
 	/**
 	 * Sets the sprite's alpha
-	 * @param number alpha - The opacity, between 0 and 1 inclusive
+	 * @param {number} alpha - The opacity, between 0 and 1 inclusive
 	 */
 	setAlpha(alpha) {
 		this.alpha = alpha;
@@ -145,7 +144,7 @@ module.exports = class Sprite extends Node {
 	
 	/**
 	 * Rotates the sprite relative to current angle
-	 * @param number angle - Amount to rotate sprite, in radians
+	 * @param {number} angle - Amount to rotate sprite, in radians
 	 */
 	translateAngle(angle) {
 		super.translateAngle(angle);
@@ -194,3 +193,4 @@ module.exports = class Sprite extends Node {
 		delete: [],
 	}
 }
+module.exports = Sprite;

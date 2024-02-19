@@ -1,16 +1,27 @@
 "use strict";
 
 const { arrayDelete } = require("../core/Common.js");
+const vec = require("./vec.js");
 
 /**
  * A broadphase grid that can handle bodies and points
- * @class Grid
  */
-module.exports = class Grid {
+class Grid {
 	static id = 0;
 	grid = {};
 	gridIds = new Set();
+	
+	/**
+	 * The grid size
+	 * @type {number}
+	 * @instance
+	 */
 	gridSize = 2000;
+
+	/**
+	 * Creates an empty grid
+	 * @param {number} size - The size of each grid cell
+	 */
 	constructor(size = 2000) {
 		this.gridSize = size;
 		this.id = Grid.id++;
@@ -60,6 +71,10 @@ module.exports = class Grid {
 		return ids;
 	}
 
+	/**
+	 * Adds the body to the grid
+	 * @param {RigidBody} body - Body added to the grid
+	 */
 	addBody = function(body) {
 		let bounds = this.getBounds(body);
 
@@ -79,6 +94,10 @@ module.exports = class Grid {
 			}
 		}
 	}
+	/**
+	 * Removes the body from the grid
+	 * @param {RigidBody} body - Body removed from the grid
+	 */
 	removeBody = function(body) {
 		for (let n of body._Grids[this.id]) {
 			let node = this.grid[n];
@@ -91,6 +110,10 @@ module.exports = class Grid {
 			}
 		}
 	}
+	/**
+	 * Adds a vector point to the grid
+	 * @param {vec} point - Point added
+	 */
 	addPoint = function(point) {
 		if (!point._Grids) point._Grids = {};
 		if (!point._Grids[this.id]) point._Grids[this.id] = [];
@@ -105,6 +128,10 @@ module.exports = class Grid {
 		}
 		this.grid[n].push(point);
 	}
+	/**
+	 * Remove a vector point from the grid
+	 * @param {vec} point - Point removed
+	 */
 	removePoint = function(point) {
 		if (!point._Grids) console.log(point._Grids);
 		for (let n of point._Grids[this.id]) {
@@ -118,6 +145,10 @@ module.exports = class Grid {
 			}
 		}
 	}
+	/**
+	 * Updates the body's position in the grid
+	 * @param {RigidBody|vec} body - Body in the grid
+	 */
 	updateBody = function(body) {
 		let curNodes = body._Grids[this.id];
 		let oldNodes = new Set(curNodes);
@@ -153,3 +184,4 @@ module.exports = class Grid {
 		}
 	}
 }
+module.exports = Grid;

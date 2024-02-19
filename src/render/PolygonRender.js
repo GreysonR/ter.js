@@ -3,11 +3,10 @@ const vec = require("../geometry/vec.js");
 const Common = require("../core/Common.js");
 
 /**
- * @class PolygonRender
+ * A polygon render object
  * @extends Node
- * @description A polygon render object
  */
-module.exports = class PolygonRender extends Node {
+class PolygonRender extends Node {
 	static defaultOptions = {
 		container: null, // {PIXI Container}
 		layer: 0, // number
@@ -106,7 +105,7 @@ module.exports = class PolygonRender extends Node {
 
 	/**
 	 * Sets the render layer (z index)
-	 * @param number layer - The render layer (z index) for the render
+	 * @param {number} layer - The render layer (z index) for the render
 	 */
 	setLayer(layer) {
 		this.layer = layer;
@@ -115,7 +114,7 @@ module.exports = class PolygonRender extends Node {
 
 	/**
 	 * Sets the render's alpha
-	 * @param number alpha - The opacity, between 0 and 1 inclusive
+	 * @param {number} alpha - The opacity, between 0 and 1 inclusive
 	 */
 	setAlpha(alpha) {
 		this.alpha = alpha;
@@ -145,7 +144,7 @@ module.exports = class PolygonRender extends Node {
 
 	/**
 	 * Rotates the render relative to current angle
-	 * @param number angle - Amount to rotate render, in radians
+	 * @param {number} angle - Amount to rotate render, in radians
 	 */
 	translateAngle(angle) {
 		let { graphic } = this;
@@ -183,3 +182,4 @@ module.exports = class PolygonRender extends Node {
 		load: [],
 	}
 }
+module.exports = PolygonRender;

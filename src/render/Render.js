@@ -4,9 +4,8 @@ const vec = require("../geometry/vec.js");
 
 /**
  * Main render object that handles the camera, pixel ratio, resizing, what is rendered, etc
- * @class Render
  */
-module.exports = class Render {
+class Render {
 	static defaultOptions = {
 		background: false,
 		pixelRatio: window.devicePixelRatio ?? 1,
@@ -160,3 +159,4 @@ module.exports = class Render {
 		}
 	}
 }
+module.exports = Render;

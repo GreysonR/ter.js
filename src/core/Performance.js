@@ -2,9 +2,8 @@ const PerformanceRender = require("../render/PerformanceRender");
 
 /**
  * Tracks performance stats of the game, like fps, delta time, and frame number
- * @class Performance
  */
-module.exports = class Performance {
+class Performance {
 	getAvgs = true;
 	#lastUpdate = 0;
 	fps = 60;
@@ -22,10 +21,6 @@ module.exports = class Performance {
 		lastUpdate: 0,
 	}
 
-	/**
-	 * Creates a Performance object
-	 * @param {Render} [Render] - Optional Render object to create a performance render
-	 */
 	constructor(Render = undefined) {
 		if (Render) this.render = new PerformanceRender(this, Render);
 		this.#lastUpdate = performance.now() / 1000;
@@ -33,7 +28,7 @@ module.exports = class Performance {
 
 	/**
 	 * Updates the performance stats. Should be called every frame
-	 * @returns {void}
+	 * @return {void}
 	 */
 	update() {
 		let curTime = performance.now() / 1000;
@@ -71,3 +66,4 @@ module.exports = class Performance {
 		this.history.avgDelta = delta;
 	}
 };
+module.exports = Performance;

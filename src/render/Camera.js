@@ -2,9 +2,8 @@ const vec = require("../geometry/vec.js");
 
 /**
  * Handles the game's camera
- * @class Camera
  */
-module.exports = class Camera {
+class Camera {
 	position = new vec(0, 0);
 	fov = 2000;
 	translation = new vec(0, 0);
@@ -16,3 +15,4 @@ module.exports = class Camera {
 		this.boundSize = boundSize;
 	}
 };
+module.exports = Camera;

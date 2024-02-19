@@ -2,9 +2,8 @@ const Common = require("../core/Common.js");
 
 /**
  * A game ticker that handles updating the engine every frame.
- * @class Ticker
  */
-module.exports = class Ticker {
+class Ticker {
 	static defaultOptions = {
 		pauseOnFreeze: true,
 		freezeThreshold: 0.3,
@@ -12,8 +11,8 @@ module.exports = class Ticker {
 
 	/**
 	 * Creates a ticker that runs on `Game` every frame.
-	 * @param {Game} Game Game ticker should be run on
-	 * @param {Object} options Options object, see documentation for options
+	 * @param {Game} Game - Game ticker should be run on
+	 * @param {Object} options - Options object, see documentation for options
 	 */
 	constructor(Game, options = {}) {
 		let defaults = { ...Ticker.defaultOptions };
@@ -71,3 +70,4 @@ module.exports = class Ticker {
 		}
 	}
 }
+module.exports = Ticker;

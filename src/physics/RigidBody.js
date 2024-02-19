@@ -7,11 +7,10 @@ const Bezier = require("../geometry/Bezier.js");
 const Bounds = require("../geometry/Bounds.js");
 
 /**
- * @class RigidBody
- * @description A rigid body with physics
+ * A rigid body with physics
  * @extends Node
  */
-module.exports = class RigidBody extends Node {
+class RigidBody extends Node {
 	/**
 	 * Default RigidBody options
 	 */
@@ -34,9 +33,9 @@ module.exports = class RigidBody extends Node {
 	/**
 	 * Rounds corners on an array of vertices
 	 * @param {Array} vertices - Array of `vec` vertices to round
-	 * @param number round - Amount of rounding
-	 * @param number dx - Quality of round, lower value means higher quality
-	 * @returns {void}
+	 * @param {number} round - Amount of rounding
+	 * @param {number} dx - Quality of round, lower value means higher quality
+	 * @return {void}
 	 */
 	static roundVertices(vertices, round, dx = 40) {
 		let newVertices = [];
@@ -92,8 +91,8 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * @description Creates a new RigidBody
-	 * @param {Array} vertices Array of `vec` representing the body's vertices
+	 * Creates a new RigidBody
+	 * @param {Array} vertices - Array of `vec` representing the body's vertices
 	 * @param {vec} position - The position of the body
 	 * @param {Engine} Engine - The engine the body should be simulated in
 	 * @param {Object} options - RigidBody options, see documentation for options
@@ -156,8 +155,8 @@ module.exports = class RigidBody extends Node {
 	// Public user methods
 	//
 	/**
-	 * @description Adds the body to its world
-	 * @returns {RigidBody} `this`
+	 * Adds the body to its world
+	 * @return {RigidBody} `this`
 	 */
 	add() {
 		let World = this.Engine.World;
@@ -169,8 +168,8 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * @description Removes the body from its world
-	 * @returns {RigidBody} `this`
+	 * Removes the body from its world
+	 * @return {RigidBody} `this`
 	 */
 	delete() {
 		let World = this.Engine.World;
@@ -186,11 +185,10 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * @method addPolygonRender
-	 * @description Adds a polygon render to body
+	 * Adds a polygon render to body
 	 * @param {PIXI.Container} container - Container polygon render is added to
 	 * @param {Object} options - Options for polygon render, see documentation for possible options
-	 * @returns {RigidBody} `this`
+	 * @return {RigidBody} `this`
 	 */
 	addPolygonRender(container, options) {
 		let render = new PolygonRender({
@@ -207,11 +205,10 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * @method addSprite
-	 * @description Adds a sprite to body
+	 * Adds a sprite to body
 	 * @param {PIXI.Container} container - Container polygon render is added to
 	 * @param {Object} options - Sprite options, see documentation for possible options
-	 * @returns {RigidBody} `this`
+	 * @return {RigidBody} `this`
 	 */
 	addSprite(container, options) {
 		let render = new Sprite({
@@ -227,9 +224,9 @@ module.exports = class RigidBody extends Node {
 	}
 	
 	/**
-	 * @description Changes if the body is static
+	 * Changes if the body is static
 	 * @param {boolean} isStatic - If the body should be static
-	 * @returns {void}
+	 * @return {void}
 	 */
 	setStatic(isStatic) {
 		let { dynamicGrid, staticGrid } = this.Engine.World;
@@ -256,9 +253,9 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * @description Changes if the body can collide with other bodies
-	 * @param number hasCollisions - Whether the body can collide with other bodies
-	 * @returns {void}
+	 * Changes if the body can collide with other bodies
+	 * @param {number} hasCollisions - Whether the body can collide with other bodies
+	 * @return {void}
 	 */
 	setCollisions(hasCollisions) {
 		let { dynamicGrid, staticGrid } = this.Engine.World;
@@ -285,9 +282,9 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * @description Finds if a point is inside the body
-	 * @param {vec} point The point to query
-	 * @returns {boolean} If the point is inside the body's vertices
+	 * Finds if a point is inside the body
+	 * @param {vec} point - The point to query
+	 * @return {boolean} If the point is inside the body's vertices
 	 */
 	containsPoint(point) {
 		let vertices = this.vertices;
@@ -303,12 +300,12 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * @description Instantly sets body's position to `position`
+	 * Instantly sets body's position to `position`
 	 * @param {vec} position - The position the body should be
 	 * @param {boolean} _ignoreChildren - If the body's children should be affected
 	 * @example
 	 * body.setPosition(new vec(100, 100)); // Sets body's position to (100, 100) 
-	 * @returns {void}
+	 * @return {void}
 	 */
 	setPosition(position, _ignoreChildren = false) {
 		let delta = position.sub(this.position);
@@ -316,11 +313,11 @@ module.exports = class RigidBody extends Node {
 	}
 	
 	/**
-	 * @description Shifts body's position by delta
+	 * Shifts body's position by delta
 	 * @param {vec} delta - Distance the body should be shifted
 	 * @param {boolean} affectPosition - If the body's position should be affected
 	 * @param {boolean} ignoreChildren - If the body's children should be shifted as well
-	 * @returns {void}
+	 * @return {void}
 	 */
 	translate(delta, affectPosition = true, ignoreChildren = false) {
 		if (delta.isNaN()) return;
@@ -348,11 +345,11 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * @description Rotates the body to `angle` - Absolute
-	 * @param number angle - Angle body should be in radians
+	 * Rotates the body to `angle` - Absolute
+	 * @param {number} angle - Angle body should be in radians
 	 * @example
 	 * body.setAngle(Math.PI); // Sets body's angle to Pi radians, or 180 degrees 
-	 * @returns {void}
+	 * @return {void}
 	 */
 	setAngle(angle) {
 		if (isNaN(angle)) return;
@@ -363,10 +360,10 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * @description Rotates the body by `angle`- Relative
-	 * @param number angle - The amount the body should be rotated, in radians
+	 * Rotates the body by `angle`- Relative
+	 * @param {number} angle - The amount the body should be rotated, in radians
 	 * @param {boolean} silent - If the body's angle should be affected
-	 * @returns {void}
+	 * @return {void}
 	 */
 	translateAngle(angle, silent = false) {
 		if (isNaN(angle)) return;
@@ -401,9 +398,9 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * @description Instantly changes the body's velocity to a specific value
+	 * Instantly changes the body's velocity to a specific value
 	 * @param {vec} velocity - The velocity the body should have
-	 * @returns {void}
+	 * @return {void}
 	 */
 	setVelocity(velocity) {
 		if (velocity.isNaN()) {
@@ -415,9 +412,9 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * @description Instantly changes the body's angular velocity to a specific value
+	 * Instantly changes the body's angular velocity to a specific value
 	 * @param {vec} velocity - The angular velocity the body should have
-	 * @returns {void}
+	 * @return {void}
 	 */
 	setAngularVelocity(velocity) {
 		if (velocity.isNaN()) {
@@ -429,10 +426,10 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * @description Applies a force to the body, ignoring mass. The body's velocity changes by force * delta
+	 * Applies a force to the body, ignoring mass. The body's velocity changes by force * delta
 	 * @param {vec} force - The amount of force to be applied, in px / sec^2
-	 * @param number delta - The amount of time that the force should be applied in seconds, set to 1 if only applying in one instant
-	 * @returns {void}
+	 * @param {number} delta - The amount of time that the force should be applied in seconds, set to 1 if only applying in one instant
+	 * @return {void}
 	 */
 	applyForce(force, delta = Engine.delta) { // set delta to 1 if you want to apply a force for only 1 frame
 		if (force.isNaN()) return;
@@ -441,10 +438,10 @@ module.exports = class RigidBody extends Node {
 	}
 	
 	/**
-	 * @description Applies a rotational force (torque) to the body, ignoring mass. The body's angular velocity changes by force * delta
-	 * @param number force - The amount of torque to be applied, in radians / sec^2
-	 * @param number delta - The amount of time the force should be applied in seconds, set to 1 if only applying instantaneous force
-	 * @returns {void}
+	 * Applies a rotational force (torque) to the body, ignoring mass. The body's angular velocity changes by force * delta
+	 * @param {number} force - The amount of torque to be applied, in radians / sec^2
+	 * @param {number} delta - The amount of time the force should be applied in seconds, set to 1 if only applying instantaneous force
+	 * @return {void}
 	 */
 	applyTorque(force, delta = Engine.delta) { // set delta to 1 if you want to apply a force for only 1 frame
 		if (isNaN(force)) return;
@@ -504,10 +501,9 @@ module.exports = class RigidBody extends Node {
 	// Private engine methods
 	// 
 	/**
-	 * @private
 	 * Prepares the body 
-	 * @param number delta - Engine tick duration, in seconds
-	 * @returns {void}
+	 * @param {number} delta - Engine tick duration, in seconds
+	 * @return {void}
 	 */
 	_preUpdate(delta) {
 		this.trigger("beforeUpdate");
@@ -524,10 +520,9 @@ module.exports = class RigidBody extends Node {
 		this.torque = 0;
 	}
 	/**
-	 * @private
 	 * Updates this body's velocity, position, and grid
-	 * @param number delta - Engine tick duration, in seconds
-	 * @returns {void}
+	 * @param {number} delta - Engine tick duration, in seconds
+	 * @return {void}
 	 */
 	_update(delta) {
 		this.trigger("duringUpdate");
@@ -566,9 +561,9 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * @private
 	 * Calculates the area of the body if it is convex
-	 * @returns number The area of the body
+	 * @return {number} The area of the body
+	 * @private
 	 */
 	#getArea() {
 		let area = 0;
@@ -581,9 +576,9 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * @private
 	 * Calculates inertia from the body's vertices
-	 * @returns number The body's inertia
+	 * @return {number} The body's inertia
+	 * @private
 	 */
 	#getInertia() {
 		const { vertices, mass } = this;
@@ -601,9 +596,9 @@ module.exports = class RigidBody extends Node {
 		return (mass / 6) * (numerator / denominator);
 	}
 	/**
-	 * @private
 	 * Sets the inertia of the body to what's calculated in `#getInertia()` if the body is not static
-	 * @returns {void}
+	 * @return {void}
+	 * @private
 	 */
 	_updateInertia() {
 		if (this.isStatic) {
@@ -617,10 +612,10 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * @private
 	 * Removes overlapping vertices
-	 * @param number minDist - Minimum distance when points are considered the same
-	 * @returns {void}
+	 * @param {number} minDist - Minimum distance when points are considered the same
+	 * @return {void}
+	 * @private
 	 */
 	#removeDuplicateVertices(minDist = 1) { // remove vertices that are the same
 		let vertices = this.vertices;
@@ -642,9 +637,9 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * @private
 	 * Determines if the body is convex
-	 * @returns {boolean} If the body is convex
+	 * @return {boolean} If the body is convex
+	 * @private
 	 */
 	#isConvex() {
 		let vertices = this.vertices;
@@ -670,6 +665,9 @@ module.exports = class RigidBody extends Node {
 		return true;
 	}
 
+	/**
+	 * @private
+	 */
 	#getCenterOfMass() {
 		let center = Common.getCenterOfMass(this.vertices);
 		this.center.set(center);
@@ -677,8 +675,8 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * @private
 	 * Calculates the body's axes from its vertices
+	 * @private
 	 */
 	#updateAxes() {
 		let verts = this.vertices;
@@ -698,8 +696,8 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * @private
 	 * Shifts vertices so their center is at the body's position 
+	 * @private
 	 */
 	#recenterVertices() {
 		let center = this.#getCenterOfMass();
@@ -712,9 +710,9 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * @private
 	 * Ensures vertices are counterclockwise winding and centered, and updates the area, bounding box, and the axes
-	 * @param number forceCCW - If vertices should be forced to be counterclockwise winding by sorting their angles from the center
+	 * @param {number} forceCCW - If vertices should be forced to be counterclockwise winding by sorting their angles from the center
+	 * @private
 	 */
 	_resetVertices(forceCCW = false) {
 		this.#makeCCW(forceCCW);
@@ -725,9 +723,9 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * @private
 	 * Tries to ensure the body's vertices are counterclockwise winding, by default by comparing the angles of the first 2 vertices and reversing the vertice array if they're clockwise
 	 * @param {boolean} force - If all vertices should be completely reordered using their angle from the center 
+	 * @private
 	 */
 	#makeCCW(force = false) { // makes vertices go counterclockwise if they're clockwise
 		if (force) { // reorders vertices by angle from center - can change order of vertices
@@ -749,11 +747,11 @@ module.exports = class RigidBody extends Node {
 	}
 
 	/**
-	 * @private
 	 * Finds the vertice farthest in a direction
 	 * @param {vec} vector - Normalized direction to find the support point
 	 * @param {vec} position - Position to base support on
-	 * @returns {Array} 
+	 * @return {Array} 
+	 * @private
 	 */
 	_getSupport(vector, position = this.position) {
 		let vertices = this.vertices;
@@ -771,3 +769,4 @@ module.exports = class RigidBody extends Node {
 		return [ bestVert, bestDist ];
 	}
 }
+module.exports = RigidBody;

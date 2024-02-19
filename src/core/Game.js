@@ -8,10 +8,9 @@ const Ticker = require("../core/Ticker.js");
 const Bodies = require("../bodies/Bodies.js");
 
 /**
- * Game object that handles physics, rendering, world, ticker, and more
- * @class Game
+ * Handles numerous aspects of the game for you, such as the world, physics engine, rendering, ticking, and making bodies.
  */
-module.exports = class Game {
+class Game {
 	static defaultOptions = {
 		World: World.defaultOptions,
 		Render: Render.defaultOptions,
@@ -19,6 +18,20 @@ module.exports = class Game {
 		Ticker: Ticker.defaultOptions,
 	}
 
+	/**
+	 * Default options:
+	 * ```
+	 * {
+	 * 	World: World.defaultOptions,
+	 * 	Render: Render.defaultOptions,
+	 * 	Engine: Engine.defaultOptions,
+	 * 	Ticker: Ticker.defaultOptions,
+	 * }
+	 * ```
+	 * See respective documentation for individual defaults.
+	 * 
+	 * @param {Object} options - Options object
+	 */
 	constructor(options = {}) {
 		let defaults = { ...Game.defaultOptions };
 		Common.merge(defaults, options, 2);
@@ -30,6 +43,10 @@ module.exports = class Game {
 		this.Ticker = new Ticker(this, options.Ticker);
 		this.Bodies = Bodies.createBodyFactory(this.Engine);
 	}
+	/**
+	 * Creates a debug rendering context as `this.DebugRender`. See [DebugRender](./DebugRender.html) for more information.
+	 * @link
+	 */
 	createDebugRender() {
 		this.DebugRender = new DebugRender(this);
 
@@ -38,3 +55,4 @@ module.exports = class Game {
 		Performance.render.enabled = true;
 	}
 }
+module.exports = Game;

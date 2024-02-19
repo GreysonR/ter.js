@@ -6,10 +6,9 @@ const RigidBody = require("../physics/RigidBody.js");
 
 /**
  * The game world
- * @class World
  * @extends Node
  */
-module.exports = class World extends Node {
+class World extends Node {
 	static defaultOptions = {
 		gravity: new vec(0, 500),
 		gridSize: 500,
@@ -198,3 +197,4 @@ module.exports = class World extends Node {
 		}
 	}
 }
+module.exports = World;

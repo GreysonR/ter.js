@@ -1,10 +1,9 @@
 const vec = require("../geometry/vec");
 
 /**
- * @class Bounds
  * AABB bounds
  */
-module.exports = class Bounds {
+class Bounds {
 	min = new vec(0, 0);
 	max = new vec(0, 0);
 	constructor(min, max) {
@@ -23,7 +22,7 @@ module.exports = class Bounds {
 
 	/**
 	 * Updates the bounds based on an array vertices
-	 * @param {Array} - Array of vertices 
+	 * @param {Array} vertices - Array of vertices 
 	 */
 	update(vertices) {
 		let minX = Infinity, minY = Infinity;
@@ -46,9 +45,10 @@ module.exports = class Bounds {
 
 	/**
 	 * Creates a random point within the bounds
-	 * @returns {vec} Random point within bounds
+	 * @return {vec} Random point within bounds
 	 */
 	randomPoint() {
 
 	}
 }
+module.exports = Bounds;

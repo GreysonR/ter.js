@@ -1,8 +1,7 @@
 /**
  * Creates a debug rendering context
- * @class DebugRender
  */
-module.exports = class DebugRender {
+class DebugRender {
 	// - Debug rendering
 	canvas = null;
 	ctx = null;
@@ -185,3 +184,4 @@ module.exports = class DebugRender {
 		});
 	}
 }
+module.exports = DebugRender;

@@ -3,7 +3,7 @@ const vec = require("../geometry/vec.js");
 const PolygonRender = require("../render/PolygonRender.js");
 const Sprite = require("../render/Sprite.js");
 
-module.exports = class Rectangle extends RigidBody {
+class Rectangle extends RigidBody {
 	static createVertices(width, height) {
 		return [
 			new vec(-width/2,  height/2),
@@ -50,3 +50,4 @@ module.exports = class Rectangle extends RigidBody {
 		return this;
 	}
 }
+module.exports = Rectangle;

@@ -1,24 +1,20 @@
 {
-    "tags": {
-        "allowUnknownTags": false
-    },
-    "source": {
-        "include": "src/",
-        "includePattern": "\\.js$",
-        "excludePattern": "(node_modules/|docs)"
-    },
-    "plugins": [
-        "plugins/markdown"
-    ],
-    "opts": {
-        "template": "node_modules/docdash",
-        "encoding": "utf8",
-        "destination": "docs/",
-        "recurse": true,
-        "verbose": true
-    },
-    "templates": {
-        "cleverLinks": true,
-        "monospaceLinks": false
-    }
+	"plugins": ["plugins/markdown", "node_modules/better-docs/category"],
+	"opts": {
+		"destination": "./docs/",
+		"recurse": true,
+		"template": "node_modules/clean-jsdoc-theme",
+        "theme_opts": {
+            "default_theme": "dark"
+        }
+	},
+	"source": {
+		"include": ["src/"]
+	},
+	"tags": {
+		"allowUnknownTags": ["category"]
+	},
+	"templates": {
+		"cleverLinks": true
+	}
 }

@@ -1,13 +1,12 @@
 /**
- * @class vec
- * @description A 2d vector
+ * A 2d vector
  */
-module.exports = class vec {
+class vec {
 	/**
-	 * @description Creates a new vector
+	 * Creates a new vector
 	 * @param {*} x - The x coordinate
 	 * @param {*} y  - The y coordinate
-	 * @returns {vec} `this`
+	 * @return {vec} `this`
 	 */
 	constructor(x, y) {
 		if (typeof x === "object") {
@@ -32,9 +31,9 @@ module.exports = class vec {
 		return this;
 	}
 	/**
-	 * @description Adds `vec2` to `this`, returning a new vector
+	 * Adds `vec2` to `this`, returning a new vector
 	 * @param {vec} vec2 - 
-	 * @returns {vec} New vector
+	 * @return {vec} New vector
 	 */
 	add(vec2) {
 		if (typeof vec2 === "number") {
@@ -45,9 +44,9 @@ module.exports = class vec {
 		}
 	}
 	/**
-	 * @description Subtracts `vec2` from `this`, returning a new vector
+	 * Subtracts `vec2` from `this`, returning a new vector
 	 * @param {vec} vec2 - 
-	 * @returns {vec} New vector
+	 * @return {vec} New vector
 	 */
 	sub(vec2) {
 		if (typeof vec2 === "number") {
@@ -58,9 +57,9 @@ module.exports = class vec {
 		}
 	}
 	/**
-	 * @description Multiplies `this` by `vec2`, returning a new vector
+	 * Multiplies `this` by `vec2`, returning a new vector
 	 * @param {vec} vec2 - 
-	 * @returns {vec} New vector
+	 * @return {vec} New vector
 	 */
 	mult(vec2) {
 		if (typeof vec2 === "number") {
@@ -71,9 +70,9 @@ module.exports = class vec {
 		}
 	}
 	/**
-	 * @description Divides `this` by `vec2`, returning a new vector
+	 * Divides `this` by `vec2`, returning a new vector
 	 * @param {vec} vec2 - 
-	 * @returns {vec} New vector
+	 * @return {vec} New vector
 	 */
 	div(vec2) {
 		if (typeof vec2 === "number") {
@@ -84,9 +83,9 @@ module.exports = class vec {
 		}
 	}
 	/**
-	 * @description Adds `vec2` to `this` in place, returning `this`
+	 * Adds `vec2` to `this` in place, returning `this`
 	 * @param {vec} vec2 - 
-	 * @returns {vec} `this`
+	 * @return {vec} `this`
 	 */
 	add2(vec2) {
 		if (typeof vec2 === "number") {
@@ -101,9 +100,9 @@ module.exports = class vec {
 		}
 	}
 	/**
-	 * @description Subtracts `vec2` from `this` in place, returning `this`
+	 * Subtracts `vec2` from `this` in place, returning `this`
 	 * @param {vec} vec2 - 
-	 * @returns {vec} `this`
+	 * @return {vec} `this`
 	 */
 	sub2(vec2) {
 		if (typeof vec2 === "number") {
@@ -118,9 +117,9 @@ module.exports = class vec {
 		}
 	}
 	/**
-	 * @description Multiplies `this` by `vec2` in place, returning `this`
+	 * Multiplies `this` by `vec2` in place, returning `this`
 	 * @param {vec} vec2 - 
-	 * @returns {vec} `this`
+	 * @return {vec} `this`
 	 */
 	mult2(vec2) {
 		if (typeof vec2 === "number") {
@@ -135,9 +134,9 @@ module.exports = class vec {
 		}
 	}
 	/**
-	 * @description Divides `this` by `vec2` in place, returning `this`
+	 * Divides `this` by `vec2` in place, returning `this`
 	 * @param {vec} vec2 - 
-	 * @returns {vec} `this`
+	 * @return {vec} `this`
 	 */
 	div2(vec2) {
 		if (typeof vec2 === "number") {
@@ -152,9 +151,9 @@ module.exports = class vec {
 		}
 	}
 	/**
-	 * @description Raises `this` to the power of `vec2`
+	 * Raises `this` to the power of `vec2`
 	 * @param {vec} vec2 - 
-	 * @returns {vec} New vector
+	 * @return {vec} New vector
 	 */
 	pow(vec2) {
 		if (typeof vec2 === "number") {
@@ -165,9 +164,9 @@ module.exports = class vec {
 		}
 	}
 	/**
-	 * @description Raises `this` to the power of `vec2` in place
+	 * Raises `this` to the power of `vec2` in place
 	 * @param {vec} vec2 - 
-	 * @returns {vec} `this`
+	 * @return {vec} `this`
 	 */
 	pow2(vec2) {
 		if (typeof vec2 === "number") {
@@ -182,20 +181,20 @@ module.exports = class vec {
 		}
 	}
 	/**
-	 * @description Finds the signed values of `x` and `y`
+	 * Finds the signed values of `x` and `y`
 	 * @example
 	 * let signed = new vec(4, -2).sign(); // signed = { x: 1, y: -1 }
-	 * @returns {vec} New vector
+	 * @return {vec} New vector
 	 */
 	sign() {
 		return new vec(Math.sign(this.x), Math.sign(this.y));
 	}
 	/**
-	 * @description Finds the signed values of `x` and `y` in place
+	 * Finds the signed values of `x` and `y` in place
 	 * @example
 	 * let signed = new vec(0, -4);
 	 * signed.sign2(); // signed = { x: 0, y: -1 }
-	 * @returns {vec} `this`
+	 * @return {vec} `this`
 	 */
 	sign2() {
 		this.x = Math.sign(this.x);
@@ -203,11 +202,11 @@ module.exports = class vec {
 		return this;
 	}
 	/**
-	 * @description Finds the modulus of `this` and `vec2`
+	 * Finds the modulus of `this` and `vec2`
 	 * @param {vec} vec2 - 
 	 * @example
 	 * let mod = new vec(14, 4).mod(new vec(2, 3)); // mod = { x: 0, y: 1 }
-	 * @returns {vec} New vector
+	 * @return {vec} New vector
 	 */
 	mod(vec2) {
 		if (typeof vec2 === "number")
@@ -215,12 +214,12 @@ module.exports = class vec {
 		return new vec(this.x % vec2.x, this.y % vec2.y);
 	}
 	/**
-	 * @description Finds the modulus of `this` and `vec2` in place
+	 * Finds the modulus of `this` and `vec2` in place
 	 * @param {vec} vec2 - 
 	 * @example
 	 * let mod = new vec(-2, 6);
 	 * mod.mod2(new vec(3, 4)); // mod = { x: -2, y: 2 }
-	 * @returns {vec} `this`
+	 * @return {vec} `this`
 	 */
 	mod2(vec2) {
 		if (typeof vec2 === "number") {
@@ -234,17 +233,17 @@ module.exports = class vec {
 		return this;
 	}
 	/**
-	 * @description Finds dot product of `this` and `vec2`
+	 * Finds dot product of `this` and `vec2`
 	 * @param {vec} vec2 - 
-	 * @returns {vec} New vector
+	 * @return {vec} New vector
 	 */
 	dot(vec2) {
 		return this.x * vec2.x + this.y * vec2.y;
 	}
 	/**
-	 * @description Finds 2d cross product of `this` and `vec2`
+	 * Finds 2d cross product of `this` and `vec2`
 	 * @param {vec} vec2 - 
-	 * @returns {vec} New vector
+	 * @return {vec} New vector
 	 */
 	cross(vec2) {
 		if (typeof vec2 === "number") {
@@ -255,29 +254,29 @@ module.exports = class vec {
 		}
 	}
 	/**
-	 * @description Finds average of `this` and `vec2`
+	 * Finds average of `this` and `vec2`
 	 * @param {vec} vec2 - Second vector
-	 * @param {weight} - The weight that `this` has in the average
-	 * @returns {vec} New vector
+	 * @param {number} weight - The weight that `this` has in the average
+	 * @return {vec} New vector
 	 */
 	avg(vec2, weight = 0.5) {
 		let weight2 = 1 - weight;
 		return new vec(this.x * weight + vec2.x * weight2, this.y * weight + vec2.y * weight2);
 	}
 	/**
-	 * @description Finds the length of `this`
-	 * @returns number Length
+	 * Finds the length of `this`
+	 * @return {number} Length
 	 */
 	get length() {
 		return Math.sqrt(this.x * this.x + this.y * this.y);
 	}
 	/**
-	 * @description Sets the length of `this`, keeping its direction the same
-	 * @param {len} - The new length
+	 * Sets the length of `this`, keeping its direction the same
+	 * @param {number} len - The new length
 	 * @example
 	 * let v = new vec(1, 1);
 	 * v.length = 10; // v = { x: 7.07, y: 7.07 }
-	 * @returns {vec} `this`
+	 * @return {vec} `this`
 	 */
 	set length(len) {
 		let scale = len / this.length;
@@ -287,37 +286,37 @@ module.exports = class vec {
 		return this;
 	}
 	/**
-	 * @description Finds the angle of `this`
-	 * @returns number Angle, in radians
+	 * Finds the angle of `this`
+	 * @return {number} Angle, in radians
 	 */
 	get angle() {
 		return Math.atan2(this.y, this.x);
 	}
 	/**
-	 * @description Finds area of the rectangle created by `this`
-	 * @returns number Area
+	 * Finds area of the rectangle created by `this`
+	 * @return {number} Area
 	 */
 	get area() {
 		return this.x * this.y;
 	}
 	/**
-	 * @description Finds the manhattan distance (x + y) between `vec` and `this`
+	 * Finds the manhattan distance (x + y) between `vec` and `this`
 	 * @param {vec} vec2
-	 * @returns number Distnace
+	 * @return {number} Distnace
 	 */
 	manhattan(vec2) {
 		return Math.abs(vec2.x - this.x) + Math.abs(vec2.y - this.y);
 	}
 	/**
-	 * @description Takes the absolute value of `x` and `y`
-	 * @returns {vec} New vector
+	 * Takes the absolute value of `x` and `y`
+	 * @return {vec} New vector
 	 */
 	abs() {
 		return new vec(Math.abs(this.x), Math.abs(this.y));
 	}
 	/**
-	 * @description Takes the absolute value of `x` and `y` in place
-	 * @returns {vec} `this`
+	 * Takes the absolute value of `x` and `y` in place
+	 * @return {vec} `this`
 	 */
 	abs2() {
 		this.x = Math.abs(this.x);
@@ -325,9 +324,9 @@ module.exports = class vec {
 		return this;
 	}
 	/**
-	 * @description Reflects `this` over `vec2`. `vec2` must be normalized
+	 * Reflects `this` over `vec2`. `vec2` must be normalized
 	 * @param {vec} vec2 - Normalized vector reflected across
-	 * @returns {vec} New reflected vector
+	 * @return {vec} New reflected vector
 	 */
 	reflect(vec2) { // vec2 must be normalized
 		// Vect2 = Vect1 - 2 * WallN * (WallN DOT Vect1)
@@ -335,26 +334,26 @@ module.exports = class vec {
 		return this.sub(v2.mult(v2.dot(this) * 2));
 	}
 	/**
-	 * @description Reflects `this` over `vec2` in place. `vec2` must be normalized
+	 * Reflects `this` over `vec2` in place. `vec2` must be normalized
 	 * @param {vec} vec2 - Normalized vector reflected across
-	 * @returns {vec} `this`
+	 * @return {vec} `this`
 	 */
 	reflect2(vec2) { // vec2 must be normalized
 		let v2 = vec2.normal();
 		return this.sub2(v2.mult(v2.dot(this) * 2));
 	}
 	/**
-	 * @description Rotates `this` by `angle`
-	 * @param number angle - Angle rotated by, in radians
-	 * @returns {vec} New rotated vector
+	 * Rotates `this` by `angle`
+	 * @param {number} angle - Angle rotated by, in radians
+	 * @return {vec} New rotated vector
 	 */
 	rotate(angle) {
 		return new vec(Math.cos(angle) * this.x - Math.sin(angle) * this.y, Math.sin(angle) * this.x + Math.cos(angle) * this.y);
 	}
 	/**
-	 * @description Rotates `this` by `angle` in place
-	 * @param number angle - Angle rotated by, in radians
-	 * @returns {vec} `this`
+	 * Rotates `this` by `angle` in place
+	 * @param {number} angle - Angle rotated by, in radians
+	 * @return {vec} `this`
 	 */
 	rotate2(angle) {
 		let x = Math.cos(angle) * this.x - Math.sin(angle) * this.y;
@@ -363,10 +362,10 @@ module.exports = class vec {
 		return this;
 	}
 	/**
-	 * @description Projects `this` onto `vec2`
+	 * Projects `this` onto `vec2`
 	 * @param {vec} vec2 - Vector projected onto
 	 * @param {boolean} [bound=false] - If the projected vector should be forced between the bounds of `vec2`
-	 * @returns {vec} New rotated vector
+	 * @return {vec} New rotated vector
 	 */
 	project(vec2, bound = false) { // projects this vector onto the other one
 		let d1 = this.dot(vec2);
@@ -379,10 +378,10 @@ module.exports = class vec {
 		return new vec(d1 * vec2.x / d2, d1 * vec2.y / d2);
 	}
 	/**
-	 * @description Projects `this` onto `vec2` in place
+	 * Projects `this` onto `vec2` in place
 	 * @param {vec} vec2 - Vector projected onto
 	 * @param {boolean} [bound=false] - If the projected vector should be forced between the bounds of `vec2`
-	 * @returns {vec} `this`
+	 * @return {vec} `this`
 	 */
 	project2(vec2, bound = false) { // projects this vector onto the other one
 		let d1 = this.dot(vec2);
@@ -398,8 +397,8 @@ module.exports = class vec {
 		return this;
 	}
 	/**
-	 * @description Normalizes `this`, making its length 1
-	 * @returns {vec} New vector
+	 * Normalizes `this`, making its length 1
+	 * @return {vec} New vector
 	 */
 	normalize() {
 		let len = this.length;
@@ -407,8 +406,8 @@ module.exports = class vec {
 		return new vec(this.x / len, this.y / len);
 	}
 	/**
-	 * @description Normalizes `this` in place, making its length 1
-	 * @returns {vec} `this`
+	 * Normalizes `this` in place, making its length 1
+	 * @return {vec} `this`
 	 */
 	normalize2() {
 		let len = this.length;
@@ -418,15 +417,15 @@ module.exports = class vec {
 		return this;
 	}
 	/**
-	 * @description Finds the left hand normal
-	 * @returns {vec} New vector
+	 * Finds the left hand normal
+	 * @return {vec} New vector
 	 */
 	normal() { // left hand normal
 		return new vec(this.y, -this.x);
 	}
 	/**
-	 * @description Finds the left hand normal in place
-	 * @returns {vec} `this`
+	 * Finds the left hand normal in place
+	 * @return {vec} `this`
 	 */
 	normal2() { // left hand normal
 		let y = this.y;
@@ -435,15 +434,15 @@ module.exports = class vec {
 		return this;
 	}
 	/**
-	 * @description Rounds `x` and `y` components down
-	 * @returns {vec} New vector
+	 * Rounds `x` and `y` components down
+	 * @return {vec} New vector
 	 */
 	floor() {
 		return new vec(Math.floor(this.x), Math.floor(this.y));
 	}
 	/**
-	 * @description Rounds `x` and `y` components down in place
-	 * @returns {vec} `this`
+	 * Rounds `x` and `y` components down in place
+	 * @return {vec} `this`
 	 */
 	floor2() {
 		this.x = Math.floor(this.x);
@@ -451,15 +450,15 @@ module.exports = class vec {
 		return this;
 	}
 	/**
-	 * @description Rounds `x` and `y` components up
-	 * @returns {vec} New vector
+	 * Rounds `x` and `y` components up
+	 * @return {vec} New vector
 	 */
 	ceil() {
 		return new vec(Math.ceil(this.x), Math.ceil(this.y));
 	}
 	/**
-	 * @description Rounds `x` and `y` components up in place
-	 * @returns {vec} `this`
+	 * Rounds `x` and `y` components up in place
+	 * @return {vec} `this`
 	 */
 	ceil2() {
 		this.x = Math.ceil(this.x);
@@ -467,15 +466,15 @@ module.exports = class vec {
 		return this;
 	}
 	/**
-	 * @description Rounds `x` and `y` components
-	 * @returns {vec} New vector
+	 * Rounds `x` and `y` components
+	 * @return {vec} New vector
 	 */
 	round() {
 		return new vec(Math.round(this.x), Math.round(this.y));
 	}
 	/**
-	 * @description Rounds `x` and `y` components in place
-	 * @returns {vec} `this`
+	 * Rounds `x` and `y` components in place
+	 * @return {vec} `this`
 	 */
 	round2() {
 		this.x = Math.round(this.x);
@@ -483,17 +482,17 @@ module.exports = class vec {
 		return this;
 	}
 	/**
-	 * @description Finds  the minimum `x` and `y` components between `this` and `vec2`
+	 * Finds  the minimum `x` and `y` components between `this` and `vec2`
 	 * @param {vec} vec2
-	 * @returns {vec} New vector
+	 * @return {vec} New vector
 	 */
 	min(vec2) {
 		return new vec(Math.min(vec2.x, this.x), Math.min(vec2.y, this.y));
 	}
 	/**
-	 * @description Finds  the minimum `x` and `y` components between `this` and `vec2` in place
+	 * Finds  the minimum `x` and `y` components between `this` and `vec2` in place
 	 * @param {vec} vec2
-	 * @returns {vec} `this`
+	 * @return {vec} `this`
 	 */
 	min2(vec2) {
 		this.x = Math.min(this.x, vec2.x);
@@ -501,17 +500,17 @@ module.exports = class vec {
 		return this;
 	}
 	/**
-	 * @description Finds the maximum `x` and `y` components between `this` and `vec2`
+	 * Finds the maximum `x` and `y` components between `this` and `vec2`
 	 * @param {vec} vec2
-	 * @returns {vec} New vector
+	 * @return {vec} New vector
 	 */
 	max(vec2) {
 		return new vec(Math.max(vec2.x, this.x), Math.max(vec2.y, this.y));
 	}
 	/**
-	 * @description Finds the maximum `x` and `y` components between `this` and `vec2` in place
+	 * Finds the maximum `x` and `y` components between `this` and `vec2` in place
 	 * @param {vec} vec2
-	 * @returns {vec} `this`
+	 * @return {vec} `this`
 	 */
 	max2(vec2) {
 		this.x = Math.max(this.x, vec2.x);
@@ -519,19 +518,19 @@ module.exports = class vec {
 		return this;
 	}
 	/**
-	 * @description Clamps `x` and `y` components between `min` and `max`
+	 * Clamps `x` and `y` components between `min` and `max`
 	 * @param {vec} min
 	 * @param {vec} max
-	 * @returns {vec} New vector
+	 * @return {vec} New vector
 	 */
 	clamp(min, max) {
 		return new vec(Math.max(min.x, Math.min(max.x, this.x)), Math.max(min.y, Math.min(max.y, this.y)));
 	}
 	/**
-	 * @description Finds  the maximum `x` and `y` components between `this` and `vec2` in place
+	 * Finds  the maximum `x` and `y` components between `this` and `vec2` in place
 	 * @param {vec} min
 	 * @param {vec} max
-	 * @returns {vec} `this`
+	 * @return {vec} `this`
 	 */
 	clamp2(min, max) {
 		this.x = Math.max(min.x, Math.min(max.x, this.x));
@@ -539,17 +538,17 @@ module.exports = class vec {
 		return this;
 	}
 	/**
-	 * @description Checks if `this` equals `vec2`. DOES NOT take into account floating point error.
+	 * Checks if `this` equals `vec2`. DOES NOT take into account floating point error.
 	 * @param {vec} vec2
-	 * @returns {boolean}
+	 * @return {boolean}
 	 */
 	equals(vec2) {
 		return this.x === vec2.x && this.y === vec2.y;
 	}
 	/**
-	 * @description Sets the `x` and `y` components to be the same as `vec2` in place
+	 * Sets the `x` and `y` components to be the same as `vec2` in place
 	 * @param {vec} vec2
-	 * @returns {vec} `this`
+	 * @return {vec} `this`
 	 */
 	set(vec2) {
 		this.x = vec2.x;
@@ -557,38 +556,39 @@ module.exports = class vec {
 		return this;
 	}
 	/**
-	 * @description Creates a string in the format `"{ x : x, y: y }"`
-	 * @returns {void}
+	 * Creates a string in the format `"{ x : x, y: y }"`
+	 * @return {void}
 	 */
 	toString() {
 		return `{ x: ${ this.x }, y: ${ this.y } }`;
 	}
 	/**
-	 * @description Creates a string in the format `"{ x : x, y: y }"`, with `x` and `y` rounded
-	 * @returns {void}
+	 * Creates a string in the format `"{ x : x, y: y }"`, with `x` and `y` rounded
+	 * @return {void}
 	 */
 	toStringInt() {
 		return `{ x: ${ Math.round(this.x) }, y: ${ Math.round(this.y) } }`;
 	}
 	/**
-	 * @description Creates js object in the form of `{ x: x, y: y }`
-	 * @returns {Object}
+	 * Creates js object in the form of `{ x: x, y: y }`
+	 * @return {Object}
 	 */
 	toObject() {
 		return { x: this.x, y: this.y };
 	}
 	/**
-	 * @description Creates a array in the format `[x, y]`
-	 * @returns {void}
+	 * Creates a array in the format `[x, y]`
+	 * @return {void}
 	 */
 	toArray() {
 		return [this.x, this.y];
 	}
 	/**
-	 * @description Finds if any part of the vector is NaN
-	 * @returns {boolean}
+	 * Finds if any part of the vector is NaN
+	 * @return {boolean}
 	 */
 	isNaN() {
 		return isNaN(this.x) || isNaN(this.y);
 	}
 }
+module.exports = vec;

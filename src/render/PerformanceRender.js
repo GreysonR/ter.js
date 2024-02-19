@@ -2,9 +2,8 @@ const RenderMethods = require("../render/RenderMethods");
 
 /**
  * Handles rendering performance stats
- * @class PerformanceRender
  */
-module.exports = class PerformanceRender {
+class PerformanceRender {
 	enabled = false;
 	canvas = null;
 	ctx = null;
@@ -129,3 +128,4 @@ module.exports = class PerformanceRender {
 		}
 	}
 }
+module.exports = PerformanceRender;
