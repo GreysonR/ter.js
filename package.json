@@ -4,6 +4,7 @@
   "description": "",
   "scripts": {
     "build": "webpack",
+    "build-prod": "webpack --config webpack-prod.config.js",
     "dev": "webpack serve",
     "build-docs": "jsdoc -c jsdoc.json --verbose"
   },
