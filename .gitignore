@@ -2,4 +2,3 @@ node_modules/
 docs/
 .vscode/
 dist/
-package-lock.json
