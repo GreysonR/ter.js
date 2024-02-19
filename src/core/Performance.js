@@ -6,8 +6,20 @@ const PerformanceRender = require("../render/PerformanceRender");
 class Performance {
 	getAvgs = true;
 	#lastUpdate = 0;
+	/**
+	 * The frames per second of the engine.
+	 * @type {number}
+	 */
 	fps = 60;
+	/**
+	 * The amount of time between frames in seconds.
+	 * @type {number}
+	 */
 	delta = 1;
+	/**
+	 * The engine frame number. Note that this will increase much faster than the number of rendered frames when `Engine.substeps` is greater than 1.
+	 * @type {number}
+	 */
 	frame = 0;
 
 	history = {
@@ -21,14 +33,17 @@ class Performance {
 		lastUpdate: 0,
 	}
 
+	/**
+	 * Creates a Performance object
+	 * @param {Render} Render - [Render](./Render.html)
+	 */
 	constructor(Render = undefined) {
 		if (Render) this.render = new PerformanceRender(this, Render);
 		this.#lastUpdate = performance.now() / 1000;
 	}
 
 	/**
-	 * Updates the performance stats. Should be called every frame
-	 * @return {void}
+	 * Updates the performance stats. Should be called every frame.
 	 */
 	update() {
 		let curTime = performance.now() / 1000;
