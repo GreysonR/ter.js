@@ -15,12 +15,13 @@ jobs:
         node-version: [18.x]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@ter-v2
 
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
+        cache: npm
 
     - name: Build
       run: |
@@ -28,4 +29,4 @@ jobs:
         npm run build-prod
 
     - name: Build documentation
-      uses: npm run build-docs
+      run: npm run build-docs
