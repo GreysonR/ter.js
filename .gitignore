@@ -1,5 +1,4 @@
 node_modules/
 docs/
 .vscode/
-dist/
-docs/
+dev_dist/
