@@ -38,6 +38,7 @@
 	game.createDebugRender();
 	console.log(game);
 
+	const { Graph } = ter;
 	const { Engine, Render, Bodies } = game;
 	const { camera } = Render;
 	const { World } = Engine;
@@ -86,5 +87,26 @@
 
 	// game.DebugRender.enabled.vertices = true;
 	game.DebugRender.enabled.collisions = true;
+
+
+	let graph = new Graph(200, 150, new vec(20, 20), {
+		maxLength: 800,
+		title: "Hello graph",
+		titleSize: 12,
+		background: "transparent",
+		lineColor: {
+			fps: "#9D436C",
+			delta: "#5EA8BA",
+			default: "white",
+		},
+		padding: 10,
+		scaleRange: [0, 144 * 2],
+	});
+	console.log(graph);
+	Render.on("beforeUpdate", () => {
+		graph.addData(game.Engine.Performance.fps, "fps");
+		graph.addData(game.Engine.Performance.delta * 1000 * 10, "delta");
+		graph.addData(game.Engine.Performance.delta * 1000 * 17);
+	});
 </script>
 </html>

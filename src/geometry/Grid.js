@@ -20,18 +20,18 @@ class Grid {
 
 	/**
 	 * Creates an empty grid
-	 * @param {number} size - The size of each grid cell
+	 * @param {number} size - Size of each grid cell
 	 */
 	constructor(size = 2000) {
 		this.gridSize = size;
 		this.id = Grid.id++;
 	}
-	pair = function(pos) {
+	pair(pos) {
 		let x = pos.x >= 0 ? pos.x * 2 : pos.x * -2 - 1;
 		let y = pos.y >= 0 ? pos.y * 2 : pos.y * -2 - 1;
 		return (x >= y) ? (x * x + x + y) : (y * y + x);
 	}
-	unpair = function(n) {
+	unpair(n) {
 		let sqrtz = Math.floor(Math.sqrt(n));
 		let sqz = sqrtz * sqrtz;
 		let result1 = ((n - sqz) >= sqrtz) ? new vec(sqrtz, n - sqz - sqrtz) : new vec(n - sqz, sqrtz);
@@ -39,7 +39,7 @@ class Grid {
 		let y = result1.y % 2 === 0 ? result1.y / 2 : (result1.y + 1) / -2;
 		return new vec(x, y);
 	}
-	getBounds = function(body) {
+	getBounds(body) {
 		let size = this.gridSize;
 		if (typeof body.bounds === "object") {
 			return {
@@ -56,7 +56,7 @@ class Grid {
 			}
 		}
 	}
-	getBucketIds = function(bounds) {
+	getBucketIds(bounds) {
 		let ids = [];
 		for (let x = bounds.min.x; x <= bounds.max.x; x++) {
 			for (let y = bounds.min.y; y <= bounds.max.y; y++) {
@@ -75,7 +75,7 @@ class Grid {
 	 * Adds the body to the grid
 	 * @param {RigidBody} body - Body added to the grid
 	 */
-	addBody = function(body) {
+	addBody(body) {
 		let bounds = this.getBounds(body);
 
 		if (!body._Grids) body._Grids = {};
@@ -98,7 +98,7 @@ class Grid {
 	 * Removes the body from the grid
 	 * @param {RigidBody} body - Body removed from the grid
 	 */
-	removeBody = function(body) {
+	removeBody(body) {
 		for (let n of body._Grids[this.id]) {
 			let node = this.grid[n];
 			if (node) {
@@ -114,7 +114,7 @@ class Grid {
 	 * Adds a vector point to the grid
 	 * @param {vec} point - Point added
 	 */
-	addPoint = function(point) {
+	addPoint(point) {
 		if (!point._Grids) point._Grids = {};
 		if (!point._Grids[this.id]) point._Grids[this.id] = [];
 
@@ -132,7 +132,7 @@ class Grid {
 	 * Remove a vector point from the grid
 	 * @param {vec} point - Point removed
 	 */
-	removePoint = function(point) {
+	removePoint(point) {
 		if (!point._Grids) console.log(point._Grids);
 		for (let n of point._Grids[this.id]) {
 			let node = this.grid[n];
@@ -149,7 +149,7 @@ class Grid {
 	 * Updates the body's position in the grid
 	 * @param {RigidBody|vec} body - Body in the grid
 	 */
-	updateBody = function(body) {
+	updateBody(body) {
 		let curNodes = body._Grids[this.id];
 		let oldNodes = new Set(curNodes);
 		let bounds = this.getBounds(body);

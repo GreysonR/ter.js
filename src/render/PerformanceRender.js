@@ -1,13 +1,23 @@
 const RenderMethods = require("../render/RenderMethods");
 
 /**
- * Handles rendering performance stats
+ * Handles rendering performance stats. Creates a graph in the top corner of the screen.
  */
 class PerformanceRender {
+	/**
+	 * If the graph is enabled
+	 * @type {boolean}
+	 */
 	enabled = false;
 	canvas = null;
 	ctx = null;
 	position = new vec(20, 20);
+
+	/**
+	 * 
+	 * @param {Performance} Performance - [Performance](./Performance.html)
+	 * @param {Render} Render - [Render](./Render.html)
+	 */
 	constructor(Performance, Render) {
 		this.Performance = Performance;
 

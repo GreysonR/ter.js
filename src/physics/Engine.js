@@ -25,7 +25,7 @@ class Engine {
 
 	/**
 	 * 
-	 * @param {World} World - The world the physics engine should run on
+	 * @param {World} World - World the physics engine should run on
 	 * @param {Object} options - Options for the engine, see documentation for possible options
 	 */
 	constructor(World, options = {}) {
@@ -275,7 +275,7 @@ class Engine {
 
 	/**
 	 * Deletes the collision pair
-	 * @param {collisionPair} pair - The pair to delete
+	 * @param {collisionPair} pair - Pair to delete
 	 * @return {boolean} If pair was successfully removed, meaning they are no longer colliding
 	 */
 	cleansePair(pair) {
@@ -303,7 +303,6 @@ class Engine {
 	/**
 	 * Solves velocity constriants on current collision pairs
 	 * Also clears collision pairs that are no longer valid (they haven't collided this frame)
-	 * @return {void}
 	 */
 	solveVelocity = function() {
 		let { pairs } = this.World;
@@ -431,7 +430,6 @@ class Engine {
 	/**
 	 * Solves physics constraints for their new position and velocity
 	 * @param {number} delta - Engine tick duration, in seconds
-	 * @return {void}
 	 */
 	solveConstraints = function(delta) {
 		delta *= 1000;

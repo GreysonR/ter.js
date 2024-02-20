@@ -2,6 +2,7 @@
 
 /**
  * Renders lines. Mainly used for rendering constraints
+ * @private
  */
 class RenderLine {
 	static all = new Set();

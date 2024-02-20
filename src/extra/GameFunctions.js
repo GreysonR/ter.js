@@ -125,6 +125,22 @@ let GameFunctions = {
 		return gradient;
 	},
 
+	/**
+	 * Creates an HTML element using properties
+	 * @param {string} type - Element tag name
+	 * @param {Object} properties - Properties to add to the element
+	 * @returns {Element} The new HTML element
+	 * 
+	 * @example
+	 * // This creates an element with color, background, margin-left, and innerHTML and appends it to document.body
+	 * let element = createElement("div", {
+	 * 	parent: document.body,
+	 * 	innerHTML: "Hello world!",
+	 * 	color: "white",
+	 * 	background: "#121A21",
+	 * 	marginLeft: "20px"
+	 * });
+	 */
 	createElement: function(type, properties) {
 		let elem = document.createElement(type);
 

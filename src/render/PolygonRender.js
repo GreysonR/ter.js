@@ -105,7 +105,7 @@ class PolygonRender extends Node {
 
 	/**
 	 * Sets the render layer (z index)
-	 * @param {number} layer - The render layer (z index) for the render
+	 * @param {number} layer - Render layer (z index) for the render
 	 */
 	setLayer(layer) {
 		this.layer = layer;
@@ -114,7 +114,7 @@ class PolygonRender extends Node {
 
 	/**
 	 * Sets the render's alpha
-	 * @param {number} alpha - The opacity, between 0 and 1 inclusive
+	 * @param {number} alpha - Opacity, between 0 and 1 inclusive
 	 */
 	setAlpha(alpha) {
 		this.alpha = alpha;
@@ -180,6 +180,7 @@ class PolygonRender extends Node {
 		delete: [],
 		add: [],
 		load: [],
+		render: [],
 	}
 }
 module.exports = PolygonRender;

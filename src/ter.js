@@ -1,9 +1,9 @@
 let ter = module.exports;
 
-ter.Performance = require("./core/Performance");
 ter.Game = require("./core/Game");
 ter.Common = require("./core/Common");
 ter.Ticker = require("./core/Ticker");
+ter.Performance = require("./core/Performance");
 
 
 ter.Node = require("./node/Node");
@@ -13,6 +13,7 @@ ter.Engine = require("./physics/Engine");
 ter.Bodies = require("./bodies/Bodies");
 
 ter.Render = require("./render/RenderTypes");
+ter.Graph = require("./render/Graph");
 
 vec = require("./geometry/vec");
 ter.Grid = require("./geometry/Grid");

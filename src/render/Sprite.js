@@ -73,7 +73,7 @@ class Sprite extends Node {
 	
 	/**
 	 * Sets the render layer (z index)
-	 * @param {number} layer - The render layer (z index) for the render
+	 * @param {number} layer - Render layer (z index) for the render
 	 */
 	setLayer(layer) {
 		this.layer = layer;
@@ -83,7 +83,7 @@ class Sprite extends Node {
 
 	/**
 	 * Sets the sprite's scale
-	 * @param {vec} scale - The new scale
+	 * @param {vec} scale - New scale
 	 */
 	setScale(scale) {
 		this.scale.set(scale);
@@ -96,8 +96,8 @@ class Sprite extends Node {
 
 	/**
 	 * Sets the sprite's width and height
-	 * @param {number} width - The new width
-	 * @param {number} height - The new height
+	 * @param {number} width - New width
+	 * @param {number} height - New height
 	 */
 	setSize(width, height) {
 		if (width != undefined) this.width = width;
@@ -111,7 +111,7 @@ class Sprite extends Node {
 
 	/**
 	 * Sets the sprite's alpha
-	 * @param {number} alpha - The opacity, between 0 and 1 inclusive
+	 * @param {number} alpha - Opacity, between 0 and 1 inclusive
 	 */
 	setAlpha(alpha) {
 		this.alpha = alpha;

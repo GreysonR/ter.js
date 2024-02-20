@@ -1,0 +1,62 @@
+a,a:active {
+	color: #6cbed2;
+}
+body {
+	color: #D0D8DE;
+}
+body, .navbar-container {
+	background-color: #0F151A;
+}
+.sidebar, .sidebar-items-container, .sidebar-container {
+	background-color: #121A21;
+}
+.sidebar-title {
+	color: #E6EDF2;
+	font-size: 1.5rem;
+}
+.sidebar-items-container {
+	margin-top: 0rem;
+}
+.sidebar-items-container>* {
+	background-color: transparent;
+}
+.sidebar-section-children-container {
+	position: relative;
+	border-radius: 0;
+}
+.sidebar-section-children-container * {
+	position: relative;
+	z-index: 1;
+}
+.sidebar-section-children-container::before {
+	content: "";
+	display: block;
+	position: absolute;
+	z-index: 0;
+	top: 0;
+	left: 0;
+	width:  95%;
+	height: 100%;
+
+	background-color: #15202A;
+	border-radius: 5px;
+}
+.sidebar-section-children {
+	width: 95%;
+	color: #E6EDF2;
+}
+.sidebar-section-children.active a {
+	/*background: white;*/ /* Change and add special styles to current section */
+}
+.sidebar-section-children a {
+	border-radius: 5px;
+}
+.sidebar-section-children-container {
+	position: relative;
+}
+.sidebar-section-children a:hover, .navbar-item:hover, .sidebar-section-title:hover {
+	background: #17242E;
+}
+.navbar-container {
+	height: 4rem;
+}

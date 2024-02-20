@@ -128,7 +128,7 @@ class Node {
 	
 	/**
 	 * Rotates the body by `angle`- Relative
-	 * @param {number} angle - The amount the body should be rotated, in radians
+	 * @param {number} angle -Amount the body should be rotated, in radians
 	 * @param {boolean} silent - If the body's angle should be affected
 	 */
 	translateAngle(angle) {
@@ -148,8 +148,8 @@ class Node {
 	}
 	/**
 	 * Bind a callback to an event
-	 * @param {string} event - The name of the event
-	 * @param {Function} callback - The callback run when event is fired
+	 * @param {string} event - Name of the event
+	 * @param {Function} callback - Callback run when event is fired
 	 */
 	on(event, callback) {
 		if (this.#events[event]) {
@@ -161,8 +161,8 @@ class Node {
 	}
 	/**
 	 * Unbinds a callback from an event
-	 * @param {string} event - The name of the event
-	 * @param {Function} callback - The function to unbind
+	 * @param {string} event - Name of the event
+	 * @param {Function} callback - Function to unbind
 	 */
 	off(event, callback) {
 		event = this.#events[event];

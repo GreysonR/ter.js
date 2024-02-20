@@ -58,7 +58,6 @@ let Common = module.exports = {
 	/**
 	 * Calculates the center of mass of a convex body. Uses algorithm from https://bell0bytes.eu/centroid-convex/
 	 * @param {Array} vertices - Array of `vec`s to find the center of 
-	 * @return {void}
 	 */
 	getCenterOfMass(vertices) {
 		let centroid = new vec(0, 0);
@@ -118,8 +117,7 @@ let Common = module.exports = {
 	 * Deep copies `objB` onto `objA` in place.
 	 * @param {Object} objA - First object
 	 * @param {Object} objB - 2nd object, copied onto `objA`
-	 * @param {number} maxDepth - The maximum depth it can copy
-	 * @return {void}
+	 * @param {number} maxDepth - Maximum depth it can copy
 	 */
 	merge: function(objA, objB, maxDepth = Infinity, hash = new WeakSet()) {
 		hash.add(objB);

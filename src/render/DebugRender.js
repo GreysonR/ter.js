@@ -1,10 +1,28 @@
+const Game = require("../core/Game");
+
 /**
- * Creates a debug rendering context
+ * Extra functions for debugging, such as showing all vertices, hitboxes, and collisions.
  */
 class DebugRender {
 	// - Debug rendering
 	canvas = null;
 	ctx = null;
+
+	/**
+	 * What is rendered
+	 * - **enabled.vertices** - Shows wireframes of all physics bodies
+	 * - **enabled.collisions** - Shows collision points and normals
+	 * - **enabled.boundingBox** - Shows AABB bounding boxes for physics bodies
+	 * - **enabled.centers** - Shows center of mass of all physics bodies
+	 * - **enabled.broadphase** - Shows active non-static broadphase grids cells
+	 * @type {object}
+	 * @example
+	 * myGame.DebugRender.enabled.vertices = true; // Vertice rendering
+	 * myGame.DebugRender.enabled.collisions = true; // Collision rendering
+	 * myGame.DebugRender.enabled.boundingBox = true; // Bounding box rendering
+	 * myGame.DebugRender.enabled.centers = true; // Center rendering
+	 * myGame.DebugRender.enabled.broadphase = true; // Broadphase rendering
+	 */
 	enabled = {
 		collisions: false,
 		boundingBox: false,
@@ -13,6 +31,10 @@ class DebugRender {
 		broadphase: false,
 	}
 
+	/**
+	 * Creates a debug rendering context for the game.
+	 * @param {Game} Game - [Game](./Game.html)
+	 */
 	constructor(Game) {
 		this.Game = Game;
 

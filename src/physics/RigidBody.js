@@ -35,7 +35,6 @@ class RigidBody extends Node {
 	 * @param {Array} vertices - Array of `vec` vertices to round
 	 * @param {number} round - Amount of rounding
 	 * @param {number} dx - Quality of round, lower value means higher quality
-	 * @return {void}
 	 */
 	static roundVertices(vertices, round, dx = 40) {
 		let newVertices = [];
@@ -93,8 +92,8 @@ class RigidBody extends Node {
 	/**
 	 * Creates a new RigidBody
 	 * @param {Array} vertices - Array of `vec` representing the body's vertices
-	 * @param {vec} position - The position of the body
-	 * @param {Engine} Engine - The engine the body should be simulated in
+	 * @param {vec} position - Position of the body
+	 * @param {Engine} Engine - Engine the body should be simulated in
 	 * @param {Object} options - RigidBody options, see documentation for options
 	 */
 	constructor(Engine, vertices, position, options = {}) {
@@ -226,7 +225,6 @@ class RigidBody extends Node {
 	/**
 	 * Changes if the body is static
 	 * @param {boolean} isStatic - If the body should be static
-	 * @return {void}
 	 */
 	setStatic(isStatic) {
 		let { dynamicGrid, staticGrid } = this.Engine.World;
@@ -255,7 +253,6 @@ class RigidBody extends Node {
 	/**
 	 * Changes if the body can collide with other bodies
 	 * @param {number} hasCollisions - Whether the body can collide with other bodies
-	 * @return {void}
 	 */
 	setCollisions(hasCollisions) {
 		let { dynamicGrid, staticGrid } = this.Engine.World;
@@ -283,7 +280,7 @@ class RigidBody extends Node {
 
 	/**
 	 * Finds if a point is inside the body
-	 * @param {vec} point - The point to query
+	 * @param {vec} point - Point to query
 	 * @return {boolean} If the point is inside the body's vertices
 	 */
 	containsPoint(point) {
@@ -301,11 +298,10 @@ class RigidBody extends Node {
 
 	/**
 	 * Instantly sets body's position to `position`
-	 * @param {vec} position - The position the body should be
+	 * @param {vec} position - Position the body should be
 	 * @param {boolean} _ignoreChildren - If the body's children should be affected
 	 * @example
 	 * body.setPosition(new vec(100, 100)); // Sets body's position to (100, 100) 
-	 * @return {void}
 	 */
 	setPosition(position, _ignoreChildren = false) {
 		let delta = position.sub(this.position);
@@ -317,7 +313,6 @@ class RigidBody extends Node {
 	 * @param {vec} delta - Distance the body should be shifted
 	 * @param {boolean} affectPosition - If the body's position should be affected
 	 * @param {boolean} ignoreChildren - If the body's children should be shifted as well
-	 * @return {void}
 	 */
 	translate(delta, affectPosition = true, ignoreChildren = false) {
 		if (delta.isNaN()) return;
@@ -349,7 +344,6 @@ class RigidBody extends Node {
 	 * @param {number} angle - Angle body should be in radians
 	 * @example
 	 * body.setAngle(Math.PI); // Sets body's angle to Pi radians, or 180 degrees 
-	 * @return {void}
 	 */
 	setAngle(angle) {
 		if (isNaN(angle)) return;
@@ -361,9 +355,8 @@ class RigidBody extends Node {
 
 	/**
 	 * Rotates the body by `angle`- Relative
-	 * @param {number} angle - The amount the body should be rotated, in radians
+	 * @param {number} angle - Amount the body should be rotated, in radians
 	 * @param {boolean} silent - If the body's angle should be affected
-	 * @return {void}
 	 */
 	translateAngle(angle, silent = false) {
 		if (isNaN(angle)) return;
@@ -399,8 +392,7 @@ class RigidBody extends Node {
 
 	/**
 	 * Instantly changes the body's velocity to a specific value
-	 * @param {vec} velocity - The velocity the body should have
-	 * @return {void}
+	 * @param {vec} velocity - Velocity the body should have
 	 */
 	setVelocity(velocity) {
 		if (velocity.isNaN()) {
@@ -413,8 +405,7 @@ class RigidBody extends Node {
 
 	/**
 	 * Instantly changes the body's angular velocity to a specific value
-	 * @param {vec} velocity - The angular velocity the body should have
-	 * @return {void}
+	 * @param {vec} velocity - Angular velocity the body should have
 	 */
 	setAngularVelocity(velocity) {
 		if (velocity.isNaN()) {
@@ -427,9 +418,8 @@ class RigidBody extends Node {
 
 	/**
 	 * Applies a force to the body, ignoring mass. The body's velocity changes by force * delta
-	 * @param {vec} force - The amount of force to be applied, in px / sec^2
-	 * @param {number} delta - The amount of time that the force should be applied in seconds, set to 1 if only applying in one instant
-	 * @return {void}
+	 * @param {vec} force - Amount of force to be applied, in px / sec^2
+	 * @param {number} delta - Amount of time that the force should be applied in seconds, set to 1 if only applying in one instant
 	 */
 	applyForce(force, delta = Engine.delta) { // set delta to 1 if you want to apply a force for only 1 frame
 		if (force.isNaN()) return;
@@ -439,9 +429,8 @@ class RigidBody extends Node {
 	
 	/**
 	 * Applies a rotational force (torque) to the body, ignoring mass. The body's angular velocity changes by force * delta
-	 * @param {number} force - The amount of torque to be applied, in radians / sec^2
-	 * @param {number} delta - The amount of time the force should be applied in seconds, set to 1 if only applying instantaneous force
-	 * @return {void}
+	 * @param {number} force - Amount of torque to be applied, in radians / sec^2
+	 * @param {number} delta - Amount of time the force should be applied in seconds, set to 1 if only applying instantaneous force
 	 */
 	applyTorque(force, delta = Engine.delta) { // set delta to 1 if you want to apply a force for only 1 frame
 		if (isNaN(force)) return;
@@ -503,7 +492,7 @@ class RigidBody extends Node {
 	/**
 	 * Prepares the body 
 	 * @param {number} delta - Engine tick duration, in seconds
-	 * @return {void}
+	 * @private
 	 */
 	_preUpdate(delta) {
 		this.trigger("beforeUpdate");
@@ -522,7 +511,7 @@ class RigidBody extends Node {
 	/**
 	 * Updates this body's velocity, position, and grid
 	 * @param {number} delta - Engine tick duration, in seconds
-	 * @return {void}
+	 * @private
 	 */
 	_update(delta) {
 		this.trigger("duringUpdate");
@@ -597,7 +586,6 @@ class RigidBody extends Node {
 	}
 	/**
 	 * Sets the inertia of the body to what's calculated in `#getInertia()` if the body is not static
-	 * @return {void}
 	 * @private
 	 */
 	_updateInertia() {
@@ -614,7 +602,6 @@ class RigidBody extends Node {
 	/**
 	 * Removes overlapping vertices
 	 * @param {number} minDist - Minimum distance when points are considered the same
-	 * @return {void}
 	 * @private
 	 */
 	#removeDuplicateVertices(minDist = 1) { // remove vertices that are the same

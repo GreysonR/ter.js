@@ -17,7 +17,7 @@ class Performance {
 	 */
 	delta = 1;
 	/**
-	 * The engine frame number. Note that this will increase much faster than the number of rendered frames when `Engine.substeps` is greater than 1.
+	 * The engine frame number. Note that this will increase faster than the number of rendered frames when `Engine.substeps` is greater than 1.
 	 * @type {number}
 	 */
 	frame = 0;

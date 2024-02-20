@@ -19,7 +19,6 @@ class Render {
 	app = null;
 	camera = null;
 	pixelRatio = 1;
-	nodes = new Set();
 	constructor(options = {}) {
 		// Test if PIXI is loaded
 		try { PIXI.settings; }
@@ -83,26 +82,7 @@ class Render {
 	}
 
 	/**
-	 * Adds all `children` to this Render
-	 * @param {...Renderable} children - The children to be added
-	 */
-	addChild(...children) {
-		for (let child of children) {
-			this.nodes.add(child);
-		}
-	}
-	/**
-	 * Removes all `children` from this Render
-	 * @param {...Renderable} children - The children to be removed
-	 */
-	removeChild(...children) {
-		for (let child of children) {
-			this.nodes.delete(child);
-		}
-	}
-
-	/**
-	 * Updates renderer, its camera, and all render nodes attached to it. Triggers `beforeUpdate` and `afterUpdate` events on this Render. Also triggers `render` on nodes
+	 * Updates renderer and its camera. Triggers `beforeUpdate` and `afterUpdate` events on this Render.
 	 */
 	update() {
 		this.trigger("beforeUpdate");
@@ -114,13 +94,6 @@ class Render {
 		let screenSize = new vec(app.screen.width, app.screen.height);
 		translation.set({ x: -cameraPosition.x * boundSize/fov + screenSize.x/2, y: -cameraPosition.y * boundSize/fov + screenSize.y/2 });
 		camera.scale = boundSize / fov;
-
-		for (let node of this.nodes) {
-			if (node.render.graphic) {
-				node.render.graphic.update();
-				node.trigger("render");
-			}
-		}
 		
 		// update camera position
 		stage.x = translation.x;

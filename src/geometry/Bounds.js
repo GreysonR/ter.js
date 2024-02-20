@@ -48,7 +48,10 @@ class Bounds {
 	 * @return {vec} Random point within bounds
 	 */
 	randomPoint() {
-
+		let { max, min } = this;
+		let x = Math.random() * (max.x - min.x) + min.x;
+		let y = Math.random() * (max.y - min.y) + min.y;
+		return new vec(x, y);
 	}
 }
 module.exports = Bounds;

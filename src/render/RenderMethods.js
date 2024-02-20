@@ -1,4 +1,4 @@
-let RenderMethods = module.exports = {
+let RenderMethods = {
 	// ~ Point transformations
 	screenPtToGame: function(point, Render) {
 		const { camera, pixelRatio } = Render;
@@ -50,6 +50,7 @@ let RenderMethods = module.exports = {
 			console.warn("RenderMethods.roundedPolygon needs at least 3 vertices", vertices);
 			return;
 		}
+
 		function getPoints(i) {
 			let curPt = vertices[i];
 			let lastPt = vertices[(vertices.length + i - 1) % vertices.length];
@@ -73,9 +74,14 @@ let RenderMethods = module.exports = {
 		ctx.quadraticCurveTo(start[1].x, start[1].y, start[2].x, start[2].y);
 
 		for (let i = 1; i < vertices.length; i++) {
-			let cur = getPoints(i);
-			ctx.lineTo(cur[0].x, cur[0].y);
-			ctx.quadraticCurveTo(cur[1].x, cur[1].y, cur[2].x, cur[2].y);
+			if (round === 0) {
+				ctx.lineTo(vertices[i].x, vertices[i].y);
+			}
+			else {
+				let cur = getPoints(i);
+				ctx.lineTo(cur[0].x, cur[0].y);
+				ctx.quadraticCurveTo(cur[1].x, cur[1].y, cur[2].x, cur[2].y);
+			}
 		}
 
 		ctx.closePath();
@@ -100,3 +106,4 @@ let RenderMethods = module.exports = {
 		ctx.lineTo(endPos.x + sideB.x, endPos.y + sideB.y);
 	},
 }
+module.exports = RenderMethods;

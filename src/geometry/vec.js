@@ -4,8 +4,8 @@
 class vec {
 	/**
 	 * Creates a new vector
-	 * @param {*} x - The x coordinate
-	 * @param {*} y  - The y coordinate
+	 * @param {*} x - x coordinate
+	 * @param {*} y  - y coordinate
 	 * @return {vec} `this`
 	 */
 	constructor(x, y) {
@@ -256,7 +256,7 @@ class vec {
 	/**
 	 * Finds average of `this` and `vec2`
 	 * @param {vec} vec2 - Second vector
-	 * @param {number} weight - The weight that `this` has in the average
+	 * @param {number} weight - Weight that `this` has in the average
 	 * @return {vec} New vector
 	 */
 	avg(vec2, weight = 0.5) {
@@ -272,7 +272,7 @@ class vec {
 	}
 	/**
 	 * Sets the length of `this`, keeping its direction the same
-	 * @param {number} len - The new length
+	 * @param {number} len - New length
 	 * @example
 	 * let v = new vec(1, 1);
 	 * v.length = 10; // v = { x: 7.07, y: 7.07 }
@@ -557,14 +557,12 @@ class vec {
 	}
 	/**
 	 * Creates a string in the format `"{ x : x, y: y }"`
-	 * @return {void}
 	 */
 	toString() {
 		return `{ x: ${ this.x }, y: ${ this.y } }`;
 	}
 	/**
 	 * Creates a string in the format `"{ x : x, y: y }"`, with `x` and `y` rounded
-	 * @return {void}
 	 */
 	toStringInt() {
 		return `{ x: ${ Math.round(this.x) }, y: ${ Math.round(this.y) } }`;
@@ -578,7 +576,6 @@ class vec {
 	}
 	/**
 	 * Creates a array in the format `[x, y]`
-	 * @return {void}
 	 */
 	toArray() {
 		return [this.x, this.y];
