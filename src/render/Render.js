@@ -19,6 +19,17 @@ class Render {
 	app = null;
 	camera = null;
 	pixelRatio = 1;
+
+	/**
+	 * 
+	 * @param {object} options - Render options
+	 * @param {string} options.background - Background color, such as "#FFFFFF00" or "rgb(0, 0, 0)"
+	 * @param {number} [options.pixelRatio=devicePixelRatio] - Render resolution percent, use default unless you have a reason to change it
+	 * @param {boolean} [options.ySort=false] - Whether to sort the render layer of bodies by their y coordinate
+	 * @param {*} [options.resizeTo=window] - What the canvas should resize to, see PIXI.js `resizeTo` for options
+	 * @param {boolean} [options.antialias=true] - If the render should have antialiasing
+	 * @param {function} [options.getBoundSize=function(width, height)] - Function that determines the bound size, which is how big the view should be based on the canvas width and height
+	 */
 	constructor(options = {}) {
 		// Test if PIXI is loaded
 		try { PIXI.settings; }

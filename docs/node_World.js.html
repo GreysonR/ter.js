@@ -30,6 +30,12 @@ class World extends Node {
 	globalPoints = [];
 	globalVectors = [];
 	
+	/**
+	 * 
+	 * @param {object} options - World options
+	 * @param {vec} [options.gravity=vec(0, 500)] - Gravity in pixels / second
+	 * @param {number} [options.gridSize=500] - Size of broadphase grid in pixels
+	 */
 	constructor(options = {}) {
 		super();
 		let defaults = { ...World.defaultOptions };

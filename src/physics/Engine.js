@@ -8,7 +8,6 @@ const RigidBody = require("./RigidBody.js");
  */
 class Engine {
 	static defaultOptions = {
-		delta: 1,
 		substeps: 5,
 		velocityIterations: 1,
 		positionIterations: 5,
@@ -26,7 +25,12 @@ class Engine {
 	/**
 	 * 
 	 * @param {World} World - World the physics engine should run on
-	 * @param {Object} options - Options for the engine, see documentation for possible options
+	 * @param {Object} options - Physics options
+	 * @param {number} [options.substeps=5] - Number of substeps per tick
+	 * @param {number} [options.velocityIterations=1] - Number of velocity solver iterations per tick
+	 * @param {number} [options.positionIterations=5] - Number of position solver iterations per tick
+	 * @param {number} [options.constraintIterations=1] - Number of constraint solver iterations per tick
+	 * @param {number} [options.maxShare=1] - Maximum share of collision impulse a body can have. Not recommended to change
 	 */
 	constructor(World, options = {}) {
 		let defaults = { ...Engine.defaultOptions };
