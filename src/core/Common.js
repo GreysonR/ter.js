@@ -1,9 +1,9 @@
 const vec = require("../geometry/vec.js");
 
 /**
- * @namespace Common
+ * @namespace
  */
-let Common = module.exports = {
+let Common = {
 	clamp: function(x, min, max) { // clamps x so that min <= x <= max
 		return Math.max(min, Math.min(x, max));
 	},
@@ -382,3 +382,4 @@ let Common = module.exports = {
 		}
 	}
 }
+module.exports = Common;

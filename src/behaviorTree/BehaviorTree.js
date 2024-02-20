@@ -25,13 +25,13 @@
 	 * Always succeeds, no matter what its child's output is.
 	 * 
 	 * ### Repeat
-	 * Repeats `n` times, specified by the `count` option. It succeeds when it finishes running and never fails.
+	 * Always repeats a set number of times, specified by the `count` option. It succeeds when it finishes running and can never fail.
 	 * 
 	 * ### RepeatUntilFail
-	 * Repeats `n` times, or infinite times by default, specified by the `count` option. It succeeds if it runs `n` times, or fails if its child ever fails.
+	 * Repeats until its child fails. The maximum number of times it can repeat is specified by the `count` option (same as Repeat) and is `Infinity` by default. It either succeeds once it runs `count` times or succeeds when any of its children fail. Like Repeat, RepeatUntilFail never resolves to failure.
 	 * 
 	 * ## Leaf
-	 * The leaf node is where the logic of the tree goes. It has a `callback` that has `resolve` and `blackboard` parameters. Call `resolve(BehaviorTree.SUCCESS)` to indicate the leaf successfully finished running, or `resolve(BehaviorTree.FAILURE)` to tell the tree the leaf failed. 
+	 * The leaf node is where the logic of the tree goes. It has a `callback` with `resolve` and `blackboard` parameters. Call `resolve(BehaviorTree.SUCCESS)` to indicate the leaf finished successfully, or `resolve(BehaviorTree.FAILURE)` to tell the tree the leaf failed. 
 	 * The blackboard is an object that is shared across all nodes that can be used as memory for the AI agent.
 	 * 
 	 * ## Reusing trees
@@ -166,9 +166,37 @@ class BehaviorTree {
 			this.head = BehaviorTree.parse(tree);
 		}
 	}
+	/**
+	 * Executes the behavior tree.
+	 * @param {object} blackboard - Optionally overrides tree's blackboard. Should generally be left blank. 
+	 * @returns {Promise} - Promise that resolve to either `BehaviorTree.SUCCESS` or `BehaviorTree.FAILURE` once all children finish processing. 
+	 * @example
+	 * // This starts the tick
+	 * tree.tick();
+	 * 
+	 * // This starts the tick with a function that executes once the tick completes
+	 * tree.tick().then(result => {
+	 * 	if (result == BehaviorTree.SUCCESS) {
+	 * 		// Do something
+	 * 	}
+	 * 	else if (result == BehaviorTree.FAILURE) {
+	 * 		// Do something else, maybe throw an error
+	 * 	}
+	 * });
+	 */
 	tick(blackboard = this.blackboard) {
 		return this.head.tick(blackboard);
 	}
+	/**
+	 * Stops the behavior tree while it's running. Useful if you want to reevaluate the tree because of an external state change or stop it entirely.
+	 * @param {BehaviorTree.SUCCESS|BehaviorTree.FAILURE} value - What nodes should resolve to in the tree. Usually doesn't change the output.
+	 * @example
+	 * // If the tree is in the middle of a tick, it will instantly resolve to BehaviorTree.FAILURE`
+	 * tree.interrupt();
+	 * 
+	 * // This one will resolve to SUCCESS. Useful if you have a callback that depends on the result of the tick
+	 * tree.interrupt(BehaviorTree.SUCCESS);
+	 */
 	interrupt(value = BehaviorTree.FAILURE) {
 		this.head.interrupt(value);
 	}
