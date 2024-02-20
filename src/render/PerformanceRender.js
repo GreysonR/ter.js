@@ -1,4 +1,5 @@
 const RenderMethods = require("../render/RenderMethods");
+const vec = require("../geometry/vec");
 
 /**
  * Handles rendering performance stats. Creates a graph in the top corner of the screen.
@@ -9,8 +10,8 @@ class PerformanceRender {
 	 * @type {boolean}
 	 */
 	enabled = false;
-	canvas = null;
-	ctx = null;
+	canvas;
+	ctx;
 	position = new vec(20, 20);
 
 	/**
@@ -28,7 +29,7 @@ class PerformanceRender {
 		let canvas = this.canvas = document.createElement("canvas");
 		this.ctx = canvas.getContext("2d");
 		canvas.style.position = "absolute";
-		canvas.style.zIndex = 2;
+		canvas.style.zIndex = "2";
 		canvas.style.top =  "20px";
 		canvas.style.right = "0px";
 		canvas.style.left = "unset";

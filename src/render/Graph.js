@@ -26,8 +26,8 @@ class Graph {
 	 * @readonly
 	 */
 	enabled = true;
-	canvas = null;
-	ctx = null;
+	canvas;
+	ctx;
 	data = {};
 
 	/**
@@ -70,7 +70,7 @@ class Graph {
 		let canvas = this.canvas = document.createElement("canvas");
 		this.ctx = canvas.getContext("2d");
 		canvas.style.position = "absolute";
-		canvas.style.zIndex = 2;
+		canvas.style.zIndex = "2";
 
 		if (anchorX === "center") {
 			canvas.style.left = `calc(50vw + ${ position.x }px)`;

@@ -1,8 +1,10 @@
 "use strict";
+const { parseColor } = require("../core/Common");
 
 /**
  * Renders lines. Mainly used for rendering constraints
  * @private
+ * @todo: Rewrite for new engine
  */
 class RenderLine {
 	static all = new Set();
@@ -23,7 +25,6 @@ class RenderLine {
 		graphic.clear();
 
 		let { border, borderWidth, borderOffset, lineJoin, lineCap } = render;
-		let { parseColor } = ter.Common;
 		border = parseColor(border);
 
 		if (border[1] > 0) {

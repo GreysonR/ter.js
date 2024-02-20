@@ -4,9 +4,8 @@
 class vec {
 	/**
 	 * Creates a new vector
-	 * @param {*} x - x coordinate
-	 * @param {*} y  - y coordinate
-	 * @return {vec} `this`
+	 * @param {number|Array|object} x - x coordinate
+	 * @param {number} [y=undefined]  - y coordinate
 	 */
 	constructor(x, y) {
 		if (typeof x === "object") {
@@ -32,7 +31,7 @@ class vec {
 	}
 	/**
 	 * Adds `vec2` to `this`, returning a new vector
-	 * @param {vec} vec2 - 
+	 * @param {vec|number} vec2 - 
 	 * @return {vec} New vector
 	 */
 	add(vec2) {
@@ -45,7 +44,7 @@ class vec {
 	}
 	/**
 	 * Subtracts `vec2` from `this`, returning a new vector
-	 * @param {vec} vec2 - 
+	 * @param {vec|number} vec2 - 
 	 * @return {vec} New vector
 	 */
 	sub(vec2) {
@@ -58,7 +57,7 @@ class vec {
 	}
 	/**
 	 * Multiplies `this` by `vec2`, returning a new vector
-	 * @param {vec} vec2 - 
+	 * @param {vec|number} vec2 - 
 	 * @return {vec} New vector
 	 */
 	mult(vec2) {
@@ -71,7 +70,7 @@ class vec {
 	}
 	/**
 	 * Divides `this` by `vec2`, returning a new vector
-	 * @param {vec} vec2 - 
+	 * @param {vec|number} vec2 - 
 	 * @return {vec} New vector
 	 */
 	div(vec2) {
@@ -84,7 +83,7 @@ class vec {
 	}
 	/**
 	 * Adds `vec2` to `this` in place, returning `this`
-	 * @param {vec} vec2 - 
+	 * @param {vec|number} vec2 - 
 	 * @return {vec} `this`
 	 */
 	add2(vec2) {
@@ -101,7 +100,7 @@ class vec {
 	}
 	/**
 	 * Subtracts `vec2` from `this` in place, returning `this`
-	 * @param {vec} vec2 - 
+	 * @param {vec|number} vec2 - 
 	 * @return {vec} `this`
 	 */
 	sub2(vec2) {
@@ -118,7 +117,7 @@ class vec {
 	}
 	/**
 	 * Multiplies `this` by `vec2` in place, returning `this`
-	 * @param {vec} vec2 - 
+	 * @param {vec|number} vec2 - 
 	 * @return {vec} `this`
 	 */
 	mult2(vec2) {
@@ -135,7 +134,7 @@ class vec {
 	}
 	/**
 	 * Divides `this` by `vec2` in place, returning `this`
-	 * @param {vec} vec2 - 
+	 * @param {vec|number} vec2 - 
 	 * @return {vec} `this`
 	 */
 	div2(vec2) {
@@ -152,7 +151,7 @@ class vec {
 	}
 	/**
 	 * Raises `this` to the power of `vec2`
-	 * @param {vec} vec2 - 
+	 * @param {vec|number} vec2 - 
 	 * @return {vec} New vector
 	 */
 	pow(vec2) {
@@ -165,7 +164,7 @@ class vec {
 	}
 	/**
 	 * Raises `this` to the power of `vec2` in place
-	 * @param {vec} vec2 - 
+	 * @param {vec|number} vec2 - 
 	 * @return {vec} `this`
 	 */
 	pow2(vec2) {
@@ -235,15 +234,15 @@ class vec {
 	/**
 	 * Finds dot product of `this` and `vec2`
 	 * @param {vec} vec2 - 
-	 * @return {vec} New vector
+	 * @return {number} Dot product
 	 */
 	dot(vec2) {
 		return this.x * vec2.x + this.y * vec2.y;
 	}
 	/**
 	 * Finds 2d cross product of `this` and `vec2`
-	 * @param {vec} vec2 - 
-	 * @return {vec} New vector
+	 * @param {vec|number} vec2 - 
+	 * @return {number|vec} New vector
 	 */
 	cross(vec2) {
 		if (typeof vec2 === "number") {
@@ -276,14 +275,11 @@ class vec {
 	 * @example
 	 * let v = new vec(1, 1);
 	 * v.length = 10; // v = { x: 7.07, y: 7.07 }
-	 * @return {vec} `this`
 	 */
 	set length(len) {
 		let scale = len / this.length;
 		this.x *= scale;
 		this.y *= scale;
-
-		return this;
 	}
 	/**
 	 * Finds the angle of `this`

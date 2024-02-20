@@ -11,9 +11,6 @@ const Bounds = require("../geometry/Bounds.js");
  * @extends Node
  */
 class RigidBody extends Node {
-	/**
-	 * Default RigidBody options
-	 */
 	static defaultOptions = { // not used, but consistent with other classes for documentation
 		mass: 1,
 		restitution: 0.5,
@@ -21,6 +18,7 @@ class RigidBody extends Node {
 		frictionAngular: 0.01,
 		friction: 0.01,
 		round: 0,
+		roundQuality: 40,
 	
 		isStatic: false,
 		isSensor: false,
@@ -80,6 +78,7 @@ class RigidBody extends Node {
 	frictionAngular = 0.01;
 	friction = 0.01;
 	round = 0;
+	roundQuality = 40;
 
 	isStatic = false;
 	isSensor = false;
@@ -94,7 +93,7 @@ class RigidBody extends Node {
 	 * @param {Array} vertices - Array of `vec` representing the body's vertices
 	 * @param {vec} position - Position of the body
 	 * @param {Engine} Engine - Engine the body should be simulated in
-	 * @param {Object} options - RigidBody options, see documentation for options
+	 * @param {Object} options - RigidBody options
 	 */
 	constructor(Engine, vertices, position, options = {}) {
 		super();
@@ -159,7 +158,7 @@ class RigidBody extends Node {
 	 */
 	add() {
 		let World = this.Engine.World;
-		if (!this.added) {
+		if (!this.isAdded()) {
 			super.add();
 			World.addChild(this);
 		}
@@ -172,7 +171,7 @@ class RigidBody extends Node {
 	 */
 	delete() {
 		let World = this.Engine.World;
-		if (this.added) {
+		if (this.isAdded()) {
 			super.delete();
 			World.removeChild(this);
 
@@ -186,7 +185,7 @@ class RigidBody extends Node {
 	/**
 	 * Adds a polygon render to body
 	 * @param {PIXI.Container} container - Container polygon render is added to
-	 * @param {Object} options - Options for polygon render, see documentation for possible options
+	 * @param {Object} options - (Polygon Render)[./PolygonRender.html] options
 	 * @return {RigidBody} `this`
 	 */
 	addPolygonRender(container, options) {
@@ -197,7 +196,7 @@ class RigidBody extends Node {
 			
 			...options
 		});
-		if (this.added) render.add();
+		if (this.isAdded()) render.add();
 		this.addChild(render);
 		
 		return this;
@@ -206,7 +205,7 @@ class RigidBody extends Node {
 	/**
 	 * Adds a sprite to body
 	 * @param {PIXI.Container} container - Container polygon render is added to
-	 * @param {Object} options - Sprite options, see documentation for possible options
+	 * @param {Object} options - (Sprite)[./Sprite.html] options
 	 * @return {RigidBody} `this`
 	 */
 	addSprite(container, options) {
@@ -216,7 +215,7 @@ class RigidBody extends Node {
 			
 			...options
 		});
-		if (this.added) render.add();
+		if (this.isAdded()) render.add();
 		this.addChild(render);
 		
 		return this;
@@ -233,7 +232,7 @@ class RigidBody extends Node {
 		
 		this.isStatic = isStatic;
 
-		if (this.hasCollisions && !this.removed) {
+		if (this.hasCollisions && this.isAdded()) {
 			if (lastStatic) {
 				staticGrid.removeBody(this);
 			}
@@ -252,7 +251,7 @@ class RigidBody extends Node {
 
 	/**
 	 * Changes if the body can collide with other bodies
-	 * @param {number} hasCollisions - Whether the body can collide with other bodies
+	 * @param {boolean} hasCollisions - Whether the body can collide with other bodies
 	 */
 	setCollisions(hasCollisions) {
 		let { dynamicGrid, staticGrid } = this.Engine.World;
@@ -405,10 +404,10 @@ class RigidBody extends Node {
 
 	/**
 	 * Instantly changes the body's angular velocity to a specific value
-	 * @param {vec} velocity - Angular velocity the body should have
+	 * @param {number} velocity - Angular velocity the body should have
 	 */
 	setAngularVelocity(velocity) {
-		if (velocity.isNaN()) {
+		if (isNaN(velocity)) {
 			console.error(velocity);
 			throw new Error("Invalid angular velocity");
 		}
@@ -421,7 +420,7 @@ class RigidBody extends Node {
 	 * @param {vec} force - Amount of force to be applied, in px / sec^2
 	 * @param {number} delta - Amount of time that the force should be applied in seconds, set to 1 if only applying in one instant
 	 */
-	applyForce(force, delta = Engine.delta) { // set delta to 1 if you want to apply a force for only 1 frame
+	applyForce(force, delta = this.Engine.delta) { // set delta to 1 if you want to apply a force for only 1 frame
 		if (force.isNaN()) return;
 		if (this.isStatic) return;
 		this.force.add2(force.mult(delta));
@@ -432,7 +431,7 @@ class RigidBody extends Node {
 	 * @param {number} force - Amount of torque to be applied, in radians / sec^2
 	 * @param {number} delta - Amount of time the force should be applied in seconds, set to 1 if only applying instantaneous force
 	 */
-	applyTorque(force, delta = Engine.delta) { // set delta to 1 if you want to apply a force for only 1 frame
+	applyTorque(force, delta = this.Engine.delta) { // set delta to 1 if you want to apply a force for only 1 frame
 		if (isNaN(force)) return;
 		this.torque += force * delta;
 	}
@@ -552,7 +551,6 @@ class RigidBody extends Node {
 	/**
 	 * Calculates the area of the body if it is convex
 	 * @return {number} The area of the body
-	 * @private
 	 */
 	#getArea() {
 		let area = 0;
@@ -567,7 +565,6 @@ class RigidBody extends Node {
 	/**
 	 * Calculates inertia from the body's vertices
 	 * @return {number} The body's inertia
-	 * @private
 	 */
 	#getInertia() {
 		const { vertices, mass } = this;
@@ -602,7 +599,6 @@ class RigidBody extends Node {
 	/**
 	 * Removes overlapping vertices
 	 * @param {number} minDist - Minimum distance when points are considered the same
-	 * @private
 	 */
 	#removeDuplicateVertices(minDist = 1) { // remove vertices that are the same
 		let vertices = this.vertices;
@@ -626,7 +622,6 @@ class RigidBody extends Node {
 	/**
 	 * Determines if the body is convex
 	 * @return {boolean} If the body is convex
-	 * @private
 	 */
 	#isConvex() {
 		let vertices = this.vertices;
@@ -652,9 +647,6 @@ class RigidBody extends Node {
 		return true;
 	}
 
-	/**
-	 * @private
-	 */
 	#getCenterOfMass() {
 		let center = Common.getCenterOfMass(this.vertices);
 		this.center.set(center);
@@ -663,7 +655,6 @@ class RigidBody extends Node {
 
 	/**
 	 * Calculates the body's axes from its vertices
-	 * @private
 	 */
 	#updateAxes() {
 		let verts = this.vertices;
@@ -683,8 +674,7 @@ class RigidBody extends Node {
 	}
 
 	/**
-	 * Shifts vertices so their center is at the body's position 
-	 * @private
+	 * Shifts vertices so their center is at the body's position
 	 */
 	#recenterVertices() {
 		let center = this.#getCenterOfMass();
@@ -698,7 +688,7 @@ class RigidBody extends Node {
 
 	/**
 	 * Ensures vertices are counterclockwise winding and centered, and updates the area, bounding box, and the axes
-	 * @param {number} forceCCW - If vertices should be forced to be counterclockwise winding by sorting their angles from the center
+	 * @param {boolean} forceCCW - If vertices should be forced to be counterclockwise winding by sorting their angles from the center
 	 * @private
 	 */
 	_resetVertices(forceCCW = false) {
@@ -711,8 +701,7 @@ class RigidBody extends Node {
 
 	/**
 	 * Tries to ensure the body's vertices are counterclockwise winding, by default by comparing the angles of the first 2 vertices and reversing the vertice array if they're clockwise
-	 * @param {boolean} force - If all vertices should be completely reordered using their angle from the center 
-	 * @private
+	 * @param {boolean} force - If all vertices should be completely reordered using their angle from the center
 	 */
 	#makeCCW(force = false) { // makes vertices go counterclockwise if they're clockwise
 		if (force) { // reorders vertices by angle from center - can change order of vertices

@@ -61,7 +61,7 @@ class World extends Node {
 
 		for (let i = 0; i < bodies.length - 1; i++) {
 			let bodyA = bodies[i];
-			if (!bodyA.added) {
+			if (!bodyA.isAdded()) {
 				if (bodyA.isStatic) {
 					this.staticGrid.removeBody(bodyA);
 				}
@@ -77,7 +77,7 @@ class World extends Node {
 				// Do AABB collision test
 				let bodyB = bodies[j];
 
-				if (!bodyB.added) {
+				if (!bodyB.isAdded()) {
 					if (bodyB.isStatic) {
 						this.staticGrid.removeBody(bodyB);
 					}

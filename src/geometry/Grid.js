@@ -78,6 +78,11 @@ class Grid {
 	addBody(body) {
 		let bounds = this.getBounds(body);
 
+		if (!bounds) {
+			console.error(body);
+			throw new Error("Could not find bounds of body");
+		}
+
 		if (!body._Grids) body._Grids = {};
 		if (!body._Grids[this.id]) body._Grids[this.id] = [];
 
@@ -153,6 +158,11 @@ class Grid {
 		let curNodes = body._Grids[this.id];
 		let oldNodes = new Set(curNodes);
 		let bounds = this.getBounds(body);
+		
+		if (!bounds) {
+			console.error(body);
+			throw new Error("Could not find bounds of body");
+		}
 
 		for (let x = bounds.min.x; x <= bounds.max.x; x++) {
 			for (let y = bounds.min.y; y <= bounds.max.y; y++) {

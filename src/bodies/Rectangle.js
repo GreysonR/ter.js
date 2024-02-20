@@ -30,7 +30,7 @@ class Rectangle extends RigidBody {
 			
 			...options
 		});
-		if (this.added) render.add();
+		if (this.isAdded()) render.add();
 		this.addChild(render);
 		
 		return this;
@@ -44,7 +44,7 @@ class Rectangle extends RigidBody {
 			
 			...options
 		});
-		if (this.added) render.add();
+		if (this.isAdded()) render.add();
 		this.addChild(render);
 
 		return this;

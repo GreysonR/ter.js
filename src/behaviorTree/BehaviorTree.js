@@ -1,4 +1,5 @@
 "use strict";
+const Common = require("../core/Common");
 
 /**
 	 * A behavior tree can be used to express complex logic and decision making. It's especially useful for game AI. See [here](https://www.gamedeveloper.com/programming/behavior-trees-for-ai-how-they-work) to learn more about behavior trees.
@@ -185,6 +186,11 @@ class BehaviorTree {
 	 * });
 	 */
 	tick(blackboard = this.blackboard) {
+		if (!this.head) {
+			console.error(this);
+			throw new Error("Could not tick behavior tree: No head node");
+		}
+
 		return this.head.tick(blackboard);
 	}
 	/**
@@ -198,6 +204,10 @@ class BehaviorTree {
 	 * tree.interrupt(BehaviorTree.SUCCESS);
 	 */
 	interrupt(value = BehaviorTree.FAILURE) {
+		if (!this.head) {
+			console.error(this);
+			throw new Error("Coudl not interrupt behavior tree: tree has no head node");
+		}
 		this.head.interrupt(value);
 	}
 }
@@ -209,6 +219,12 @@ class Composite { // Has 1+ children, processes them in a certain order each tic
 	static toString() {
 		return "Composite";
 	}
+
+	/**
+	 * @type {Function|undefined}
+	 * @protected
+	 */
+	resolve;
 
 	constructor({ children = [] }) {
 		this.id = ++BehaviorTree.id;
@@ -311,6 +327,12 @@ class Decorator { // Has 1 child, transforms result / repeats / terminates
 	static toString() {
 		return "Decorator";
 	}
+
+	/**
+	 * @type {Function|undefined}
+	 * @protected
+	 */
+	resolve;
 
 	constructor({ child }) {
 		this.id = ++BehaviorTree.id;

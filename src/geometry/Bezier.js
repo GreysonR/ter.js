@@ -1,4 +1,5 @@
 "use strict";
+const vec = require("../geometry/vec");
 
 /**
  * A bezier curve 
@@ -65,40 +66,6 @@ class Bezier {
 		return this.getDx2AtT(d / this.length);
 	}
 
-	render() {
-		ctx.beginPath();
-		for (let t = 0; t < this.length; t += 10) {
-			let pt = this.get(t);
-
-			if (t === 0) {
-				ctx.moveTo(pt.x, pt.y);
-			}
-			else {
-				ctx.lineTo(pt.x, pt.y);
-			}
-		}
-		ctx.strokeStyle = "#ff0000";
-		ctx.lineWidth = 1 / camera.scale;
-		ctx.stroke();
-	}
-	renderDx() {
-		ctx.strokeStyle = "#000000";
-		ctx.lineWidth = 1 / camera.scale;
-
-
-		for (let t = 10; t < this.length; t += 10) {
-			let pt = this.get(t);
-			let lastPt = this.get(t - 10);
-
-			ctx.lineWidth = this.getDx(t).length ** 2 * 0.0001 / camera.scale;
-
-			ctx.beginPath();
-			ctx.moveTo(lastPt.x, lastPt.y);
-			ctx.lineTo(pt.x, pt.y);
-			ctx.stroke();
-
-		}
-	}
 	toObject() {
 		return {
 			a: this.a.toObject(),

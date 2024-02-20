@@ -52,7 +52,7 @@ class Engine {
 	 * Ticks the engine one frame
 	 * @param {number} [delta] - (Optional) Engine tick duration, in seconds
 	 */
-	update = function(delta) {
+	update(delta) {
 		const { World, Performance, substeps } = this;
 		const { bodies } = World;
 
@@ -95,7 +95,7 @@ class Engine {
 
 			// Solve for velocities
 			for (let i = 0; i < this.velocityIterations; i++) {
-				this.solveVelocity(delta);
+				this.solveVelocity();
 			}
 			for (let i = 0; i < this.positionIterations; i++) {
 				this.solvePositions();
@@ -234,6 +234,10 @@ class Engine {
 		if (contacts.length === 0) {
 			contacts.push({ vertice: new vec(bodyA.position), body: bodyA });
 		}
+		if (normal === undefined) {
+			console.error(bodyA, bodyB);
+			throw new Error("Could not find normal");
+		}
 
 		normal.mult2(-1);
 		World.globalVectors.push({ position: normalPoint, vector: new vec(normal) });
@@ -279,7 +283,7 @@ class Engine {
 
 	/**
 	 * Deletes the collision pair
-	 * @param {collisionPair} pair - Pair to delete
+	 * @param {Object} pair - Pair to delete
 	 * @return {boolean} If pair was successfully removed, meaning they are no longer colliding
 	 */
 	cleansePair(pair) {
@@ -308,7 +312,7 @@ class Engine {
 	 * Solves velocity constriants on current collision pairs
 	 * Also clears collision pairs that are no longer valid (they haven't collided this frame)
 	 */
-	solveVelocity = function() {
+	solveVelocity() {
 		let { pairs } = this.World;
 		
 		for (let i in pairs) {
@@ -388,7 +392,7 @@ class Engine {
 	/**
 	 * Solves position intersections between bodies based on their collision pairs
 	 */
-	solvePositions = function() {
+	solvePositions() {
 		const { World } = this;
 		let { pairs } = World;
 		
@@ -435,7 +439,7 @@ class Engine {
 	 * Solves physics constraints for their new position and velocity
 	 * @param {number} delta - Engine tick duration, in seconds
 	 */
-	solveConstraints = function(delta) {
+	solveConstraints(delta) {
 		delta *= 1000;
 		const constraints = this.World.constraints;
 		const constraintIterations = this.constraintIterations;

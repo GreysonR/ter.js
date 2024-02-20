@@ -10,9 +10,10 @@
 			"default_theme": "dark",
 			"sort": false,
 			"includeFilesListInHomepage": true,
-			"displayModuleHeader": true
+			"displayModuleHeader": true,
+			"include_css": ["jsdoc-theme/table-fix.css"],
 			// "include_css": ["jsdoc-theme/jsdoc-theme.css"],
-			// "include_js": ["jsdoc-theme/jsdoc-setup.js"]
+			"include_js": ["jsdoc-theme/jsdoc-setup.js"]
 		}
 	},
 	"source": {

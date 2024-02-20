@@ -72,7 +72,7 @@ let Common = {
 			tempDet = curVert.x * nextVert.y - nextVert.x * curVert.y;
 			det += tempDet;
 
-			centroid.add2({ x: (curVert.x + nextVert.x) * tempDet, y: (curVert.y + nextVert.y) * tempDet });
+			centroid.add2(new vec((curVert.x + nextVert.x) * tempDet, (curVert.y + nextVert.y) * tempDet));
 		}
 
 		centroid.div2(3 * det);
@@ -172,7 +172,7 @@ let Common = {
 	 * @param {vec} a2 - End of line 1
 	 * @param {vec} b1 - Start of line 2
 	 * @param {vec} b2 - End of line 2
-	 * @return {vec} Point of intersection, or null if they don't intersect
+	 * @return {vec|object} Point of intersection, or null if they don't intersect
 	 */
 	lineIntersects: function(a1, a2, b1, b2) { // tells you if lines a1->a2 and b1->b2 are intersecting, and at what point
 		if (a1.x === a2.x || a1.y === a2.y) {
@@ -191,7 +191,7 @@ let Common = {
 			b1.y += 0.00001;
 
 		let d = (a1.x - a2.x) * (b1.y - b2.y) - (a1.y - a2.y) * (b1.x - b2.x);
-		if (d === 0) return false;
+		if (d === 0) return null;
 
 		let nx = (a1.x * a2.y - a1.y * a2.x) * (b1.x - b2.x) - (a1.x - a2.x) * (b1.x * b2.y - b1.y * b2.x);
 		let ny = (a1.x * a2.y - a1.y * a2.x) * (b1.y - b2.y) - (a1.y - a2.y) * (b1.x * b2.y - b1.y * b2.x);
@@ -267,7 +267,7 @@ let Common = {
 		let grid = World.staticGrid;
 		let size = grid.gridSize;
 		let bounds = { min: start.min(end).div2(size).floor2(), max: start.max(end).div2(size).floor2() };
-		bodies = new Set();
+		let bodies = new Set();
 
 		for (let x = bounds.min.x; x <= bounds.max.x; x++) {
 			for (let y = bounds.min.y; y <= bounds.max.y; y++) {
@@ -288,7 +288,7 @@ let Common = {
 		let grid = World.dynamicGrid;
 		let size = grid.gridSize;
 		let bounds = { min: start.min(end).div2(size).floor2(), max: start.max(end).div2(size).floor2() };
-		bodies = new Set();
+		let bodies = new Set();
 
 		for (let x = bounds.min.x; x <= bounds.max.x; x++) {
 			for (let y = bounds.min.y; y <= bounds.max.y; y++) {
@@ -310,10 +310,10 @@ let Common = {
 	 * 
 	 * @param {vec} start - Start of ray
 	 * @param {vec} end - End of ray
-	 * @param {Array} [bodies] - (Optional) Array of bodies to test
+	 * @param {Array} [bodies] - Array of bodies to test
 	 * @return {Object} { collision: boolean, distance: Number, point: vec, body: RigidBody, verticeIndex: Number }
 	 */
-	raycast: function(start, end, bodies) {
+	raycast: function(start, end, bodies = []) {
 		let lineIntersects = Common.lineIntersects;
 		let minDist = Infinity;
 		let minPt = null;

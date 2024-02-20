@@ -1,6 +1,7 @@
 "use strict";
 
 const vec = require("../geometry/vec.js");
+const Common = require("../core/Common.js");
 
 /**
  * A generic node object
@@ -35,10 +36,9 @@ class Node {
 	/**
 	 * If the node is added to the game world. 
 	 * To modify, use `add()` or `delete()`.
-	 * @readonly
-	 * @type {Set}
+	 * @type {boolean}
 	 */
-	added = false;
+	#added = false;
 	
 	/**
 	 * Creates a Node
@@ -51,9 +51,9 @@ class Node {
 	 * Adds this node and its children
 	 */
 	add() {
-		if (!this.added) {
+		if (!this.#added) {
 			this.trigger("add");
-			this.added = true;
+			this.#added = true;
 
 			for (let child of this.children) {
 				child.add();
@@ -64,9 +64,9 @@ class Node {
 	 * Removes this node and its children
 	 */
 	delete() {
-		if (this.added) {
+		if (this.#added) {
 			this.trigger("delete");
-			this.added = false;
+			this.#added = false;
 	
 			for (let child of this.children) {
 				child.delete();
@@ -74,8 +74,17 @@ class Node {
 		}
 	}
 
+	isAdded() {
+		return this.#added;
+	}
+
 	/**
 	 * Adds all `children` to this node's children
+	 * @param {...Node} children - Children added
+	 * @example
+	 * let parentNode = new Node();
+	 * let childNode = new Node();
+	 * node.addChild(childNode);
 	 */
 	addChild(...children) {
 		for (let child of children) {
@@ -84,6 +93,12 @@ class Node {
 	}
 	/**
 	 * Removes all `children` from this node's children
+	 * @param {...Node} children - Children removed
+	 * @example
+	 * let parentNode = new Node();
+	 * let childNode = new Node();
+	 * node.addChild(childNode); // node.children: Set {childNode}
+	 * node.removeChild(childNode); // node.children: Set {}
 	 */
 	removeChild(...children) {
 		for (let child of children) {
@@ -108,7 +123,7 @@ class Node {
 	translate(positionDelta) {
 		this.position.add2(positionDelta);
 		for (let child of this.children) {
-			child.translate(delta);
+			child.translate(positionDelta);
 		}
 	}
 	
@@ -129,7 +144,6 @@ class Node {
 	/**
 	 * Rotates the body by `angle`- Relative
 	 * @param {number} angle -Amount the body should be rotated, in radians
-	 * @param {boolean} silent - If the body's angle should be affected
 	 */
 	translateAngle(angle) {
 		if (isNaN(angle)) return;
@@ -165,20 +179,21 @@ class Node {
 	 * @param {Function} callback - Function to unbind
 	 */
 	off(event, callback) {
-		event = this.#events[event];
-		if (event.includes(callback)) {
-			event.splice(event.indexOf(callback), 1);
+		let events = this.#events[event];
+		if (events.includes(callback)) {
+			events.splice(events.indexOf(callback), 1);
 		}
 	}
 	/**
 	 * Triggers an event, firing all bound callbacks
-	 * @param {string} event - Name of the event=
+	 * @param {string} event - Name of the event
+	 * @param {...*} args - Arguments passed to callbacks
 	 */
-	trigger(event) {
+	trigger(event, ...args) {
 		// Trigger each event
 		if (this.#events[event]) {
 			this.#events[event].forEach(callback => {
-				callback();
+				callback(...args);
 			});
 		}
 	}

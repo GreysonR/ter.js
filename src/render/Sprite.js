@@ -158,7 +158,7 @@ class Sprite extends Node {
 	 * Adds the sprite to the world
 	 */
 	add() {
-		if (!this.sprite && this.added) {
+		if (!this.sprite && this.isAdded()) {
 			this.on("load", this.add);
 			return;
 		}
