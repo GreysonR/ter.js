@@ -210,7 +210,7 @@ class Graph {
 			};
 			let boundSize = bounds.max.sub(bounds.min);
 			function getPosition(point, i) {
-				point = Math.max(valueRanges.min, Math.min(valueRanges.max, point));
+				// point = Math.max(valueRanges.min, Math.min(valueRanges.max, point));
 				const range = valueRanges.max - valueRanges.min;
 				let x = bounds.min.x + (i / maxLength) * boundSize.x;
 				let y = bounds.max.y - ((point - valueRanges.min) / range) * boundSize.y;

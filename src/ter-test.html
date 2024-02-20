@@ -21,18 +21,18 @@
 <script>
 	const game = new ter.Game({
 		Render: {
+			resizeTo: window,
 			background: "#002A32",
 			getBoundSize: function(width, height) {
 				return Math.min(width, height);
 			}
 		},
 		World: {
-			resizeTo: window,
+			gravity: new vec(0, 500),
 		},
 		Engine: {
+			substeps: 10,
 			positionIterations: 1,
-			velocityIterations: 1,
-			substeps: 1,
 		},
 	});
 	game.createDebugRender();
@@ -43,7 +43,9 @@
 	const { camera } = Render;
 	const { World } = Engine;
 
-	var floor = Bodies.Rectangle(1000, 100, new vec(0, 400), {
+	camera.setPosition(new vec(0, 0));
+
+	var floor = Bodies.Rectangle(10000, 100, new vec(0, 400), {
 		isStatic: true,
 	}).addPolygonRender(Render.app.stage, {
 		// background: "#E0F2E9",
@@ -53,14 +55,71 @@
 
 
 	function stack() {
-		for (let i = 1; --i >= 0;) {
-			Bodies.Rectangle(300, 300, new vec(300, 0 - i * 50))
-				.addPolygonRender(Render.app.stage, {
+		for (let i = 2; --i >= 0;) {
+			Bodies.Rectangle(50, 50, new vec(300 + i * 10, 0 - i * 50), {
+				restitution: 0,
+			}).addPolygonRender(Render.app.stage, {
+				// background: "#4B8F8C"
+				border: "#4B8F8C",
+				borderWidth: 2,
+			}).add();
+		}
+	}
+
+	function newton() {
+		let bodyA = Bodies.Rectangle(50, 50, new vec(-300, 0), {
+			restitution: 0.4,
+			friction: 0,
+			frictionAir: 0,
+		}).addPolygonRender(Render.app.stage, {
+			// background: "#4B8F8C"
+			border: "#4B8F8C",
+			borderWidth: 2,
+		}).add();
+		let bodyB = Bodies.Rectangle(50, 50, new vec(-350, 0), {
+			restitution: 0.4,
+			friction: 0,
+			frictionAir: 0,
+		}).addPolygonRender(Render.app.stage, {
+			// background: "#4B8F8C"
+			border: "#4B8F8C",
+			borderWidth: 2,
+		}).add();
+		
+		for (let i = 4; --i >= 0;) {
+			Bodies.Rectangle(50, 50, new vec(-100 + i * 50, 0), {
+				restitution: 0.4,
+				friction: 0,
+				frictionAir: 0,
+			}).addPolygonRender(Render.app.stage, {
+				// background: "#4B8F8C"
+				border: "#4B8F8C",
+				borderWidth: 2,
+			}).add();
+		}
+
+		setTimeout(() => {
+			bodyA.applyForce(new vec(400, 0), 1);
+			bodyB.applyForce(new vec(400, 0), 1);
+		}, 400);
+	}
+
+	
+	function multistack() {
+		let width =  10;
+		let height = 10;
+		for (let y = 0; y < height; ++y) {
+			for (let x = 0; x < width; ++x) {
+				let body = window[`body${x}-${y}`] = Bodies.Rectangle(50, 50, new vec(300 + 51 * (x - width/2), 50 * (y  - height/2)), {
+					restitution: 0.2,
+					friction: 1,
+				}).addPolygonRender(Render.app.stage, {
 					// background: "#4B8F8C"
 					border: "#4B8F8C",
 					borderWidth: 2,
-				})
-				.add();
+				}).add();
+				// body.applyTorque(2, 1);
+			}
 		}
 	}
 
@@ -77,36 +136,33 @@
 
 		var bodyB = Bodies.Rectangle(100, 100, new vec(60, -160), {
 			round: 10
-		}).addSprite(Render.app.stage, {
-			src: "burstShot.png"
-		}).add();
+		}).addPolygonRender(Render.app.stage, {
+				border: "#4B8F8C",
+				borderWidth: 4,
+				borderOffset: 0.5,
+				round: 10,
+			}).add();
 		bodyB.applyTorque(5.5, 1);
 	}
 
-	window.addEventListener("load", stack);
+	window.addEventListener("load", multistack);
 
 	// game.DebugRender.enabled.vertices = true;
 	game.DebugRender.enabled.collisions = true;
 
 
-	let graph = new Graph(200, 150, new vec(20, 20), {
-		maxLength: 800,
-		title: "Hello graph",
+	var graph = new Graph(80, 40, new vec(20, 20), {
+		maxLength: 100,
+		title: "Impulses",
 		titleSize: 12,
-		background: "transparent",
 		lineColor: {
-			fps: "#9D436C",
-			delta: "#5EA8BA",
-			default: "white",
+			0: "#9D436C80",
+			1: "#9D436C80",
+			2: "#5EA8BA80",
+			3: "#5EA8BA80",
 		},
 		padding: 10,
-		scaleRange: [0, 144 * 2],
-	});
-	console.log(graph);
-	Render.on("beforeUpdate", () => {
-		graph.addData(game.Engine.Performance.fps, "fps");
-		graph.addData(game.Engine.Performance.delta * 1000 * 10, "delta");
-		graph.addData(game.Engine.Performance.delta * 1000 * 17);
+		scaleRange: [-50, 50],
 	});
 </script>
 </html>

@@ -19,11 +19,15 @@ class Node {
 	/**
 	 * Position
 	 * @type {vec}
+	 * @readonly
+	 * @todo Implement getPosition method and make this private
 	 */
 	position = new vec(0, 0);
 	/**
 	 * Angle, in radians
 	 * @type {number}
+	 * @readonly
+	 * @todo Implement getAngle method and make this private
 	 */
 	angle = 0;
 	/**

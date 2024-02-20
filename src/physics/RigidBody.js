@@ -286,6 +286,10 @@ class RigidBody extends Node {
 		if (isStatic === lastStatic) return;
 		
 		this.isStatic = isStatic;
+		this.mass = Infinity;
+		this.inertia = Infinity;
+		this._inverseMass = 0;
+		this._inverseInertia = 0;
 
 		if (this.hasCollisions && this.isAdded()) {
 			if (lastStatic) {
@@ -521,7 +525,6 @@ class RigidBody extends Node {
 
 	pairs = [];
 	_lastSeparations = {};
-	_slop = 0.001;
 
 	bounds = null;
 
@@ -623,6 +626,8 @@ class RigidBody extends Node {
 	 */
 	#getInertia() {
 		const { vertices, mass } = this;
+
+		if (this.isStatic) return Infinity;
 		
 		let numerator = 0;
 		let denominator = 0;
@@ -643,7 +648,9 @@ class RigidBody extends Node {
 	_updateInertia() {
 		if (this.isStatic) {
 			this.mass = Infinity;
+			this.inertia = Infinity;
 			this._inverseMass = 0;
+			this._inverseInertia = 0;
 		}
 		else {
 			this.inertia = this.#getInertia();

@@ -8,17 +8,17 @@ const RigidBody = require("./RigidBody.js");
  */
 class Engine {
 	static defaultOptions = {
-		substeps: 5,
+		substeps: 6,
 		velocityIterations: 1,
-		positionIterations: 5,
+		positionIterations: 1,
 		constraintIterations: 1,
 		maxShare: 1,
 	}
 
 	delta = 1;
-	substeps = 5;
+	substeps = 6;
 	velocityIterations = 1;
-	positionIterations = 5;
+	positionIterations = 1;
 	constraintIterations = 1;
 	maxShare = 1;
 
@@ -26,9 +26,9 @@ class Engine {
 	 * 
 	 * @param {World} World - World the physics engine should run on
 	 * @param {Object} options - Physics options
-	 * @param {number} [options.substeps=5] - Number of substeps per tick
+	 * @param {number} [options.substeps=6] - Number of substeps per tick
 	 * @param {number} [options.velocityIterations=1] - Number of velocity solver iterations per tick
-	 * @param {number} [options.positionIterations=5] - Number of position solver iterations per tick
+	 * @param {number} [options.positionIterations=1] - Number of position solver iterations per tick
 	 * @param {number} [options.constraintIterations=1] - Number of constraint solver iterations per tick
 	 * @param {number} [options.maxShare=1] - Maximum share of collision impulse a body can have. Not recommended to change
 	 */
@@ -95,7 +95,7 @@ class Engine {
 
 			// Solve for velocities
 			for (let i = 0; i < this.velocityIterations; i++) {
-				this.solveVelocity();
+				this.solveVelocity(delta);
 			}
 			for (let i = 0; i < this.positionIterations; i++) {
 				this.solvePositions();
@@ -311,15 +311,16 @@ class Engine {
 	/**
 	 * Solves velocity constriants on current collision pairs
 	 * Also clears collision pairs that are no longer valid (they haven't collided this frame)
+	 * @param {number} delta - Delta time in seconds
 	 */
-	solveVelocity() {
+	solveVelocity(delta) {
 		let { pairs } = this.World;
 		
 		for (let i in pairs) {
 			let pair = pairs[i];
 			if (!pair || this.cleansePair(pair)) continue;
 
-			let { bodyA, bodyB, normal, tangent, contacts } = pair;
+			let { bodyA, bodyB, normal, tangent, contacts, depth } = pair;
 			let numContacts = contacts.length;
 			if (numContacts === 0) continue;
 
@@ -334,7 +335,6 @@ class Engine {
 			const restitution = 1 + Math.max(bodyA.restitution, bodyB.restitution);
 			const relVel = bodyB.velocity.sub(bodyA.velocity);
 			const friction = Math.max(bodyA.friction, bodyB.friction);
-			const slop = Math.max(bodyA._slop, bodyB._slop);
 
 			if (relVel.dot(normal) < 0) {
 				continue;
@@ -358,33 +358,61 @@ class Engine {
 
 				const offsetA = vertice.sub(bodyA.position);
 				const offsetB = vertice.sub(bodyB.position);
-				const vpA = bodyA.velocity.add(offsetA.normal().mult(-bodyA.angularVelocity));
-				const vpB = bodyB.velocity.add(offsetB.normal().mult(-bodyB.angularVelocity));
-				var relativeVelocity = vpA.sub(vpB);
-				const normalVelocity = relativeVelocity.abs().sub(slop).mult(relativeVelocity.sign()).dot(normal);
+				const vrA = bodyA.velocity.add(offsetA.cross(bodyA.angularVelocity));
+				const vrB = bodyB.velocity.add(offsetB.cross(bodyB.angularVelocity));
+				const relativeVelocity = vrA.sub(vrB);
+				const normalVelocity = relativeVelocity.dot(normal);
 				const tangentVelocity = relativeVelocity.dot(tangent);
 
 				if (normalVelocity > 0) continue;
-				let oAcN = offsetA.cross(normal);
-				let oBcN = offsetB.cross(normal);
-				let share = 1 / (contacts.length * (bodyA._inverseMass + bodyB._inverseMass + bodyA._inverseInertia * oAcN * oAcN + bodyB._inverseInertia * oBcN * oBcN));
-				
-				const normalImpulse = restitution * normalVelocity * share;
-				const tangentImpulse = restitution * tangentVelocity * share;
 
-				const curImpulse = normal.mult(normalImpulse).add2(tangent.mult(tangentImpulse * friction));
+				let rnA = offsetA.cross(normal);
+				let rnB = offsetB.cross(normal);
+				let kNormal = bodyA._inverseMass + bodyB._inverseMass + bodyA._inverseInertia * rnA * rnA + bodyB._inverseInertia * rnB * rnB;
+
+				let share = 1 / (contacts.length * kNormal);
+				
+				// const normalMass = (kNormal > 0 ? 1 / kNormal : 0) / contacts.length;
+				// const bias = -depth / delta * 0;
+				// let normalImpulse = normalMass * (normalVelocity + bias) * 0.4 * restitution;
+				
+				const normalImpulse = restitution * normalVelocity * share * 0.5;
+				const tangentImpulse = tangentVelocity * share * 0.3;
+
+				// float bias = separation / delta
+				// float impulse = -cp->normalMass * 1 * (vn + bias) - impulseScale * cp->normalImpulse;
+
+				/**
+				// Compute normal impulse
+				float impulse = -cp->normalMass * massScale * (vn + bias) - impulseScale * cp->normalImpulse;
+
+				// Clamp the accumulated impulse
+				float newImpulse = S2_MAX(cp->normalImpulse + impulse, 0.0f);
+				impulse = newImpulse - cp->normalImpulse;
+				cp->normalImpulse = newImpulse;
+
+				// Apply contact impulse
+				s2Vec2 P = s2MulSV(impulse, normal);
+				vA = s2MulSub(vA, mA, P);
+				wA -= iA * s2Cross(rA, P);
+
+				vB = s2MulAdd(vB, mB, P);
+				wB += iB * s2Cross(rB, P);
+				 */
+
+				const curImpulse = normal.mult(normalImpulse * restitution).add2(tangent.mult(tangentImpulse * friction));
 				impulse.add2(curImpulse);
 				angImpulseA += offsetA.cross(curImpulse) * bodyA._inverseInertia;
 				angImpulseB += offsetB.cross(curImpulse) * bodyB._inverseInertia;
 			}
 			
 			if (!bodyA.isStatic) {
-				bodyA.velocity.sub2(impulse.mult(1 / bodyA.mass));
-				bodyA.angularVelocity -= angImpulseA / bodyA.mass;
+				bodyA.velocity.sub2(impulse.mult(bodyA._inverseMass));
+				bodyA.angularVelocity -= angImpulseA * bodyA._inverseMass;
 			}
 			if (!bodyB.isStatic) {
-				bodyB.velocity.add2(impulse.mult(1 / bodyB.mass));
-				bodyB.angularVelocity += angImpulseB / bodyB.mass;
+				bodyB.velocity.add2(impulse.mult(bodyB._inverseMass));
+				bodyB.angularVelocity += angImpulseB * bodyB._inverseMass;
 			}
 		}
 	}
@@ -424,11 +452,11 @@ class Engine {
 			if (bodyA.isStatic || bodyB.isStatic) impulse.mult(0);
 
 			if (!bodyA.isStatic) {
-				let a = impulse.mult(shareA * 0.95 / bodyA.pairs.length);
+				let a = impulse.mult(shareA * 1 / bodyA.pairs.length);
 				bodyA.translate(a);
 			}
 			if (!bodyB.isStatic) {
-				let a = impulse.mult(-shareB * 0.95 / bodyB.pairs.length);
+				let a = impulse.mult(-shareB * 1 / bodyB.pairs.length);
 				bodyB.translate(a);
 			}
 			pair.depth -= impulse.length;
