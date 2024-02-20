@@ -23,7 +23,7 @@ class Sprite extends Node {
 		
 		scale: new vec(1, 1),
 		width:  undefined,
-		heigth: undefined,
+		height: undefined,
 	}
 	static all = new Set();
 

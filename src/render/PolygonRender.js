@@ -26,7 +26,7 @@ class PolygonRender extends Node {
 		
 		// subtype: "rectangle" only options
 		width: 100,
-		heigth: 100,
+		height: 100,
 		round: 0,
 
 		// subtype: "circle" only options

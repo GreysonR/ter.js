@@ -3,6 +3,10 @@ const vec = require("../geometry/vec.js");
 const PolygonRender = require("../render/PolygonRender.js");
 const Sprite = require("../render/Sprite.js");
 
+/**
+ * A rectangle RigidBody
+ * @extends RigidBody
+ */
 class Rectangle extends RigidBody {
 	static createVertices(width, height) {
 		return [
@@ -12,6 +16,15 @@ class Rectangle extends RigidBody {
 			new vec(-width/2, -height/2),
 		];
 	}
+
+	/**
+	 * 
+	 * @param {Engine} Engine - Engine to add to
+	 * @param {number} width - Width of rectangle
+	 * @param {number} height - Height of rectangle
+	 * @param {vec} position - Position of body
+	 * @param {object} options - (RigidBody)[./RigidBody.html] options
+	 */
 	constructor(Engine, width, height, position, options = {}) {
 		super(Engine, Rectangle.createVertices(width, height), position, options);
 

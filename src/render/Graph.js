@@ -51,6 +51,19 @@ class Graph {
 	 * @param {string} [options.lineColor="#9C9C9C"] - Color of the line. Use this if you only have 1 value you're graphing
 	 * @param {object} [options.lineColor={ default: "#9C9C9C" }] - Colors of each line name. Use this notation if you have multiple lines on one graph
 	 * @param {number} [options.lineWidth=1] - Width of the graph lines
+	 * @example
+	 * let graph = new Graph(200, 150, new vec(20, 20), {
+	 * 	maxLength: 800,
+	 * 	title: "Hello graph",
+	 * 	titleSize: 12,
+	 * 	background: "transparent",
+	 * 	lineColor: {
+	 * 		itemA: "#9D436C",
+	 * 		itemB: "#5EA8BA",
+	 * 	},
+	 * 	padding: 10,
+	 * 	scaleRange: [0, 144 * 2],
+	 * });
 	 */
 	
 	constructor(width = 200, height = 200, position = new vec(0, 0), options = {}) {
@@ -231,6 +244,9 @@ class Graph {
 	 * Adds value to the graph
 	 * @param {number} value - Value to add
 	 * @param {string} [name="default"] - Name of line
+	 * @example
+	 * graph.addData(20); // Adds value 20 to the default line
+	 * graph.addData(102.4, "itemA"); // Adds value 102.4 to itemA line
 	 */
 	addData(value, name = "default") {
 		if (!this.lineColor[name]) {

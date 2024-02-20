@@ -13,7 +13,7 @@ class Ticker {
 	 * Creates a ticker that updates [Game](./Game.html) every frame.
 	 * @param {Game} Game - Game ticker should be run on
 	 * @param {Object} options - Options object
-	 * @param {boolean} [options.pauseOnFreeze=true] - If the ticker should pause when the game freezes. Helps prevent jumping when user tabs out and back in.
+	 * @param {boolean} [options.pauseOnFreeze=true] - If the ticker should pause when the game freezes. Helps prevent jumping when user switches tabs.
 	 * @param {number} [options.freezeThreshold=0.3] - The threshold before the game pauses **between 0 and 1**. Higher values means the fps doesn't have to dip as low for the ticker to pause.
 	 */
 	constructor(Game, options = {}) {

@@ -28,7 +28,7 @@ class Game {
 	 * 	Ticker: Ticker.defaultOptions,
 	 * }
 	 * ```
-	 * See documentation for [World](./World.html), [Render](./Render.html), [Engine](./Engine.html), [Ticker](./Ticker.html) for options
+	 * See documentation for [World](./World.html), [Render](./Render.html), [Engine](./Engine.html), and [Ticker](./Ticker.html) for options
 	 * 
 	 * @param {Object} options - Options object
 	 */

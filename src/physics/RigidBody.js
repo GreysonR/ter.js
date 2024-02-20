@@ -94,6 +94,27 @@ class RigidBody extends Node {
 	 * @param {vec} position - Position of the body
 	 * @param {Engine} Engine - Engine the body should be simulated in
 	 * @param {Object} options - RigidBody options
+	 * @example
+	 * // Includes all RigidBody options
+	 * new RigidBody(Engine, [new vec(0, 0), new vec(10, 0), new vec(10, 10), new vec(0, 10)], new vec(0, 0), {
+	 * 	mass: 1,
+	 * 	restitution: 0.5,
+	 * 
+	 * 	frictionAir: 0.05,
+	 * 	frictionAngular: 0.01,
+	 * 	friction: 0.01,
+	 * 
+	 * 	round: 0,
+	 * 	roundQuality: 40,
+	 * 
+	 * 	isStatic: false,
+	 * 	isSensor: false,
+	 * 	hasCollisions: true,
+	 * 	collisionFilter: {
+	 * 		layer: 0xFFFFFF,
+	 * 		mask: 0xFFFFFF,
+	 * 	},
+	 * });
 	 */
 	constructor(Engine, vertices, position, options = {}) {
 		super();
@@ -187,6 +208,28 @@ class RigidBody extends Node {
 	 * @param {PIXI.Container} container - Container polygon render is added to
 	 * @param {Object} options - (Polygon Render)[./PolygonRender.html] options
 	 * @return {RigidBody} `this`
+	 * @example
+	 * body.addPolygonRender(Render.app.stage, {
+	 * 	layer: 0, // number
+	 * 	subtype: "polygon", // "polygon" | "rectangle" | "circle"
+	 * 
+	 * 	visible: true,
+	 * 	alpha: 1,
+	 * 	background: "transparent",
+	 * 	border: "transparent",
+	 * 	borderWidth: 3,
+	 * 	borderOffset: 0.5,
+	 * 	lineCap: "butt",
+	 * 	lineJoin: "miter",
+	 * 
+	 * 	// subtype = "rectangle" only options
+	 * 	width: 100,
+	 * 	height: 100,
+	 * 	round: 0,
+	 * 
+	 * 	// subtype = "circle" only options
+	 * 	radius: 50,
+	 * })
 	 */
 	addPolygonRender(container, options) {
 		let render = new PolygonRender({
@@ -207,6 +250,18 @@ class RigidBody extends Node {
 	 * @param {PIXI.Container} container - Container polygon render is added to
 	 * @param {Object} options - (Sprite)[./Sprite.html] options
 	 * @return {RigidBody} `this`
+	 * @example
+	 * body.addSprite(Render.app.stage, {
+	 * 	layer: 0, // number
+	 * 
+	 * 	visible: true,
+	 * 	alpha: 1, // number between [0, 1]
+	 * 	src: "path/to/sprite.png",
+	 * 	
+	 * 	scale: new vec(1, 1),
+	 * 	width:  undefined, // number
+	 * 	height: undefined, // number
+	 * });
 	 */
 	addSprite(container, options) {
 		let render = new Sprite({

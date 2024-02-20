@@ -23,7 +23,7 @@ class Render {
 	/**
 	 * 
 	 * @param {object} options - Render options
-	 * @param {string} options.background - Background color, such as "#FFFFFF00" or "rgb(0, 0, 0)"
+	 * @param {string} options.background - Background color, such as `"#FFFFFF00"` or `"rgb(0, 0, 0)"`
 	 * @param {number} [options.pixelRatio=devicePixelRatio] - Render resolution percent, use default unless you have a reason to change it
 	 * @param {boolean} [options.ySort=false] - Whether to sort the render layer of bodies by their y coordinate
 	 * @param {*} [options.resizeTo=window] - What the canvas should resize to, see PIXI.js `resizeTo` for options

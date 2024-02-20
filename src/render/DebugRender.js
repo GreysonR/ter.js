@@ -16,6 +16,7 @@ class DebugRender {
 	 * - **enabled.centers** - Shows center of mass of all physics bodies
 	 * - **enabled.broadphase** - Shows active non-static broadphase grids cells
 	 * @type {object}
+	 * @todo Add methods for setting these, possibly also in Game
 	 * @example
 	 * myGame.DebugRender.enabled.vertices = true; // Vertice rendering
 	 * myGame.DebugRender.enabled.collisions = true; // Collision rendering
@@ -33,7 +34,7 @@ class DebugRender {
 
 	/**
 	 * Creates a debug rendering context for the game.
-	 * @param {Game} Game - [Game](./Game.html)
+	 * @param {Game} Game - Game to render debug info for
 	 */
 	constructor(Game) {
 		this.Game = Game;
