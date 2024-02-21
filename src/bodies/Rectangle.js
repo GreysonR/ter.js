@@ -40,6 +40,8 @@ class Rectangle extends RigidBody {
 			subtype: "Rectangle",
 			width: this.width,
 			height: this.height,
+			angle: this.angle,
+			angle: this.angle,
 			
 			...options
 		});

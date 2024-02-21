@@ -31,11 +31,13 @@ class Polygon extends RigidBody {
 		this.nodeType = "Polygon";
 	}
 	addPolygonRender(container, options) {
+		console.log(...this.vertices, this.angle);
 		let render = new PolygonRender({
 			container: container,
 			position: new vec(this.position),
 			vertices: this.vertices,
 			subtype: "Polygon",
+			angle: this.angle,
 			
 			...options
 		});
@@ -48,6 +50,7 @@ class Polygon extends RigidBody {
 		let render = new Sprite({
 			container: container,
 			position: new vec(this.position),
+			angle: this.angle,
 			
 			...options
 		});

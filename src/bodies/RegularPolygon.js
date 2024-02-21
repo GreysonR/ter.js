@@ -37,6 +37,7 @@ class RegularPolygon extends RigidBody {
 			container: container,
 			position: new vec(this.position),
 			vertices: this.vertices,
+			angle: this.angle,
 			subtype: "RegularPolygon",
 			
 			...options
@@ -52,6 +53,7 @@ class RegularPolygon extends RigidBody {
 			position: new vec(this.position),
 			width:  this.radius * 2,
 			height: this.radius * 2,
+			angle: this.angle,
 			
 			...options
 		});

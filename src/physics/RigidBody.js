@@ -5,6 +5,7 @@ const PolygonRender = require("../render/PolygonRender.js");
 const Sprite = require("../render/Sprite.js");
 const Bezier = require("../geometry/Bezier.js");
 const CollisionShape = require("../physics/CollisionShape.js");
+const decomp = require("../lib/poly-decomp.js");
 
 /**
  * A rigid body with physics
@@ -157,8 +158,11 @@ class RigidBody extends Node {
 		this.#removeDuplicateVertices();
 		this._resetVertices();
 
-		// Todo: make vertices concave
 		let allVertices = [this.vertices];
+		if (!this.#isConvex()) {
+			allVertices = this.#getConvexVertices();
+		}
+
 		for (let vertices of allVertices) {
 			let collisionShape = new CollisionShape(this, vertices, this.Engine);
 			this.addChild(collisionShape);
@@ -171,7 +175,7 @@ class RigidBody extends Node {
 		// Set angle from options
 		if (options.angle) {
 			this.angle = 0;
-			this.setAngle(-options.angle);
+			this.setAngle(options.angle);
 		}
 		this.setPosition(position);
 	}
@@ -238,6 +242,7 @@ class RigidBody extends Node {
 			container: container,
 			position: new vec(this.position),
 			vertices: this.vertices,
+			angle: this.angle,
 			
 			...options
 		});
@@ -269,6 +274,7 @@ class RigidBody extends Node {
 		let render = new Sprite({
 			container: container,
 			position: new vec(this.position),
+			angle: this.angle,
 			
 			...options
 		});
@@ -612,6 +618,21 @@ class RigidBody extends Node {
 		}
 
 		return true;
+	}
+	/**
+	 * Decomposes concave vertices into convex shapes
+	 * @returns {Array<vec>} set of convex shapes
+	 */
+	#getConvexVertices() {
+		let convexShapes = [];
+		let vertices = this.vertices;
+		let decompVerts = vertices.map(v => v.toArray());
+		decomp.makeCCW(decompVerts);
+		let concaveVertices = decomp.quickDecomp(decompVerts);
+		for (let i = 0; i < concaveVertices.length; i++) {
+			convexShapes.push(concaveVertices[i].map(v => new vec(v)));
+		}
+		return convexShapes;
 	}
 
 	#getCenterOfMass() {

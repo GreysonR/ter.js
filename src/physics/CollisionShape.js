@@ -121,28 +121,25 @@ class CollisionShape extends Node {
 		if (isNaN(angle)) return;
 		let vertices = this.vertices;
 		let position = this.position;
-		let rotationPoint = this.parentNode.rotationPoint.rotate(this.angle + angle);
+		let rotationPoint = this.parentNode.rotationPoint.rotate(this.angle + angle).add(this.parentNode.position);
 
 		let sin = Math.sin(angle);
 		let cos = Math.cos(angle);
 
 		for (let i = vertices.length; i-- > 0;) {
 			let vert = vertices[i];
-			let dist = vert.sub(position);
-			vert.x = position.x + (dist.x * cos - dist.y * sin);
-			vert.y = position.y + (dist.x * sin + dist.y * cos);
+			let dist = vert.sub(rotationPoint);
+			vert.x = this.parentNode.position.x + (dist.x * cos - dist.y * sin);
+			vert.y = this.parentNode.position.y + (dist.x * sin + dist.y * cos);
 		}
 
-		let posOffset = rotationPoint.sub(rotationPoint.rotate(angle));
-		this.translate(posOffset);
-		this.angle += angle;
+		// let posOffset = rotationPoint.sub(rotationPoint.rotate(angle));
+		// this.translate(posOffset);
 
 		this.bounds.update(this.vertices);
 		this.#updateAxes();
 
-		for (let child of this.children) {
-			child.translateAngle?.(angle);
-		}
+		super.translateAngle(angle);
 	}
 	
 	/**
@@ -172,10 +169,33 @@ class CollisionShape extends Node {
 	 * @private
 	 */
 	_resetVertices() {
+		this.#makeCCW(true);
 		this.area = this.#getArea();
 		this.#recenterVertices();
 		this.bounds.update(this.vertices);
 		this.#updateAxes();
+	}
+	/**
+	 * Tries to ensure the body's vertices are counterclockwise winding, by default by comparing the angles of the first 2 vertices and reversing the vertice array if they're clockwise
+	 * @param {boolean} force - If all vertices should be completely reordered using their angle from the center
+	 */
+	#makeCCW(force = false) { // makes vertices go counterclockwise if they're clockwise
+		if (force) { // reorders vertices by angle from center - can change order of vertices
+			let vertices = this.vertices;
+			let center = this.position;
+			let mapped = vertices.map(v => [v, v.sub(center).angle]);
+			mapped.sort((a, b) => Common.angleDiff(a[1], b[1]));
+			this.vertices = mapped.map(v => v[0]);
+		}
+		else { // reverses vertices if the 1st and 2nd are going wrong direction - never changes order of vertices
+			let vertices = this.vertices;
+			let center = this.position;
+	
+			let mapped = vertices.map(v => v.sub(center).angle);
+			if (Common.angleDiff(mapped[0], mapped[1]) > 0) {
+				this.vertices.reverse();
+			}
+		}
 	}
 	/**
 	 * Calculates the area of the body if it is convex

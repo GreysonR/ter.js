@@ -39,6 +39,7 @@ class Circle extends RigidBody {
 			vertices: this.vertices,
 			subtype: "Circle",
 			radius: this.radius,
+			angle: this.angle,
 			
 			...options
 		});
@@ -53,6 +54,7 @@ class Circle extends RigidBody {
 			position: new vec(this.position),
 			width:  this.radius * 2,
 			height: this.radius * 2,
+			angle: this.angle,
 			
 			...options
 		});

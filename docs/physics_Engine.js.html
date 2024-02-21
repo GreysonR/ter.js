@@ -83,8 +83,7 @@ class Engine {
 			
 			const pairs = World.collisionPairs;
 			for (let i = 0; i &lt; pairs.length; i++) {
-				let bodyA = pairs[i][0];
-				let bodyB = pairs[i][1];	
+				let [ bodyA, bodyB ] = pairs[i];
 				if (this.collides(bodyA, bodyB)) {
 					this.createPair(bodyA, bodyB);
 				}
@@ -157,7 +156,7 @@ class Engine {
 				delete bodyB._lastSeparations[bodyA.id];
 			}
 		}
-		if (collision) { // last separation didn't work - try all axes
+		if (collision) { // last separation axis didn't work - try all axes
 			// ~ bodyA axes
 			for (let j = 0; j &lt; bodyA._axes.length; j++) {
 				let axis = bodyA._axes[j];
@@ -322,9 +321,9 @@ class Engine {
 			let pair = pairs[i];
 			if (!pair || this.cleansePair(pair)) continue;
 
-			let { bodyA, bodyB, normal, tangent, contacts, depth } = pair;
-			bodyA = bodyA.parentNode;
-			bodyB = bodyB.parentNode;
+			let { bodyA: collisionShapeA, bodyB: collisionShapeB, normal, tangent, contacts, depth } = pair;
+			let bodyA = collisionShapeA.parentNode;
+			let bodyB = collisionShapeB.parentNode;
 
 			let numContacts = contacts.length;
 			if (numContacts === 0) continue;
@@ -426,30 +425,32 @@ class Engine {
 		for (let i in pairs) {
 			let pair = pairs[i];
 			if (!pair || this.cleansePair(pair)) continue;
-			let { depth, bodyA, bodyB, normal } = pair;
+			let { depth, bodyA: collisionShapeA, bodyB: collisionShapeB, normal } = pair;
+			let bodyA = collisionShapeA.parentNode;
+			let bodyB = collisionShapeB.parentNode;
 			// depth = Math.min(depth, 15);
 			
-			if (bodyA.parentNode.isSensor || bodyB.parentNode.isSensor) continue;
+			if (bodyA.isSensor || bodyB.isSensor) continue;
 			
 			if (depth &lt; 1) continue;
 
 			let impulse = normal.mult(depth - 1);
-			let totalMass = bodyA.parentNode.mass + bodyB.parentNode.mass;
+			let totalMass = bodyA.mass + bodyB.mass;
 			let shareA = (bodyB.mass / totalMass) || 0;
-			let shareB = (bodyA.parentNode.mass / totalMass) || 0;
+			let shareB = (bodyA.mass / totalMass) || 0;
 			let maxShare = this.maxShare;
 			shareA = Math.min(maxShare, shareA);
 			shareB = Math.min(maxShare, shareB);
-			if (bodyA.parentNode.isStatic) shareB = 1;
-			if (bodyB.parentNode.isStatic) shareA = 1;
+			if (bodyA.isStatic) shareB = 1;
+			if (bodyB.isStatic) shareA = 1;
 
 			if (!bodyA.isStatic) {
-				let a = impulse.mult(shareA * 1 / bodyA.pairs.length);
-				bodyA.parentNode.translate(a)
+				let a = impulse.mult(shareA * 1 / collisionShapeA.pairs.length);
+				bodyA.translate(a)
 			}
 			if (!bodyB.isStatic) {
-				let a = impulse.mult(-shareB * 1 / bodyB.pairs.length);
-				bodyB.parentNode.translate(a)
+				let a = impulse.mult(-shareB * 1 / collisionShapeB.pairs.length);
+				bodyB.translate(a)
 			}
 			pair.depth -= impulse.length;
 		}

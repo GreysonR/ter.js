@@ -1,12 +1,14 @@
 {
   "name": "ter",
-  "version": "2.1.16",
+  "version": "2.2.0",
   "description": "",
   "scripts": {
     "build": "webpack",
-    "build-prod": "webpack --config webpack-prod.config.js",
     "dev": "webpack serve",
-    "build-docs": "jsdoc -c jsdoc.json --verbose"
+
+    "build-prod": "webpack --config webpack-prod.config.js",
+    "build-docs": "jsdoc -c jsdoc.json --verbose",
+    "build-release": "npm run build-prod & npm run build-docs"
   },
   "keywords": [],
   "author": "GreysonR",
