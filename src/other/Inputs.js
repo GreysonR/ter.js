@@ -8,6 +8,7 @@ class Inputs {
 		window.addEventListener("keyup", event => this.#handleKeyup.call(this, event));
 
 		window.addEventListener("mousedown", event => this.#handleMousedown.call(this, event))
+		window.addEventListener("mouseup", event => this.#handleMouseup.call(this, event))
 	}
 	#handleKeydown(event) {
 		if (event.repeat) return;
@@ -41,7 +42,15 @@ class Inputs {
 	}
 	#handleMousedown(event) {
 		let fullName = "mouse" + event.button;
-		console.log(fullName);
+		if (this.#binds[fullName]) {
+			this.trigger(fullName, true);
+		}
+	}
+	#handleMouseup(event) {
+		let fullName = "mouse" + event.button;
+		if (this.#binds[fullName]) {
+			this.trigger(fullName, false);
+		}
 	}
 	
 	/**
