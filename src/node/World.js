@@ -3,6 +3,7 @@ const Common = require("../core/Common.js")
 const Grid = require("../geometry/Grid.js");
 const vec = require("../geometry/vec.js");
 const RigidBody = require("../physics/RigidBody.js");
+const CollisionShape = require("../physics/CollisionShape.js");
 
 /**
  * The game world
@@ -18,7 +19,7 @@ class World extends Node {
 	timescale = 1;
 	time = 0;
 
-	bodies = new Set();
+	rigidBodies = new Set();
 	constraints = new Set();
 	pairs = {};
 
@@ -62,7 +63,7 @@ class World extends Node {
 		for (let i = 0; i < bodies.length - 1; i++) {
 			let bodyA = bodies[i];
 			if (!bodyA.isAdded()) {
-				if (bodyA.isStatic) {
+				if (bodyA.parentNode.isStatic) {
 					this.staticGrid.removeBody(bodyA);
 				}
 				else {
@@ -70,7 +71,7 @@ class World extends Node {
 				}
 				continue;
 			}
-			if (!bodyA.hasCollisions)
+			if (!bodyA.parentNode.hasCollisions)
 				continue;
 			
 			for (let j = i + 1; j < bodies.length; j++) {
@@ -78,7 +79,7 @@ class World extends Node {
 				let bodyB = bodies[j];
 
 				if (!bodyB.isAdded()) {
-					if (bodyB.isStatic) {
+					if (bodyB.parentNode.isStatic) {
 						this.staticGrid.removeBody(bodyB);
 					}
 					else {
@@ -86,9 +87,9 @@ class World extends Node {
 					}
 					continue;
 				}
-				if (!bodyB.hasCollisions || bodyA.parent && bodyA.parent === bodyB.parent)
+				if (!bodyB.parentNode.hasCollisions || bodyA.parentNode === bodyB.parentNode)
 					continue;
-				if (!canCollide(bodyA.collisionFilter, bodyB.collisionFilter))
+				if (!canCollide(bodyA.parentNode.collisionFilter, bodyB.parentNode.collisionFilter))
 					continue;
 				
 
@@ -127,14 +128,14 @@ class World extends Node {
 			if (curStaticBucket) {
 				for (let j = 0; j < curDynamicBucket.length; j++) {
 					let bodyA = curDynamicBucket[j];
-					if (!bodyA.hasCollisions)
+					if (!bodyA.parentNode.hasCollisions)
 						continue;
 					for (let k = 0; k < curStaticBucket.length; k++) {
 						let bodyB = curStaticBucket[k];
 
-						if (!bodyB.hasCollisions || bodyA.isStatic && bodyB.isStatic || bodyA.parent && bodyA.parent === bodyB.parent)
+						if (!bodyB.parentNode.hasCollisions || bodyA.parentNode.isStatic && bodyB.parentNode.isStatic || bodyA.parentNode === bodyB.parentNode)
 							continue;
-						if (!canCollide(bodyA.collisionFilter, bodyB.collisionFilter))
+						if (!canCollide(bodyA.parentNode.collisionFilter, bodyB.parentNode.collisionFilter))
 							continue;
 	
 	
@@ -170,15 +171,19 @@ class World extends Node {
 		for (let child of children) {
 			// Add to engine
 			if (child instanceof RigidBody) {
-				this.bodies.add(child);
-			}
+				this.rigidBodies.add(child);
 
-			// Add to grids
-			if (child.isStatic) {
-				this.staticGrid.addBody(child);
-			}
-			else {
-				this.dynamicGrid.addBody(child);
+				for (let rigidChild of child.children) {
+					if (rigidChild instanceof CollisionShape) {
+						// Add to grids
+						if (child.isStatic) {
+							this.staticGrid.addBody(rigidChild);
+						}
+						else {
+							this.dynamicGrid.addBody(rigidChild);
+						}
+					}
+				}
 			}
 		}
 	}
@@ -188,7 +193,7 @@ class World extends Node {
 		for (let child of children) {
 			// Add to engine
 			if (child instanceof RigidBody) {
-				this.bodies.delete(child);
+				this.rigidBodies.delete(child);
 			}
 
 			// Remove from grids

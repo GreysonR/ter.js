@@ -1,7 +1,7 @@
 const vec = require("../geometry/vec.js");
 const Common = require("../core/Common.js");
 const Performance = require("../core/Performance.js");
-const RigidBody = require("./RigidBody.js");
+const CollisionShape = require("./CollisionShape.js");
 
 /**
  * The physics engine
@@ -54,7 +54,7 @@ class Engine {
 	 */
 	update(delta) {
 		const { World, Performance, substeps } = this;
-		const { bodies } = World;
+		const { rigidBodies } = World;
 
 		// Get delta
 		if (delta === undefined) {
@@ -71,7 +71,7 @@ class Engine {
 			Performance.frame++;
 			
 			// Update positions / angles
-			for (let body of bodies) {
+			for (let body of rigidBodies) {
 				body._update(delta);
 			}
 			
@@ -89,7 +89,7 @@ class Engine {
 			}
 
 			// Apply forces
-			for (let body of bodies) {
+			for (let body of rigidBodies) {
 				body._preUpdate(delta);
 			}
 
@@ -108,12 +108,12 @@ class Engine {
 
 	/**
 	 * Checks if `bodyA` and `bodyB` are colliding
-	 * @param {RigidBody} bodyA - 1st body to check
-	 * @param {RigidBody} bodyB - 2nd body to check
+	 * @param {CollisionShape} bodyA - 1st body to check
+	 * @param {CollisionShape} bodyB - 2nd body to check
 	 * @return {boolean} If the bodies are colliding
 	 */
 	collides(bodyA, bodyB) {
-		if (bodyA.isStatic && bodyB.isStatic) return false;
+		if (bodyA.parentNode.isStatic && bodyB.parentNode.isStatic) return false;
 
 		let collision = true;
 
@@ -147,7 +147,7 @@ class Engine {
 			let supportsB = getAllSupports(bodyB, axis);
 			let overlap = Math.min(supportsA.max - supportsB.min, supportsB.max - supportsA.min);
 
-			if (overlap < 0) {
+			if (overlap < 0.01) {
 				collision = false;
 			}
 			else {
@@ -163,7 +163,7 @@ class Engine {
 				let supportsB = getAllSupports(bodyB, axis);
 				let overlap = Math.min(supportsA.max - supportsB.min, supportsB.max - supportsA.min);
 
-				if (overlap < 0) {
+				if (overlap < 0.01) {
 					collision = false;
 					bodyA._lastSeparations[bodyB.id] = axis;
 					bodyB._lastSeparations[bodyA.id] = axis;
@@ -190,8 +190,8 @@ class Engine {
 
 	/**
 	 * Creates a collision pair between `bodyA` and `bodyB`
-	 * @param {RigidBody} bodyA - 1st body to pair
-	 * @param {RigidBody} bodyB - 2nd body to pair
+	 * @param {CollisionShape} bodyA - 1st body to pair
+	 * @param {CollisionShape} bodyB - 2nd body to pair
 	 */
 	createPair(bodyA, bodyB) {
 		const { World, Performance } = this;
@@ -321,15 +321,12 @@ class Engine {
 			if (!pair || this.cleansePair(pair)) continue;
 
 			let { bodyA, bodyB, normal, tangent, contacts, depth } = pair;
+			bodyA = bodyA.parentNode;
+			bodyB = bodyB.parentNode;
+
 			let numContacts = contacts.length;
 			if (numContacts === 0) continue;
 
-			while (bodyA.parent instanceof RigidBody && bodyA.parent !== bodyA) {
-				bodyA = bodyA.parent;
-			}
-			while (bodyB.parent instanceof RigidBody && bodyB.parent !== bodyB) {
-				bodyB = bodyB.parent;
-			}
 			if (bodyA.isSensor || bodyB.isSensor) continue;
 
 			const restitution = 1 + Math.max(bodyA.restitution, bodyB.restitution);
@@ -372,13 +369,13 @@ class Engine {
 
 				let share = 1 / (contacts.length * kNormal);
 				
+				const normalImpulse = restitution * normalVelocity * share * 0.5;
+				const tangentImpulse = tangentVelocity * share * 0.3;
+
 				// const normalMass = (kNormal > 0 ? 1 / kNormal : 0) / contacts.length;
 				// const bias = -depth / delta * 0;
 				// let normalImpulse = normalMass * (normalVelocity + bias) * 0.4 * restitution;
 				
-				const normalImpulse = restitution * normalVelocity * share * 0.5;
-				const tangentImpulse = tangentVelocity * share * 0.3;
-
 				// float bias = separation / delta
 				// float impulse = -cp->normalMass * 1 * (vn + bias) - impulseScale * cp->normalImpulse;
 
@@ -430,34 +427,27 @@ class Engine {
 			let { depth, bodyA, bodyB, normal } = pair;
 			// depth = Math.min(depth, 15);
 			
-			while (bodyA.parent && bodyA.parent !== bodyA) {
-				bodyA = bodyA.parent;
-			}
-			while (bodyB.parent && bodyB.parent !== bodyB) {
-				bodyB = bodyB.parent;
-			}
-			if (bodyA.isSensor || bodyB.isSensor) continue;
+			if (bodyA.parentNode.isSensor || bodyB.parentNode.isSensor) continue;
 			
 			if (depth < 1) continue;
 
 			let impulse = normal.mult(depth - 1);
-			let totalMass = bodyA.mass + bodyB.mass;
+			let totalMass = bodyA.parentNode.mass + bodyB.parentNode.mass;
 			let shareA = (bodyB.mass / totalMass) || 0;
-			let shareB = (bodyA.mass / totalMass) || 0;
+			let shareB = (bodyA.parentNode.mass / totalMass) || 0;
 			let maxShare = this.maxShare;
 			shareA = Math.min(maxShare, shareA);
 			shareB = Math.min(maxShare, shareB);
-			if (bodyA.isStatic) shareB = 1;
-			if (bodyB.isStatic) shareA = 1;
-			if (bodyA.isStatic || bodyB.isStatic) impulse.mult(0);
+			if (bodyA.parentNode.isStatic) shareB = 1;
+			if (bodyB.parentNode.isStatic) shareA = 1;
 
 			if (!bodyA.isStatic) {
 				let a = impulse.mult(shareA * 1 / bodyA.pairs.length);
-				bodyA.translate(a);
+				bodyA.parentNode.translate(a)
 			}
 			if (!bodyB.isStatic) {
 				let a = impulse.mult(-shareB * 1 / bodyB.pairs.length);
-				bodyB.translate(a);
+				bodyB.parentNode.translate(a)
 			}
 			pair.depth -= impulse.length;
 		}

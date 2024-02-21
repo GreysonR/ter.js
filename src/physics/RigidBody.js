@@ -4,7 +4,7 @@ const Common = require("../core/Common.js");
 const PolygonRender = require("../render/PolygonRender.js");
 const Sprite = require("../render/Sprite.js");
 const Bezier = require("../geometry/Bezier.js");
-const Bounds = require("../geometry/Bounds.js");
+const CollisionShape = require("../physics/CollisionShape.js");
 
 /**
  * A rigid body with physics
@@ -70,6 +70,7 @@ class RigidBody extends Node {
 	//
 	// Public user options
 	//
+	nodeType = "RigidBody";
 	vertices = [];
 
 	mass = 1;
@@ -118,6 +119,7 @@ class RigidBody extends Node {
 	 */
 	constructor(Engine, vertices, position, options = {}) {
 		super();
+		position = new vec(position);
 		if (!this.Engine) this.Engine = Engine;
 		
 		// Shallow copy World
@@ -151,12 +153,17 @@ class RigidBody extends Node {
 			this.vertices = RigidBody.roundVertices(this.vertices, this.round, this.roundQuality);
 		}
 
-		// Create bounds
-		this.bounds = new Bounds(this.vertices);
-
 		// Reset vertices so convex check works properly
 		this.#removeDuplicateVertices();
-		this._resetVertices(false);
+		this._resetVertices();
+
+		// Todo: make vertices concave
+		let allVertices = [this.vertices];
+		for (let vertices of allVertices) {
+			console.log(vertices);
+			let collisionShape = new CollisionShape(this, vertices, this.Engine);
+			this.addChild(collisionShape);
+		}
 
 		// Fully reset vertices
 		this._resetVertices();
@@ -174,7 +181,7 @@ class RigidBody extends Node {
 	// Public user methods
 	//
 	/**
-	 * Adds the body to its world
+	 * Adds the collision shape to its world
 	 * @return {RigidBody} `this`
 	 */
 	add() {
@@ -187,7 +194,7 @@ class RigidBody extends Node {
 	}
 
 	/**
-	 * Removes the body from its world
+	 * Removes the collision shape from its world
 	 * @return {RigidBody} `this`
 	 */
 	delete() {
@@ -195,10 +202,6 @@ class RigidBody extends Node {
 		if (this.isAdded()) {
 			super.delete();
 			World.removeChild(this);
-
-			for (let i = 0; i < this.pairs.length; i++) {
-				this.Engine.cleansePair(this.pairs[i]);
-			}
 		}
 		return this;
 	}
@@ -337,115 +340,28 @@ class RigidBody extends Node {
 	}
 
 	/**
-	 * Finds if a point is inside the body
+	 * Finds if a point is inside the body's collision shapes
 	 * @param {vec} point - Point to query
 	 * @return {boolean} If the point is inside the body's vertices
 	 */
 	containsPoint(point) {
-		let vertices = this.vertices;
-		for (let i = 0; i < vertices.length; i++) {
-			let curVertice = vertices[i];
-			let nextVertice = vertices[(i + 1) % vertices.length];
-			
-			if ((point.x - curVertice.x) * (nextVertice.y - curVertice.y) + (point.y - curVertice.y) * (curVertice.x - nextVertice.x) >= 0) {
-				return false;
+		for (let child of this.children) {
+			if (child instanceof CollisionShape && child.containsPoint(point)) {
+				return true;
 			}
 		}
-		return true;
+		return false;
 	}
 
 	/**
 	 * Instantly sets body's position to `position`
 	 * @param {vec} position - Position the body should be
-	 * @param {boolean} _ignoreChildren - If the body's children should be affected
 	 * @example
 	 * body.setPosition(new vec(100, 100)); // Sets body's position to (100, 100) 
 	 */
-	setPosition(position, _ignoreChildren = false) {
+	setPosition(position) {
 		let delta = position.sub(this.position);
-		this.translate(delta, true, _ignoreChildren);
-	}
-	
-	/**
-	 * Shifts body's position by delta
-	 * @param {vec} delta - Distance the body should be shifted
-	 * @param {boolean} affectPosition - If the body's position should be affected
-	 * @param {boolean} ignoreChildren - If the body's children should be shifted as well
-	 */
-	translate(delta, affectPosition = true, ignoreChildren = false) {
-		if (delta.isNaN()) return;
-		let vertices = this.vertices;
-		for (let i = 0; i < vertices.length; i++) {
-			vertices[i].add2(delta);
-		}
-
-		if (affectPosition) {
-			this.position.add2(delta);
-		}
-		this.bounds.update(this.vertices);
-
-		let tree = this.Engine.World.dynamicGrid;
-		if (this._Grids && this._Grids[tree.id]) {
-			tree.updateBody(this);
-		}
-
-		if (!ignoreChildren) {
-			let children = this.children;
-			for (let child of children) {
-				child.translate(delta, affectPosition);
-			}
-		}
-	}
-
-	/**
-	 * Rotates the body to `angle` - Absolute
-	 * @param {number} angle - Angle body should be in radians
-	 * @example
-	 * body.setAngle(Math.PI); // Sets body's angle to Pi radians, or 180 degrees 
-	 */
-	setAngle(angle) {
-		if (isNaN(angle)) return;
-		if (angle !== this.angle) {
-			let delta = Common.angleDiff(angle, this.angle);
-			this.translateAngle(delta);
-		}
-	}
-
-	/**
-	 * Rotates the body by `angle`- Relative
-	 * @param {number} angle - Amount the body should be rotated, in radians
-	 * @param {boolean} silent - If the body's angle should be affected
-	 */
-	translateAngle(angle, silent = false) {
-		if (isNaN(angle)) return;
-		let vertices = this.vertices;
-		let position = this.position;
-		let rotationPoint = this.rotationPoint.rotate(this.angle + angle);
-		if (this.parent) {
-			rotationPoint.add2(this.position.sub(this.parent.position));
-		}
-		let sin = Math.sin(angle);
-		let cos = Math.cos(angle);
-
-		for (let i = vertices.length; i-- > 0;) {
-			let vert = vertices[i];
-			let dist = vert.sub(position);
-			vert.x = position.x + (dist.x * cos - dist.y * sin);
-			vert.y = position.y + (dist.x * sin + dist.y * cos);
-		}
-
-		let posOffset = rotationPoint.sub(rotationPoint.rotate(angle));
-		this.translate(posOffset);
-		if (!silent) {
-			this.angle += angle;
-		}
-
-		this.bounds.update(this.vertices);
-		this.#updateAxes();
-
-		for (let child of this.children) {
-			child.translateAngle?.(angle, silent);
-		}
+		this.translate(delta);
 	}
 
 	/**
@@ -498,9 +414,7 @@ class RigidBody extends Node {
 	// 
 	// Private engine variables
 	// 
-	nodeType = "RigidBody";
-	Engine = null;
-	parent = null;
+	Engine;
 
 	position = new vec(0, 0);
 	velocity = new vec(0, 0);
@@ -513,20 +427,13 @@ class RigidBody extends Node {
 	
 	force = new vec(0, 0);
 	impulse = new vec(0, 0);
-	center = new vec(0, 0);
 	torque = 0;
 	
-	_axes = [];
 	rotationPoint = new vec(0, 0);
 
 	_inverseMass = 1;
 	inertia = 1;
 	_inverseInertia = 0.000015;	
-
-	pairs = [];
-	_lastSeparations = {};
-
-	bounds = null;
 
 	#events = {
 		collisionStart: [],
@@ -588,21 +495,21 @@ class RigidBody extends Node {
 		this.velocity.mult2(frictionAir);
 		if (this.velocity.x !== 0 || this.velocity.y !== 0){
 			this.translate(this.velocity.add(lastVelocity).mult(timescale / 2)); // trapezoidal rule to take into account acceleration
-			// body.translate(body.velocity.mult(timescale)); // potentially more stable, but less accurate
 		}
 		this._last.velocity.set(this.velocity);
 
 		this.angularVelocity *= frictionAngular;
 		if (this.angularVelocity){
 			this.translateAngle((this.angularVelocity + lastAngularVelocity) * timescale / 2); // trapezoidal rule to take into account acceleration
-			// body.translateAngle((body.angularVelocity) * timescale); // potentially more stable, but less accurate
 		}
 		this._last.angularVelocity = this.angularVelocity;
-		
-		this.bounds.update(this.vertices);
 
 		if (this.hasCollisions) {
-			this.Engine.World.dynamicGrid.updateBody(this);
+			for (let child of this.children) {
+				if (child instanceof CollisionShape) {
+					this.Engine.World.dynamicGrid.updateBody(child);
+				}
+			}
 		}
 	}
 
@@ -618,6 +525,28 @@ class RigidBody extends Node {
 			area += vertices[i].cross(vertices[(i + 1) % len]);
 		}
 		return area * 0.5;
+	}
+	/**
+	 * Removes overlapping vertices
+	 * @param {number} minDist - Minimum distance when points are considered the same
+	 */
+	#removeDuplicateVertices(minDist = 1) { // remove vertices that are the same
+		let vertices = this.vertices;
+		for (let i = 0; i < vertices.length; i++) {
+			let curVert = vertices[i];
+			
+			for (let j = 0; j < vertices.length; j++) {
+				if (j === i) continue;
+				let nextVert = vertices[j];
+				let dist = curVert.sub(nextVert);
+
+				if (Math.abs(dist.x) + Math.abs(dist.y) < minDist) { // just use manhattan dist because it doesn't really matter
+					vertices.splice(i, 1);
+					i--;
+					break;
+				}
+			}
+		}
 	}
 
 	/**
@@ -659,29 +588,6 @@ class RigidBody extends Node {
 	}
 
 	/**
-	 * Removes overlapping vertices
-	 * @param {number} minDist - Minimum distance when points are considered the same
-	 */
-	#removeDuplicateVertices(minDist = 1) { // remove vertices that are the same
-		let vertices = this.vertices;
-		for (let i = 0; i < vertices.length; i++) {
-			let curVert = vertices[i];
-			
-			for (let j = 0; j < vertices.length; j++) {
-				if (j === i) continue;
-				let nextVert = vertices[j];
-				let dist = curVert.sub(nextVert);
-
-				if (Math.abs(dist.x) + Math.abs(dist.y) < minDist) { // just use manhattan dist because it doesn't really matter
-					vertices.splice(i, 1);
-					i--;
-					break;
-				}
-			}
-		}
-	}
-
-	/**
 	 * Determines if the body is convex
 	 * @return {boolean} If the body is convex
 	 */
@@ -711,28 +617,7 @@ class RigidBody extends Node {
 
 	#getCenterOfMass() {
 		let center = Common.getCenterOfMass(this.vertices);
-		this.center.set(center);
 		return center;
-	}
-
-	/**
-	 * Calculates the body's axes from its vertices
-	 */
-	#updateAxes() {
-		let verts = this.vertices;
-		let axes = [];
-
-		for (let i = 0; i < verts.length; i++) {
-			let curVert = verts[i];
-			let nextVert = verts[(i + 1) % verts.length];
-
-			axes.push(nextVert.sub(curVert));
-		}
-		for (let i = 0; i < axes.length; i++) {
-			axes[i] = axes[i].normal().normalize2();
-		}
-
-		this._axes = axes;
 	}
 
 	/**
@@ -757,8 +642,6 @@ class RigidBody extends Node {
 		this.#makeCCW(forceCCW);
 		this.area = this.#getArea();
 		this.#recenterVertices();
-		this.bounds.update(this.vertices);
-		this.#updateAxes();
 	}
 
 	/**
@@ -784,27 +667,5 @@ class RigidBody extends Node {
 		}
 	}
 
-	/**
-	 * Finds the vertice farthest in a direction
-	 * @param {vec} vector - Normalized direction to find the support point
-	 * @param {vec} position - Position to base support on
-	 * @return {Array} 
-	 * @private
-	 */
-	_getSupport(vector, position = this.position) {
-		let vertices = this.vertices;
-		let bestDist = 0;
-		let bestVert;
-		for (let i = 0; i < vertices.length; i++) {
-			let dist = vector.dot(vertices[i].sub(position));
-
-			if (dist > bestDist) {
-				bestDist = dist;
-				bestVert = i;
-			}
-		}
-
-		return [ bestVert, bestDist ];
-	}
 }
 module.exports = RigidBody;

@@ -1,4 +1,5 @@
 const Game = require("../core/Game");
+const CollisionShape = require("../physics/CollisionShape");
 
 /**
  * Extra functions for debugging, such as showing all vertices, hitboxes, and collisions.
@@ -109,9 +110,13 @@ class DebugRender {
 		}
 
 		ctx.beginPath();
-		let allBodies = Game.World.bodies;
+		let allBodies = Game.World.rigidBodies;
 		for (let body of allBodies) {
-			renderVertices(body.vertices);
+			for (let child of body.children) {
+				if (child instanceof CollisionShape) {
+					renderVertices(child.vertices);
+				}
+			}
 		}
 		ctx.lineWidth = 2 / scale;
 		ctx.strokeStyle = "#FF832A";
@@ -148,13 +153,11 @@ class DebugRender {
 		const { ctx, Game } = this;
 		const { camera } = Game.Render;
 		ctx.fillStyle = "#FF832A";
-		let allBodies = Game.World.bodies;
+		let allBodies = Game.World.rigidBodies;
 		ctx.beginPath();
 		for (let body of allBodies) {
-			if (body.children.size === 0 || true) {
-				ctx.moveTo(body.position.x, body.position.y);
-				ctx.arc(body.position.x, body.position.y, 2 / camera.scale, 0, Math.PI*2);
-			}
+			ctx.moveTo(body.position.x, body.position.y);
+			ctx.arc(body.position.x, body.position.y, 2 / camera.scale, 0, Math.PI*2);
 		}
 		ctx.fill();
 	}
@@ -162,20 +165,22 @@ class DebugRender {
 		const { ctx, Game } = this;
 		const { World, Render } = Game;
 		const { camera } = Render;
-		let allBodies = World.bodies;
+		let allBodies = World.rigidBodies;
 		let allConstraints = World.constraints;
 
 		ctx.strokeStyle = "#66666680";
 		ctx.lineWidth = 1 / camera.scale;
 
 		for (let body of allBodies) {
-			if (!body.children || body.children.size === 0) {
-				let bounds = body.bounds;
-				let width  = bounds.max.x - bounds.min.x;
-				let height = bounds.max.y - bounds.min.y;
-
-				ctx.beginPath();
-				ctx.strokeRect(bounds.min.x, bounds.min.y, width, height);
+			for (let child of body.children) {
+				if (child instanceof CollisionShape) {
+					let bounds = child.bounds;
+					let width  = bounds.max.x - bounds.min.x;
+					let height = bounds.max.y - bounds.min.y;
+		
+					ctx.beginPath();
+					ctx.strokeRect(bounds.min.x, bounds.min.y, width, height);
+				}
 			}
 		}
 		ctx.strokeStyle = "#66666630";

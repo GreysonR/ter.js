@@ -53,6 +53,7 @@ class Node {
 	
 	/**
 	 * Adds this node and its children
+	 * @returns {Node} `this`
 	 */
 	add() {
 		if (!this.#added) {
@@ -63,9 +64,11 @@ class Node {
 				child.add();
 			}
 		}
+		return this;
 	}
 	/**
 	 * Removes this node and its children
+	 * @returns {Node} `this`
 	 */
 	delete() {
 		if (this.#added) {
@@ -76,6 +79,7 @@ class Node {
 				child.delete();
 			}
 		}
+		return this;
 	}
 
 	isAdded() {
