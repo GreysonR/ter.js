@@ -1,6 +1,7 @@
 const Common = require("../core/Common.js");
 const Node = require("../node/Node.js");
 const vec = require("../geometry/vec.js");
+const PIXI = require("pixi.js");
 
 // todo: load all sprites when game is loaded
 // todo: properly delete sprites when bodies no longer used
@@ -12,7 +13,7 @@ const vec = require("../geometry/vec.js");
 class Sprite extends Node {
 	static imageDir = "./img/";
 	static defaultOptions = {
-		container: null, // {PIXI Container}
+		container: undefined, // {PIXI Container}
 		layer: 0, // number
 		position: new vec(0, 0), // {vec}
 		angle: 0, // number [0, 2PI]

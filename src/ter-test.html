@@ -19,6 +19,7 @@
 <script src="lib/pixi.min.js"></script>
 <script src="lib/pixi-filters.js"></script>
 <script>
+	const { Graph, vec } = ter;
 	const game = new ter.Game({
 		Render: {
 			resizeTo: window,
@@ -36,7 +37,6 @@
 	game.createDebugRender();
 	console.log(game);
 
-	const { Graph } = ter;
 	const { Engine, Render, Bodies } = game;
 	const { camera } = Render;
 	const { World } = Engine;
@@ -135,7 +135,6 @@
 			round: 10,
 		}).add();
 		bodyA.add();
-		// bodyA.setAngle(Math.PI/2);
 
 		var bodyB = window.bodyB = Bodies.Polygon([new vec(0, 0), new vec(50, -50), new vec(100, 0), new vec(100, 100), new vec(0, 100)], new vec(200, 300), {
 			round: 0

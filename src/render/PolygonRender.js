@@ -1,6 +1,7 @@
 const Node = require("../node/Node.js");
 const vec = require("../geometry/vec.js");
 const Common = require("../core/Common.js");
+const PIXI = require("pixi.js");
 
 /**
  * A polygon render object
@@ -8,7 +9,7 @@ const Common = require("../core/Common.js");
  */
 class PolygonRender extends Node {
 	static defaultOptions = {
-		container: null, // {PIXI Container}
+		container: undefined, // {PIXI Container}
 		layer: 0, // number
 		position: new vec(0, 0), // {vec}
 		angle: 0, // number [0, 2PI]

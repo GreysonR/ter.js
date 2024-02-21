@@ -15,7 +15,7 @@ ter.Bodies = require("./bodies/Bodies");
 ter.Render = require("./render/RenderTypes");
 ter.Graph = require("./render/Graph");
 
-vec = require("./geometry/vec");
+ter.vec = require("./geometry/vec");
 ter.Grid = require("./geometry/Grid");
 ter.Bezier = require("./geometry/Bezier");
 ter.Bounds = require("./geometry/Bounds");
@@ -25,3 +25,5 @@ ter.polyDecomp = require("./lib/poly-decomp");
 
 ter.BehaviorTree = require("./behaviorTree/BehaviorTree");
 ter.Functions = require("./extra/GameFunctions");
+
+ter.PIXI = require("pixi.js")

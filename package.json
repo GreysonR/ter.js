@@ -1,14 +1,13 @@
 {
   "name": "ter",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "",
   "scripts": {
     "build": "webpack",
     "dev": "webpack serve",
-
     "build-prod": "webpack --config webpack-prod.config.js",
     "build-docs": "jsdoc -c jsdoc.json --verbose",
-    "build-release": "npm run build-prod & npm run build-docs"
+    "build-release": "npm i & npm run build-prod & npm run build-docs"
   },
   "keywords": [],
   "author": "GreysonR",
@@ -21,5 +20,8 @@
     "webpack": "^5.90.2",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.0.1"
+  },
+  "dependencies": {
+    "pixi.js": "^7.4.0"
   }
 }

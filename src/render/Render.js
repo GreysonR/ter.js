@@ -1,6 +1,7 @@
 const Camera = require("../render/Camera.js");
 const Common = require("../core/Common.js");
 const vec = require("../geometry/vec.js");
+const PIXI = require("pixi.js");
 
 /**
  * Main render object that handles the camera, pixel ratio, resizing, what is rendered, etc
@@ -23,7 +24,7 @@ class Render {
 	/**
 	 * 
 	 * @param {object} options - Render options
-	 * @param {string} options.background - Background color, such as `"#FFFFFF00"` or `"rgb(0, 0, 0)"`
+	 * @param {string} [options.background="transparent"] - Background color, such as `"#FFFFFF00"`, `"rgb(0, 0, 0)"`, or `"transparent"`
 	 * @param {number} [options.pixelRatio=devicePixelRatio] - Render resolution percent, use default unless you have a reason to change it
 	 * @param {boolean} [options.ySort=false] - Whether to sort the render layer of bodies by their y coordinate
 	 * @param {*} [options.resizeTo=window] - What the canvas should resize to, see PIXI.js `resizeTo` for options
