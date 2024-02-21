@@ -169,5 +169,38 @@
 		padding: 10,
 		scaleRange: [-50, 50],
 	});
+
+	let inputs = new ter.Inputs();
+	inputs.on("altV", keydown => {
+		if (keydown) {
+			let enabled = game.DebugRender.enabled;
+			enabled.vertices = !enabled.vertices;
+			enabled.collisions = enabled.vertices;
+		}
+	});
+	inputs.on("altG", keydown => {
+		if (keydown) {
+			let enabled = game.DebugRender.enabled;
+			enabled.boundingBox = !enabled.boundingBox;
+		}
+	});
+	inputs.on("altB", keydown => {
+		if (keydown) {
+			let enabled = game.DebugRender.enabled;
+			enabled.broadphase = !enabled.broadphase;
+		}
+	});
+	inputs.on("altC", keydown => {
+		if (keydown) {
+			let enabled = game.DebugRender.enabled;
+			enabled.centers = !enabled.centers;
+		}
+	});
+	inputs.on("altP", keydown => {
+		if (keydown) {
+			let render = game.Engine.Performance.render;
+			render.enabled = !render.enabled;
+		}
+	});
 </script>
 </html>

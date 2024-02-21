@@ -20,10 +20,11 @@ ter.Grid = require("./geometry/Grid");
 ter.Bezier = require("./geometry/Bezier");
 ter.Bounds = require("./geometry/Bounds");
 
-ter.simplexNoise = require("./lib/simplexNoise");
-ter.polyDecomp = require("./lib/poly-decomp");
 
 ter.BehaviorTree = require("./behaviorTree/BehaviorTree");
-ter.Functions = require("./extra/GameFunctions");
+ter.Functions = require("./other/GameFunctions");
+ter.Inputs = require("./other/Inputs");
 
 ter.PIXI = require("pixi.js")
+ter.simplexNoise = require("simplex-noise");
+ter.polyDecomp = require("poly-decomp");

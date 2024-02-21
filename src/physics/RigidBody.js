@@ -5,7 +5,7 @@ const PolygonRender = require("../render/PolygonRender.js");
 const Sprite = require("../render/Sprite.js");
 const Bezier = require("../geometry/Bezier.js");
 const CollisionShape = require("../physics/CollisionShape.js");
-const decomp = require("../lib/poly-decomp.js");
+const decomp = require("poly-decomp");
 const PIXI = require("pixi.js");
 
 /**
