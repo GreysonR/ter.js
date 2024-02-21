@@ -91,9 +91,9 @@ class RigidBody extends Node {
 
 	/**
 	 * Creates a new RigidBody
+	 * @param {Engine} Engine - Engine the body should be simulated in
 	 * @param {Array} vertices - Array of `vec` representing the body's vertices
 	 * @param {vec} position - Position of the body
-	 * @param {Engine} Engine - Engine the body should be simulated in
 	 * @param {Object} options - RigidBody options
 	 * @example
 	 * // Includes all RigidBody options
@@ -160,7 +160,6 @@ class RigidBody extends Node {
 		// Todo: make vertices concave
 		let allVertices = [this.vertices];
 		for (let vertices of allVertices) {
-			console.log(vertices);
 			let collisionShape = new CollisionShape(this, vertices, this.Engine);
 			this.addChild(collisionShape);
 		}

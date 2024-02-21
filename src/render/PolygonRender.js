@@ -24,12 +24,12 @@ class PolygonRender extends Node {
 		lineCap: "butt",
 		lineJoin: "miter",
 		
-		// subtype: "rectangle" only options
+		// subtype: "Rectangle" only options
 		width: 100,
 		height: 100,
 		round: 0,
 
-		// subtype: "circle" only options
+		// subtype: "Circle" only options
 		radius: 50,
 	}
 	static all = new Set();
@@ -64,7 +64,7 @@ class PolygonRender extends Node {
 			});
 		}
 
-		if (subtype === "rectangle") {
+		if (subtype === "Rectangle") {
 			let { width, height } = this;
 			
 			if (round > 0) {
@@ -74,7 +74,7 @@ class PolygonRender extends Node {
 				graphic.drawRect(-width/2, -height/2, width, height);
 			}
 		}
-		else if (subtype === "circle") {
+		else if (subtype === "Circle") {
 			let { radius } = this;
 			graphic.drawCircle(0, 0, radius);
 		}

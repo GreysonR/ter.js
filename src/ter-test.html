@@ -125,7 +125,7 @@
 
 	function basic() {
 		// game.DebugRender.enabled.vertices = true;
-		var bodyA = Bodies.Rectangle(100, 100, new vec(0, -300))
+		var bodyA = Bodies.Polygon([new vec(0, 0), new vec(100, 40), new vec(80, 90), new vec(30, 120)], new vec(0, -300))
 			.addPolygonRender(Render.app.stage, {
 				border: "#4B8F8C",
 				borderWidth: 4,
@@ -134,20 +134,20 @@
 			}).add();
 		bodyA.add();
 
-		var bodyB = Bodies.Rectangle(100, 100, new vec(60, -160), {
-			round: 10
-		}).addPolygonRender(Render.app.stage, {
-				border: "#4B8F8C",
-				borderWidth: 4,
-				borderOffset: 0.5,
-				round: 10,
-			}).add();
-		bodyB.applyTorque(5.5, 1);
+		// var bodyB = Bodies.Rectangle(100, 100, new vec(60, -160), {
+		// 	round: 10
+		// }).addPolygonRender(Render.app.stage, {
+		// 		border: "#4B8F8C",
+		// 		borderWidth: 4,
+		// 		borderOffset: 0.5,
+		// 		round: 10,
+		// 	}).add();
+		// bodyB.applyTorque(5.5, 1);
 	}
 
-	window.addEventListener("load", newton);
+	window.addEventListener("load", basic);
 	
-	// game.DebugRender.enabled.vertices = true;
+	game.DebugRender.enabled.vertices = true;
 	game.DebugRender.enabled.collisions = true;
 	// game.DebugRender.enabled.boundingBox = true;
 

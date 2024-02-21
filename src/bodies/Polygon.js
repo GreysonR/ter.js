@@ -4,42 +4,38 @@ const PolygonRender = require("../render/PolygonRender.js");
 const Sprite = require("../render/Sprite.js");
 
 /**
- * A rectangle RigidBody
+ * A Polygon RigidBody
  * @extends RigidBody
  */
-class Rectangle extends RigidBody {
-	static createVertices(width, height) {
-		return [
-			new vec(-width/2,  height/2),
-			new vec( width/2,  height/2),
-			new vec( width/2, -height/2),
-			new vec(-width/2, -height/2),
-		];
+class Polygon extends RigidBody {
+	static createVertices(radius, verticeCount = 0) {
+		verticeCount = verticeCount || Math.round(Math.pow(radius, 1/3) * 2.8);
+		let angle = Math.PI * 2 / verticeCount;
+		let vertices = [];
+		for (let i = 0; i < verticeCount; i++) {
+			vertices.push(new vec(Math.cos(angle * i + angle / 2) * radius, Math.sin(angle * i + angle / 2) * radius));
+		}
+		return vertices;
 	}
 
 	/**
 	 * 
 	 * @param {Engine} Engine - Engine to add to
-	 * @param {number} width - Width of rectangle
-	 * @param {number} height - Height of rectangle
+	 * @param {Array<vec>} vertices - Vertices of polygon
 	 * @param {vec} position - Position of body
 	 * @param {object} options - (RigidBody)[./RigidBody.html] options
 	 */
-	constructor(Engine, width, height, position, options = {}) {
-		super(Engine, Rectangle.createVertices(width, height), position, options);
+	constructor(Engine, vertices, position, options = {}) {
+		super(Engine, vertices, position, options);
 
-		this.width = width;
-		this.height = height;
-		this.nodeType = "Rectangle";
+		this.nodeType = "Polygon";
 	}
 	addPolygonRender(container, options) {
 		let render = new PolygonRender({
 			container: container,
 			position: new vec(this.position),
 			vertices: this.vertices,
-			subtype: "Rectangle",
-			width: this.width,
-			height: this.height,
+			subtype: "Polygon",
 			
 			...options
 		});
@@ -52,8 +48,6 @@ class Rectangle extends RigidBody {
 		let render = new Sprite({
 			container: container,
 			position: new vec(this.position),
-			width: this.width,
-			height: this.height,
 			
 			...options
 		});
@@ -63,4 +57,4 @@ class Rectangle extends RigidBody {
 		return this;
 	}
 }
-module.exports = Rectangle;
+module.exports = Polygon;

@@ -245,8 +245,8 @@ class Graph {
 	 * @param {number} value - Value to add
 	 * @param {string} [name="default"] - Name of line
 	 * @example
-	 * graph.addData(20); // Adds value 20 to the default line
-	 * graph.addData(102.4, "itemA"); // Adds value 102.4 to itemA line
+	 * graph.addData(20); // Adds value 20. Only works if you used a string (not object) to set lineColor
+	 * graph.addData(102.4, "itemA"); // Adds value 102.4 to the line named itemA
 	 */
 	addData(value, name = "default") {
 		if (!this.lineColor[name]) {
