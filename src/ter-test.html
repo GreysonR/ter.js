@@ -202,5 +202,9 @@
 			render.enabled = !render.enabled;
 		}
 	});
+
+	Render.on("beforeUpdate", () => {
+		console.log(inputs.isPressed("alt", "v"));
+	});
 </script>
 </html>
