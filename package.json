@@ -1,0 +1,29 @@
+{
+  "name": "ter",
+  "version": "2.2.5",
+  "description": "",
+  "scripts": {
+    "build": "webpack",
+    "dev": "webpack serve",
+    "build-prod": "webpack --config webpack-prod.config.js",
+    "build-docs": "jsdoc -c jsdoc.json --verbose",
+    "build-release": "npm i & npm run build-prod & npm run build-docs"
+  },
+  "keywords": [],
+  "author": "GreysonR",
+  "license": "MIT",
+  "devDependencies": {
+    "better-docs": "^2.7.3",
+    "clean-jsdoc-theme": "^4.2.17",
+    "html-webpack-plugin": "^5.6.0",
+    "taffydb": "^2.7.3",
+    "webpack": "^5.90.2",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^5.0.1"
+  },
+  "dependencies": {
+    "pixi.js": "^7.4.0",
+    "poly-decomp": "^0.3.0",
+    "simplex-noise": "^4.0.1"
+  }
+}

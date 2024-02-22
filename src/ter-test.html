@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title><%= htmlWebpackPlugin.options.title %></title>
+
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+	</style>
+</head>
+<body>
+	
+</body>
+<script src="lib/pixi.min.js"></script>
+<script src="lib/pixi-filters.js"></script>
+<script>
+	const { Graph, vec } = ter;
+	const game = new ter.Game({
+		Render: {
+			resizeTo: window,
+			background: "#002A32",
+			getBoundSize: function(width, height) {
+				return Math.min(width, height);
+			}
+		},
+		World: {
+			gravity: new vec(0, 500),
+		},
+		Engine: {
+		},
+	});
+	game.createDebugRender();
+	console.log(game);
+
+	const { Engine, Render, Bodies } = game;
+	const { camera } = Render;
+	const { World } = Engine;
+
+	camera.setPosition(new vec(0, 0));
+
+	var floor = Bodies.Rectangle(1000, 100, new vec(0, 400), {
+		isStatic: true,
+	}).addPolygonRender(Render.app.stage, {
+		// background: "#E0F2E9",
+		border: "#E0F2E9",
+		borderWidth: 2,
+	}).add();
+
+
+	function stack() {
+		for (let i = 1; --i >= 0;) {
+			Bodies.Rectangle(50, 50, new vec(300, 0 - i * 50), {
+				restitution: 0,
+			}).addPolygonRender(Render.app.stage, {
+				// background: "#4B8F8C"
+				border: "#4B8F8C",
+				borderWidth: 2,
+			}).add();
+		}
+	}
+
+	function newton() {
+		World.gravity.y = 300;
+		let bodyA = Bodies.Rectangle(50, 50, new vec(-300, 0), {
+			restitution: 1,
+			friction: 0,
+			frictionAir: 0,
+		}).addPolygonRender(Render.app.stage, {
+			// background: "#4B8F8C"
+			border: "#4B8F8C",
+			borderWidth: 2,
+		}).add();
+		let bodyB = Bodies.Rectangle(50, 50, new vec(-400, 0), {
+			restitution: 1,
+			friction: 0,
+			frictionAir: 0,
+		}).addPolygonRender(Render.app.stage, {
+			// background: "#4B8F8C"
+			border: "#4B8F8C",
+			borderWidth: 2,
+		}).add();
+		
+		for (let i = 4; --i >= 0;) {
+			Bodies.Rectangle(50, 50, new vec(-100 + i * 50, 0), {
+				restitution: 0.95,
+				friction: 0.4,
+				frictionAir: 0,
+			}).addPolygonRender(Render.app.stage, {
+				// background: "#4B8F8C"
+				border: "#4B8F8C",
+				borderWidth: 2,
+			}).add();
+		}
+
+		setTimeout(() => {
+			// bodyA.applyForce(new vec(400, 0), 1);
+			bodyB.applyForce(new vec(400, 0), 1);
+		}, 400);
+	}
+
+	
+	function multistack() {
+		let width =  5;
+		let height = 5;
+		Engine.substeps = 4;
+		for (let y = 0; y < height; ++y) {
+			for (let x = 0; x < width; ++x) {
+				let body = window[`body${x}-${y}`] = Bodies.Rectangle(50, 50, new vec(300 + 50 * (x - width/2), 50 * (y  - height/2) - 300), {
+					restitution: 0.2,
+					friction: 1,
+				}).addPolygonRender(Render.app.stage, {
+					// background: "#4B8F8C"
+					border: "#4B8F8C",
+					borderWidth: 2,
+				}).add();
+				// body.applyTorque(2, 1);
+			}
+		}
+	}
+
+	function basic() {
+		// game.DebugRender.enabled.vertices = true;
+		var bodyA = window.bodyA = Bodies.Polygon([new vec(0, 0), new vec(100, 0), new vec(50, 50), new vec(100, 100), new vec(0, 100)], new vec(220, 100), {
+			hasCollisions: true,
+			angle: Math.PI/2,
+		}).addPolygonRender(Render.app.stage, {
+			border: "#4B8F8C",
+			borderWidth: 4,
+			borderOffset: 0.5,
+			round: 10,
+		}).add();
+		bodyA.add();
+
+		var bodyB = window.bodyB = Bodies.Polygon([new vec(0, 0), new vec(50, -50), new vec(100, 0), new vec(100, 100), new vec(0, 100)], new vec(200, 300), {
+		}).addPolygonRender(Render.app.stage, {
+			border: "#4B8F8C",
+			borderWidth: 4,
+			borderOffset: 0.5,
+		}).add();
+	}
+
+	window.addEventListener("load", basic);
+	
+	game.DebugRender.enabled.collisions = true;
+	// game.DebugRender.enabled.vertices = true;
+
+	let inputs = new ter.Inputs();
+	inputs.blockRightClick();
+	inputs.on("altV", keydown => {
+		if (keydown) {
+			let enabled = game.DebugRender.enabled;
+			enabled.vertices = !enabled.vertices;
+			enabled.collisions = enabled.vertices;
+		}
+	});
+	inputs.on("altB", keydown => {
+		if (keydown) {
+			let enabled = game.DebugRender.enabled;
+			enabled.boundingBox = !enabled.boundingBox;
+		}
+	});
+	inputs.on("altG", keydown => {
+		if (keydown) {
+			let enabled = game.DebugRender.enabled;
+			enabled.broadphase = !enabled.broadphase;
+		}
+	});
+	inputs.on("altC", keydown => {
+		if (keydown) {
+			let enabled = game.DebugRender.enabled;
+			enabled.centers = !enabled.centers;
+		}
+	});
+	inputs.on("altP", keydown => {
+		if (keydown) {
+			let render = game.Engine.Performance.render;
+			render.enabled = !render.enabled;
+		}
+	});
+</script>
+</html>

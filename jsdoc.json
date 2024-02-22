@@ -1,0 +1,28 @@
+{
+	"plugins": ["plugins/markdown", "node_modules/better-docs/category"],
+	"opts": {
+		"destination": "./docs/",
+		"recurse": true,
+		"template": "node_modules/clean-jsdoc-theme",
+		"encoding": "utf8",
+		"lenient": false,
+		"theme_opts": {
+			"default_theme": "dark",
+			"sort": false,
+			"includeFilesListInHomepage": true,
+			"displayModuleHeader": true,
+			"include_css": ["jsdoc-theme/table-fix.css"],
+			// "include_css": ["jsdoc-theme/jsdoc-theme.css"],
+			"include_js": ["jsdoc-theme/jsdoc-setup.js"]
+		}
+	},
+	"source": {
+		"include": ["src/"]
+	},
+	"tags": {
+		"allowUnknownTags": ["category"]
+	},
+	"templates": {
+		"cleverLinks": true
+	}
+}
