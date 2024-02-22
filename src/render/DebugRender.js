@@ -26,11 +26,11 @@ class DebugRender {
 	 * myGame.DebugRender.enabled.broadphase = true; // Broadphase rendering
 	 */
 	enabled = {
-		collisions: false,
-		boundingBox: false,
 		vertices: false,
 		centers: false,
+		collisions: false,
 		broadphase: false,
+		boundingBox: false,
 	}
 
 	/**

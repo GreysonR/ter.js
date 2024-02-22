@@ -137,40 +137,20 @@
 		bodyA.add();
 
 		var bodyB = window.bodyB = Bodies.Polygon([new vec(0, 0), new vec(50, -50), new vec(100, 0), new vec(100, 100), new vec(0, 100)], new vec(200, 300), {
-			round: 0
 		}).addPolygonRender(Render.app.stage, {
 			border: "#4B8F8C",
 			borderWidth: 4,
 			borderOffset: 0.5,
-			// round: 10,
 		}).add();
-		// bodyB.applyTorque(3, 1);
-
-		// World.timescale = 0.2;
 	}
 
 	window.addEventListener("load", basic);
 	
-	// game.DebugRender.enabled.vertices = true;
 	game.DebugRender.enabled.collisions = true;
-	// game.DebugRender.enabled.boundingBox = true;
-
-
-	var graph = new Graph(80, 40, new vec(20, 20), {
-		maxLength: 100,
-		title: "Impulses",
-		titleSize: 12,
-		lineColor: {
-			0: "#9D436C80",
-			1: "#9D436C80",
-			2: "#5EA8BA80",
-			3: "#5EA8BA80",
-		},
-		padding: 10,
-		scaleRange: [-50, 50],
-	});
+	// game.DebugRender.enabled.vertices = true;
 
 	let inputs = new ter.Inputs();
+	inputs.blockRightClick();
 	inputs.on("altV", keydown => {
 		if (keydown) {
 			let enabled = game.DebugRender.enabled;
@@ -178,13 +158,13 @@
 			enabled.collisions = enabled.vertices;
 		}
 	});
-	inputs.on("altG", keydown => {
+	inputs.on("altB", keydown => {
 		if (keydown) {
 			let enabled = game.DebugRender.enabled;
 			enabled.boundingBox = !enabled.boundingBox;
 		}
 	});
-	inputs.on("altB", keydown => {
+	inputs.on("altG", keydown => {
 		if (keydown) {
 			let enabled = game.DebugRender.enabled;
 			enabled.broadphase = !enabled.broadphase;
@@ -201,20 +181,6 @@
 			let render = game.Engine.Performance.render;
 			render.enabled = !render.enabled;
 		}
-	});
-	
-	inputs.blockRightClick();
-	inputs.on("mouse0", mousedown => {
-		if (mousedown) {
-			console.log("left click");
-		}
-		else {
-			console.log("un left click");
-		}
-	});
-
-	Render.on("beforeUpdate", () => {
-		console.log(inputs.isPressed("alt", "v"));
 	});
 </script>
 </html>
