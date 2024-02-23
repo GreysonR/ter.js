@@ -2,10 +2,46 @@
 
 class Animation {
 	/**
-	 * A variety of built in ease functions to use for animations
-	 * https://easings.net/
+	 * A variety of built in ease functions to use for animations<br>
+	 * See [easings.net](https://easings.net/) for animation types
+	 * @static
+	 * 
+	 * @property {function} ease.linear
+	 * 
+	 * @property {function} ease.in.sine
+	 * @property {function} ease.in.quadratic
+	 * @property {function} ease.in.cubic
+	 * @property {function} ease.in.quartic
+	 * @property {function} ease.in.quintic
+	 * @property {function} ease.in.exponential
+	 * @property {function} ease.in.circular
+	 * @property {function} ease.in.back
+	 * 
+	 * @property {function} ease.out.sine
+	 * @property {function} ease.out.quadratic
+	 * @property {function} ease.out.cubic
+	 * @property {function} ease.out.quartic
+	 * @property {function} ease.out.quintic
+	 * @property {function} ease.out.exponential
+	 * @property {function} ease.out.circular
+	 * @property {function} ease.out.back
+	 * 
+	 * @property {function} ease.inOut.sine
+	 * @property {function} ease.inOut.quadratic
+	 * @property {function} ease.inOut.cubic
+	 * @property {function} ease.inOut.quartic
+	 * @property {function} ease.inOut.quintic
+	 * @property {function} ease.inOut.exponential
+	 * @property {function} ease.inOut.circular
+	 * @property {function} ease.inOut.back
+	 * 
+	 * @example
+	 * Animation.ease.in.cubic // access the cubic ease in function
 	 */
 	static ease = {
+		/**
+		 * Linear animation
+		 */
 		linear: x => x,
 		in: {
 			sine: x => 1 - Math.cos((x * Math.PI) / 2),
