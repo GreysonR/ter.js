@@ -1,4 +1,5 @@
 const Common = require("../core/Common.js");
+const Animation = require("../other/Animation.js");
 
 /**
  * A game ticker that handles updating the engine every frame.
@@ -41,6 +42,7 @@ class Ticker {
 			// animations.run();
 		}
 
+		Animation.update();
 		this.trigger("afterTick");
 		requestAnimationFrame(this.tick);
 	}

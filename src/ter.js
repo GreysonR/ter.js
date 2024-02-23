@@ -24,6 +24,7 @@ ter.Bounds = require("./geometry/Bounds");
 ter.BehaviorTree = require("./behaviorTree/BehaviorTree");
 ter.Functions = require("./other/GameFunctions");
 ter.Inputs = require("./other/Inputs");
+ter.Animation = require("./other/Animation");
 
 ter.PIXI = require("pixi.js")
 ter.simplexNoise = require("simplex-noise");

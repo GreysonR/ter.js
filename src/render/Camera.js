@@ -1,4 +1,5 @@
 const vec = require("../geometry/vec.js");
+const Animation = require("../other/Animation");
 
 /**
  * Handles the game's camera
@@ -42,6 +43,10 @@ class Camera {
 	 */
 	setFov(fov) {
 		this.fov = fov;
+	}
+
+	shake() {
+
 	}
 };
 module.exports = Camera;

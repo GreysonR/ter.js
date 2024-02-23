@@ -1,16 +1,16 @@
 ::selection {
     background: #ffce76;
-    color: #0F151A;
+    color: #222;
 }
 
 body {
-    background-color: #0F151A;
-    color: #E6EDF2;
+    background-color: #1a1a1a;
+    color: #fff;
 }
 
 a,
 a:active {
-    color: #448B9C;
+    color: #00bbff;
 }
 
 hr {
@@ -23,21 +23,20 @@ h3,
 h4,
 h5,
 h6 {
-	color: #E6EDF2;
+    color: #fff;
 }
 
 .sidebar {
     background-color: #222;
-	color: #E6EDF2;
+    color: #999;
 }
 
 .sidebar-title {
-	color: #E6EDF2;
-	font-size: 1.5rem;
+    color: #999;
 }
 
 .sidebar-section-title {
-	color: #E6EDF2;
+    color: #999;
 }
 
 .sidebar-section-title:hover {
