@@ -17,7 +17,7 @@ class Polygon extends RigidBody {
 		}
 		return vertices;
 	}
-
+	
 	/**
 	 * 
 	 * @param {Engine} Engine - Engine to add to

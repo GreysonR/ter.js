@@ -181,31 +181,6 @@
 		}
 	});
 
-	async function animate() {
-		const Animation = ter.Animation;
-
-		let a = new Animation({
-			duration: 0.2,
-			ontick: p => {
-				console.log(p, "a");
-			},
-			onend: () => {
-				console.log("a onend");
-			}
-		});
-		let b = new Animation({
-			duration: 1,
-			delay: 1,
-			curve: Animation.ease.out.cubic,
-			ontick: p => {
-				console.log(p, "b");
-			}
-		});
-
-		await a.run();
-		await b.run();
-		console.log("done");
-	}
-	animate();
+	camera.shake();
 </script>
 </html>

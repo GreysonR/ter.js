@@ -79,7 +79,7 @@ class Animation {
 	static running = new Set();
 	static update() {
 		for (let animation of Animation.queued) {
-			if (animation.getTime() - animation.startTime >= animation.delay) {
+			if (animation.getTime() >= 0) {
 				Animation.queued.delete(animation);
 				Animation.running.add(animation);
 			}
@@ -93,20 +93,20 @@ class Animation {
 	 * Gets if the animation is currently running. Running includes any delay that the animation may have.
 	 * @returns {boolean} If the animation is running
 	 */
-	getRunning() {
+	isRunning() {
 		return this.#running;
 	}
 
 	/**
 	 * 
 	 * @param {object} options - Animation options
-	 * @param {number} options.duration - Duration of the animation
-	 * @param {function} options.curve - Curve function that takes a time between [0, 1] and returns a value between [0, 1]
-	 * @param {number} options.delay - The amount of delay before the animation starts
-	 * @param {function} options.onstop - Function that is fired when the animation is forcibly stopped
-	 * @param {function} options.onend - Function fired when the function completes successfully
-	 * @param {function} options.ontick - Function fired when the animation ticks every frame. Takes a number between [0, 1] for the animation's progress.
-	 * @param {World} options.World - World the animation should be bound to. If specified, the animation will use the world's timescale. If not, it will run independent of any world's timescale.
+	 * @param {number} [options.duration] - Duration of the animation
+	 * @param {function} [options.curve] - Curve function that takes a time between [0, 1] and returns a value between [0, 1]
+	 * @param {number} [options.delay] - The amount of delay before the animation starts
+	 * @param {function} [options.onstop] - Function that is fired when the animation is forcibly stopped
+	 * @param {function} [options.onend] - Function fired when the function completes successfully
+	 * @param {function} [options.ontick] - Function fired when the animation ticks every frame. Takes a number between [0, 1] for the animation's progress.
+	 * @param {World} [options.World] - World the animation should be bound to. If specified, the animation will use the world's timescale. If not, it will run independent of any world's timescale.
 	 */
 	constructor({ duration = 0, curve = Animation.ease.linear, delay = 0, onstop, onend, ontick, World = null }) {
 		this.duration = duration;
@@ -124,7 +124,7 @@ class Animation {
 	run() {
 		if (!this.#running) {
 			this.#running = true;
-			this.startTime = this.getTime();
+			this.startTime = this.getTimeRaw();
 			Animation.queued.add(this);
 	
 			let animation = this;
@@ -134,13 +134,16 @@ class Animation {
 			});
 		}
 	}
+	getTimeRaw() {
+		return (this.World ? this.World.time : performance.now() / 1000);
+	}
 	getTime() {
-		return this.World ? this.World.time : performance.now() / 1000;
+		return (this.World ? this.World.time : performance.now() / 1000) - this.startTime - this.delay;
 	}
 	tick() {
 		if (!this.#running) return;
 
-		let time = this.getTime() - this.startTime - this.delay;
+		let time = this.getTime();
 		let percent = Math.max(0, Math.min(1, this.curve(time / this.duration)));
 		if (this.ontick) this.ontick(percent);
 

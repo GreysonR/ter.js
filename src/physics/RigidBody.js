@@ -452,8 +452,9 @@ class RigidBody extends Node {
 		
 		beforeUpdate: [], // use to apply forces to current body
 		duringUpdate: [], // use to clear forces from current body
-		delete: [],
+		
 		add: [],
+		delete: [],
 	}
 
 	// 

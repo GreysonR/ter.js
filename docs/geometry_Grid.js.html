@@ -140,7 +140,10 @@ class Grid {
 	 * @param {vec} point - Point removed
 	 */
 	removePoint(point) {
-		if (!point._Grids) console.log(point._Grids);
+		if (!point._Grids) {
+			console.error(point);
+			throw new Error("Can't remove point that isn't in grid");
+		}
 		for (let n of point._Grids[this.id]) {
 			let node = this.grid[n];
 			if (node) {
