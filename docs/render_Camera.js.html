@@ -53,8 +53,14 @@ class Camera {
 	 * @param {number} [intensity] - How much the camera shakes
 	 * @param {number} [duration] - How long the camera shakes, in seconds
 	 * @param {function} [intensityCurve] - Animation curve, see (Animation)[./Animation.html] for ease options
+	 * @param {vec|undefined} direction - Direction of the camera shake. Shakes in all directions if left undefined
 	 */
-	async shake(intensity = 30, duration = 3, intensityCurve = Animation.ease.out.cubic) {
+	async shake(intensity = 30, duration = 1, intensityCurve = Animation.ease.out.cubic, direction = undefined) {
+		if (direction) {
+			direction?.normalize2();
+			direction.y *= -1;
+		}
+
 		let shakeDuration = 0.01; // duration of individual shakes
 		let curIntensity = intensity;
 
@@ -68,12 +74,22 @@ class Camera {
 		});
 		intensityAnimation.run();
 		console.log(duration, intensityAnimation.getTime(), shakeDuration);
+
+		function getAngle(prevAngle) {
+			if (direction) {
+				return direction.mult(-Math.sign(direction.dot(new vec(prevAngle)))).angle;
+			}
+			else {
+				return (angleDiff(prevAngle, Math.random() * Math.PI + Math.PI) + Math.PI * 2) % Math.PI * 2;
+			}
+		}
 		
 		let delta = new vec(0, 0);
-		let lastAngle = Math.random() * Math.PI * 2;
+		let lastAngle = getAngle(Math.random() * Math.PI * 2);
 		while (intensityAnimation.isRunning() &amp;&amp; duration - intensityAnimation.getTime() > shakeDuration) {
 			let curDuration = shakeDuration;
-			let angle = (angleDiff(lastAngle, Math.random() * Math.PI + Math.PI) + Math.PI * 2) % Math.PI * 2;
+			let angle = getAngle(lastAngle);
+			lastAngle = angle;
 			let nextDelta = new vec(Math.cos(angle) * curIntensity, Math.sin(angle) * curIntensity);
 			let lastDelta = new vec(delta);
 			let deltaDelta = nextDelta.sub(lastDelta); // trust me this isn't acceleration
