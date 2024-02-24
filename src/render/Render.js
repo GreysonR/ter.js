@@ -53,7 +53,8 @@ class Render {
 		this.getBoundSize = getBoundSize;
 
 		// Set basic settings
-		let scale = PIXI.settings.RESOLUTION = PIXI.settings.FILTER_RESOLUTION = this.pixelRatio = pixelRatio;
+		let scale = PIXI.settings.RESOLUTION = this.pixelRatio = pixelRatio;
+		PIXI.Filter.defaultResolution = 0;
 		PIXI.Container.defaultSortableChildren = true
 		
 		// Create PIXI app
@@ -86,17 +87,20 @@ class Render {
 	}
 	setSize(width, height) {
 		let pixelRatio = this.pixelRatio;
-		this.camera.boundSize = this.getBoundSize(width, height) * pixelRatio;
+		this.camera.boundSize = this.getBoundSize(width, height);
 	}
 	setPixelRatio(pixelRatio) {
 		this.pixelRatio = pixelRatio;
+		PIXI.settings.RESOLUTION = pixelRatio;
 		this.setSize(this.app.screen.width, this.app.screen.height); // update bounds with new pixel ratio
 	}
 
 	/**
 	 * Updates renderer and its camera. Triggers `beforeUpdate` and `afterUpdate` events on this Render.
+	 * @param {number} delta - Frame time, in seconds
 	 */
-	update() {
+	update(delta) {
+		delta = delta / 60; // convert to ms
 		this.trigger("beforeUpdate");
 
 		let { app, camera } = this;

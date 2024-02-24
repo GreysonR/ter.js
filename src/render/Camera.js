@@ -46,6 +46,15 @@ class Camera {
 		this.fov = fov;
 	}
 
+	// ~ Point transformations
+	screenPtToGame(point) {
+		const scale =  this.scale;
+		return new vec((point.x - this.translation.x) / scale, (point.y - this.translation.y) / scale);
+	}
+	gamePtToScreen(point) {
+		return new vec((point.x * this.scale + this.translation.x), (point.y * this.scale + this.translation.y));
+	}
+
 	/**
 	 * 
 	 * @param {number} [intensity] - How much the camera shakes
@@ -71,7 +80,6 @@ class Camera {
 			}
 		});
 		intensityAnimation.run();
-		console.log(duration, intensityAnimation.getTime(), shakeDuration);
 
 		function getAngle(prevAngle) {
 			if (direction) {

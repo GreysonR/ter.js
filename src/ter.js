@@ -26,6 +26,7 @@ ter.Functions = require("./other/GameFunctions");
 ter.Inputs = require("./other/Inputs");
 ter.Animation = require("./other/Animation");
 
-ter.PIXI = require("pixi.js")
+ter.PIXI = require("pixi.js");
+ter.Filters = require("pixi-filters");
 ter.simplexNoise = require("simplex-noise");
 ter.polyDecomp = require("poly-decomp");

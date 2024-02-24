@@ -119,7 +119,7 @@ class DebugRender {
 			}
 		}
 		ctx.lineWidth = 2 / scale;
-		ctx.strokeStyle = "#FF832A";
+		ctx.strokeStyle = "#DF7157";
 		ctx.stroke();
 	}
 	collisions() {
@@ -131,7 +131,7 @@ class DebugRender {
 			for (let i = 0; i < globalPoints.length; i++) {
 				let point = globalPoints[i];
 				ctx.moveTo(point.x, point.y);
-				ctx.arc(point.x, point.y, 2 / camera.scale, 0, Math.PI*2);
+				ctx.arc(point.x, point.y, 2.5 / camera.scale, 0, Math.PI*2);
 				ctx.fillStyle = "#e8e8e8";
 			}
 			ctx.fill();
@@ -143,7 +143,7 @@ class DebugRender {
 				let vector = globalVectors[i].vector;
 				ctx.moveTo(point.x, point.y);
 				ctx.lineTo(point.x + vector.x * 10 / camera.scale, point.y + vector.y * 10 / camera.scale);
-				ctx.strokeStyle = "#FFAB2E";
+				ctx.strokeStyle = "#DF7157";
 				ctx.lineWidth = 3 / camera.scale;
 			}
 			ctx.stroke();
@@ -152,7 +152,7 @@ class DebugRender {
 	centers() {
 		const { ctx, Game } = this;
 		const { camera } = Game.Render;
-		ctx.fillStyle = "#FF832A";
+		ctx.fillStyle = "#DF7157";
 		let allBodies = Game.World.rigidBodies;
 		ctx.beginPath();
 		for (let body of allBodies) {

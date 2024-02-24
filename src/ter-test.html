@@ -17,11 +17,11 @@
 	
 </body>
 <script>
-	const { Graph, vec } = ter;
+	const { Graph, vec, PIXI } = ter;
 	const game = new ter.Game({
 		Render: {
 			resizeTo: window,
-			background: "#002A32",
+			background: "#1C1C25",
 			getBoundSize: function(width, height) {
 				return Math.min(width, height);
 			}
@@ -51,7 +51,7 @@
 
 
 	function stack() {
-		for (let i = 1; --i >= 0;) {
+		for (let i = 2; --i >= 0;) {
 			Bodies.Rectangle(50, 50, new vec(300, 0 - i * 50), {
 				restitution: 0,
 			}).addPolygonRender(Render.app.stage, {
@@ -113,7 +113,7 @@
 					friction: 1,
 				}).addPolygonRender(Render.app.stage, {
 					// background: "#4B8F8C"
-					border: "#4B8F8C",
+					border: "#46849A",
 					borderWidth: 2,
 				}).add();
 				// body.applyTorque(2, 1);
@@ -121,14 +121,14 @@
 		}
 	}
 
-	function basic() {
+	function concave() {
 		// game.DebugRender.enabled.vertices = true;
 		var bodyA = window.bodyA = Bodies.Polygon([new vec(0, 0), new vec(100, 0), new vec(50, 50), new vec(100, 100), new vec(0, 100)], new vec(220, 100), {
 			hasCollisions: true,
 			angle: Math.PI/2,
 		}).addPolygonRender(Render.app.stage, {
-			border: "#4B8F8C",
-			borderWidth: 4,
+			border: "#46849A",
+			borderWidth: 3,
 			borderOffset: 0.5,
 			round: 10,
 		}).add();
@@ -136,13 +136,43 @@
 
 		var bodyB = window.bodyB = Bodies.Polygon([new vec(0, 0), new vec(50, -50), new vec(100, 0), new vec(100, 100), new vec(0, 100)], new vec(200, 300), {
 		}).addPolygonRender(Render.app.stage, {
-			border: "#4B8F8C",
-			borderWidth: 4,
+			border: "#D55769",
+			borderWidth: 3,
 			borderOffset: 0.5,
 		}).add();
 	}
 
-	window.addEventListener("load", basic);
+	window.addEventListener("load", concave);
+
+	let mouseBody = Bodies.Circle(5, new vec(0, 0), {
+		isStatic: false,
+		frictionAir: 1,
+		isSensor: true,
+	}).addPolygonRender(Render.app.stage, {
+		background: "#ffffff",
+	}).add();
+	window.addEventListener("mousemove", event => {
+		let position = new vec(event.clientX, event.clientY);
+		mouseBody.setPosition(camera.screenPtToGame(position));
+	});
+
+	window.addEventListener("load", () => {
+		// bodies at edges of screen required to get filters to work correctly
+		let anchorA = Bodies.Rectangle(5,5, camera.screenPtToGame(new vec(0, 0)), {
+			isStatic: false,
+			frictionAir: 1,
+			isSensor: true,
+		}).addPolygonRender(Render.app.stage, {
+			background: "#ffffff01",
+		}).add();
+		let anchorB = Bodies.Rectangle(5,5, camera.screenPtToGame(new vec(window.innerWidth, window.innerHeight)), {
+			isStatic: false,
+			frictionAir: 1,
+			isSensor: true,
+		}).addPolygonRender(Render.app.stage, {
+			background: "#ffffff01",
+		}).add();
+	});
 	
 	game.DebugRender.enabled.collisions = true;
 	// game.DebugRender.enabled.vertices = true;
@@ -181,6 +211,30 @@
 		}
 	});
 
-	camera.shake(30, 1, ter.Animation.ease.quintic, new vec(1, 1));
+	camera.shake(20, 1, ter.Animation.ease.out.cubic, new vec(1, 1));
+
+	async function filter() {
+		let position = new vec(0, 0);
+		let strength = 0.3;
+		let filter = new ter.Filters.ZoomBlurFilter({
+			strength: strength,
+			innerRadius: 100,
+			center: camera.gamePtToScreen(position),
+		});
+		Render.app.stage.filters.push(filter);
+		
+		let anim = new ter.Animation({
+			duration: 0.6,
+			curve: ter.Animation.ease.out.cubic,
+			ontick: p => {
+				// filter.time += game.Engine.delta;
+				filter.center.set(camera.gamePtToScreen(position));
+				filter.strength = strength * (1 - p);
+			}
+		});
+		await anim.run();
+		Render.app.stage.filters.splice(Render.app.stage.filters.indexOf(filter), 1);
+	}
+	filter();
 </script>
 </html>
