@@ -1,7 +1,6 @@
 const Common = require("../core/Common.js");
 const Node = require("../node/Node.js");
 const vec = require("../geometry/vec.js");
-const PIXI = require("pixi.js");
 
 // todo: load all sprites when game is loaded
 // todo: properly delete sprites when bodies no longer used

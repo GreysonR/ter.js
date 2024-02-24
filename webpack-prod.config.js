@@ -2,7 +2,7 @@ const path = require("path");
 
 module.exports = {
 	mode: "production",
-	entry: path.resolve(__dirname, "src/ter.js"),
+	entry: "./src/ter.js",
 	output: {
 		path: path.resolve(__dirname, "dist"),
 		filename: "ter.js",

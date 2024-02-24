@@ -1,6 +1,5 @@
 "use strict";
 const { parseColor } = require("../core/Common");
-const PIXI = require("pixi.js");
 
 /**
  * Renders lines. Mainly used for rendering constraints

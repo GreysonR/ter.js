@@ -6,7 +6,6 @@ const Sprite = require("../render/Sprite.js");
 const Bezier = require("../geometry/Bezier.js");
 const CollisionShape = require("../physics/CollisionShape.js");
 const decomp = require("poly-decomp");
-const PIXI = require("pixi.js");
 
 /**
  * A rigid body with physics

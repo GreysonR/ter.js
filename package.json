@@ -1,6 +1,6 @@
 {
   "name": "ter",
-  "version": "2.2.7",
+  "version": "2.2.8",
   "description": "",
   "scripts": {
     "build": "webpack",
@@ -22,7 +22,6 @@
     "webpack-dev-server": "^5.0.1"
   },
   "dependencies": {
-    "pixi.js": "^7.4.0",
     "poly-decomp": "^0.3.0",
     "simplex-noise": "^4.0.1"
   }

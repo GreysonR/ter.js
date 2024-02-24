@@ -12,12 +12,15 @@
 			overflow: hidden;
 		}
 	</style>
+
+	<script src="https://cdn.jsdelivr.net/npm/pixi.js@7.x/dist/pixi.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/pixi-filters@latest/dist/browser/pixi-filters.min.js"></script>
 </head>
 <body>
 	
 </body>
 <script>
-	const { Graph, vec, PIXI } = ter;
+	const { Graph, vec } = ter;
 	const game = new ter.Game({
 		Render: {
 			resizeTo: window,
@@ -216,7 +219,7 @@
 	async function filter() {
 		let position = new vec(0, 0);
 		let strength = 0.3;
-		let filter = new ter.Filters.ZoomBlurFilter({
+		let filter = new PIXI.filters.ZoomBlurFilter({
 			strength: strength,
 			innerRadius: 100,
 			center: camera.gamePtToScreen(position),
@@ -235,6 +238,6 @@
 		await anim.run();
 		Render.app.stage.filters.splice(Render.app.stage.filters.indexOf(filter), 1);
 	}
-	filter();
+	setTimeout(filter, 10);
 </script>
 </html>

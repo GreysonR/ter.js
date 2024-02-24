@@ -1,7 +1,6 @@
 const Node = require("../node/Node.js");
 const vec = require("../geometry/vec.js");
 const Common = require("../core/Common.js");
-const PIXI = require("pixi.js");
 
 /**
  * A polygon render object

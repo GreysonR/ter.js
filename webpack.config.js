@@ -3,7 +3,7 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = {
 	mode: "development",
-	entry: path.resolve(__dirname, "src/ter.js"),
+	entry: "./src/ter.js",
 	output: {
 		path: path.resolve(__dirname, "dev_dist"),
 		filename: "ter.js",
