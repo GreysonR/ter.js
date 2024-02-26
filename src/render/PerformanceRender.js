@@ -23,6 +23,7 @@ class PerformanceRender {
 		this.Performance = Performance;
 
 		// Create canvas
+		let baseCanvas = Render.app.view;
 		const width  = this.width  = 100;
 		const height = this.height = 50;
 		let scale = this.scale = devicePixelRatio ?? 1;
@@ -39,7 +40,7 @@ class PerformanceRender {
 		canvas.style.pointerEvents = "none";
 		canvas.style.transformOrigin = "top left";
 		canvas.style.transform = `scale(${1 / scale}, ${1 / scale})`;
-		document.body.appendChild(canvas);
+		baseCanvas.parentNode.appendChild(canvas);
 
 		// Set up rendering
 		this.update = this.update.bind(this);

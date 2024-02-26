@@ -42,6 +42,7 @@ class DebugRender {
 	constructor(Game) {
 		this.Game = Game;
 
+		let baseCanvas = Game.Render.app.view;
 		let scale = devicePixelRatio ?? 1;
 		let canvas = this.canvas = document.createElement("canvas");
 		this.ctx = canvas.getContext("2d");
@@ -49,13 +50,13 @@ class DebugRender {
 		canvas.style.zIndex = 1;
 		canvas.style.top =  "0px";
 		canvas.style.left = "0px";
-		canvas.width  = scale * window.innerWidth;
-		canvas.height = scale * window.innerHeight;
+		canvas.width  = baseCanvas.width;
+		canvas.height = baseCanvas.height;
 		canvas.style.background = "transparent";
 		canvas.style.pointerEvents = "none";
 		canvas.style.transformOrigin = "top left";
 		canvas.style.transform = `scale(${1 / scale}, ${1 / scale})`;
-		document.body.appendChild(canvas);
+		baseCanvas.parentNode.appendChild(canvas);
 
 		Game.Render.app.renderer.on("resize", (width, height) => {
 			let scale = devicePixelRatio ?? 1;

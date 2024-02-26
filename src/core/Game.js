@@ -55,7 +55,6 @@ class Game {
 
 		let Performance = this.Engine.Performance;
 		Performance.render = new PerformanceRender(Performance, this.Render);
-		Performance.render.enabled = true;
 	}
 }
 module.exports = Game;

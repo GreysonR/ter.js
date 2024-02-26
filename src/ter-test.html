@@ -36,7 +36,6 @@
 		},
 	});
 	game.createDebugRender();
-	console.log(game);
 
 	const { Engine, Render, Bodies } = game;
 	const { camera } = Render;
@@ -175,6 +174,8 @@
 		}).addPolygonRender(Render.app.stage, {
 			background: "#ffffff01",
 		}).add();
+
+		filter();
 	});
 	
 	game.DebugRender.enabled.collisions = true;
@@ -238,6 +239,5 @@
 		await anim.run();
 		Render.app.stage.filters.splice(Render.app.stage.filters.indexOf(filter), 1);
 	}
-	setTimeout(filter, 10);
 </script>
 </html>
