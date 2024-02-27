@@ -17,6 +17,12 @@ class Node {
 	}
 	
 	/**
+	 * Type of node it is
+	 * @readonly
+	 */
+	nodeType = "Node";
+
+	/**
 	 * Position
 	 * @type {vec}
 	 * @readonly
