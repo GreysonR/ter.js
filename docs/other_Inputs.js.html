@@ -70,6 +70,7 @@ class Inputs {
 	 * @returns {boolean} If the event is formatted correctly
 	 */
 	isValidKeyEvent(event) {
+		if (event === " ") return true;
 		return event.replace(/(ctrl)?(alt)?(shift)?[a-zA-Z]+/i, "").length === 0;
 	}
 	/**
@@ -117,12 +118,13 @@ class Inputs {
 	 * 	}
 	 * });
 	 * inputs.on("altW", keydown => {}); // alt + w
-	 * inputs.on("ctrlAltShiftH", {}); // ctrl + alt + shift + h. Must be in this order, but can take out ctrl/alt/shift as needed
+	 * inputs.on("ctrlAltShiftH", keydown => {}); // ctrl + alt + shift + h. Must be in this order, but can take out ctrl/alt/shift as needed
+	 * inputs.on(" ", keydown => {}); // space is pressed
 	 * 
 	 * // mouse events
-	 * inputs.on("mouse0", keydown => {}); // left click
-	 * inputs.on("mouse1", keydown => {}); // middle click
-	 * inputs.on("mouse2", keydown => {}); // right click
+	 * inputs.on("mouse0", mousedown => {}); // left click
+	 * inputs.on("mouse1", mousedown => {}); // middle click
+	 * inputs.on("mouse2", mousedown => {}); // right click
 	 * 
 	 */
 	on(event, callback) {
