@@ -192,5 +192,41 @@ class Sprite extends Node {
 		add: [],
 		delete: [],
 	}
+	/**
+	 * Binds a function to an event
+	 * @param {("beforeTick"|"afterTick")} event - Name of the event
+	 * @param {function} callback - Function called when event fires
+	 */
+	on(event, callback) {
+		if (this.#events[event]) {
+			this.#events[event].push(callback);
+		}
+		else {
+			console.warn(event + " is not a valid event");
+		}
+	}
+	/**
+	 * Unbinds a function from an event
+	 * @param {("beforeTick"|"afterTick")} event - Name of the event
+	 * @param {function} callback - Function bound to event
+	 */
+	off(event, callback) {
+		event = this.#events[event];
+		if (event.includes(callback)) {
+			event.splice(event.indexOf(callback), 1);
+		}
+	}
+	/**
+	 * Fires an event
+	 * @param {("beforeTick"|"afterTick")} event - Name of the event
+	 */
+	trigger(event) {
+		// Trigger each event
+		if (this.#events[event]) {
+			this.#events[event].forEach(callback => {
+				callback();
+			});
+		}
+	}
 }
 module.exports = Sprite;

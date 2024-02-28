@@ -455,6 +455,43 @@ class RigidBody extends Node {
 		add: [],
 		delete: [],
 	}
+	/**
+	 * Bind a callback to an event
+	 * @param {string} event - Name of the event
+	 * @param {Function} callback - Callback run when event is fired
+	 */
+	on(event, callback) {
+		if (this.#events[event]) {
+			this.#events[event].push(callback);
+		}
+		else {
+			console.warn(event + " is not a valid event");
+		}
+	}
+	/**
+	 * Unbinds a callback from an event
+	 * @param {string} event - Name of the event
+	 * @param {Function} callback - Function to unbind
+	 */
+	off(event, callback) {
+		let events = this.#events[event];
+		if (events.includes(callback)) {
+			events.splice(events.indexOf(callback), 1);
+		}
+	}
+	/**
+	 * Triggers an event, firing all bound callbacks
+	 * @param {string} event - Name of the event
+	 * @param {...*} args - Arguments passed to callbacks
+	 */
+	trigger(event, ...args) {
+		// Trigger each event
+		if (this.#events[event]) {
+			this.#events[event].forEach(callback => {
+				callback(...args);
+			});
+		}
+	}
 
 	// 
 	// Private engine methods
