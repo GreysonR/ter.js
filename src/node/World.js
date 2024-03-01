@@ -62,31 +62,12 @@ class World extends Node {
 
 		for (let i = 0; i < bodies.length - 1; i++) {
 			let bodyA = bodies[i];
-			if (!bodyA.isAdded()) {
-				if (bodyA.parentNode.isStatic) {
-					this.staticGrid.removeBody(bodyA);
-				}
-				else {
-					this.dynamicGrid.removeBody(bodyA);
-				}
-				continue;
-			}
 			if (!bodyA.parentNode.hasCollisions)
 				continue;
 			
 			for (let j = i + 1; j < bodies.length; j++) {
 				// Do AABB collision test
 				let bodyB = bodies[j];
-
-				if (!bodyB.isAdded()) {
-					if (bodyB.parentNode.isStatic) {
-						this.staticGrid.removeBody(bodyB);
-					}
-					else {
-						this.dynamicGrid.removeBody(bodyB);
-					}
-					continue;
-				}
 				if (!bodyB.parentNode.hasCollisions || bodyA.parentNode === bodyB.parentNode)
 					continue;
 				if (!canCollide(bodyA.parentNode.collisionFilter, bodyB.parentNode.collisionFilter))
@@ -191,20 +172,23 @@ class World extends Node {
 		super.removeChild(...children);
 
 		for (let child of children) {
-			// Add to engine
+			// Remove from engine
 			if (child instanceof RigidBody) {
 				this.rigidBodies.delete(child);
-			}
 
-			// Remove from grids
-			if (child._Grids) {
-				if (child._Grids[this.staticGrid.id]) {
-					this.staticGrid.removeBody(child);
-				}
-				if (child._Grids[this.dynamicGrid.id]) {
-					this.dynamicGrid.removeBody(child);
+				for (let child2 of child.children) {
+					// Remove from grids
+					if (child2._Grids) {
+						if (child2._Grids[this.staticGrid.id]) {
+							this.staticGrid.removeBody(child2);
+						}
+						if (child2._Grids[this.dynamicGrid.id]) {
+							this.dynamicGrid.removeBody(child2);
+						}
+					}
 				}
 			}
+			
 		}
 	}
 }

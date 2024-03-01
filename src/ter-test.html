@@ -103,7 +103,6 @@
 		}, 400);
 	}
 
-	
 	function multistack() {
 		let width =  5;
 		let height = 5;
@@ -143,8 +142,20 @@
 			borderOffset: 0.5,
 		}).add();
 	}
+	
+	function memory() {
+		// game.DebugRender.enabled.vertices = true;
+		for (let i = 0; i < 1; ++i) {
+			let bodyA = Bodies.Rectangle(100, 100, new vec(0, 0), {
+				hasCollisions: true,
+			}).add();
+			setTimeout(() => {
+				bodyA.delete();
+			}, 10);
+		}
+	}
 
-	window.addEventListener("load", concave);
+	Render.app.ticker.add(memory);
 
 	let mouseBody = Bodies.Circle(5, new vec(0, 0), {
 		isStatic: false,
@@ -175,11 +186,13 @@
 			background: "#ffffff01",
 		}).add();
 
-		filter();
+		// filter();
 	});
 	
 	game.DebugRender.enabled.collisions = true;
-	// game.DebugRender.enabled.vertices = true;
+	game.DebugRender.enabled.vertices = true;
+	game.DebugRender.enabled.vertices = true;
+	Engine.Performance.render.enabled = true;
 
 	let inputs = new ter.Inputs();
 	inputs.blockRightClick();
@@ -215,7 +228,7 @@
 		}
 	});
 
-	camera.shake(20, 1, ter.Animation.ease.out.cubic, new vec(1, 1));
+	// camera.shake(20, 1, ter.Animation.ease.out.cubic, new vec(1, 1));
 
 	async function filter() {
 		let position = new vec(0, 0);

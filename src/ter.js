@@ -13,6 +13,7 @@ ter.Engine = require("./physics/Engine");
 ter.Bodies = require("./bodies/Bodies");
 
 ter.Render = require("./render/RenderTypes");
+ter.RenderMethods = require("./render/RenderMethods");
 ter.Graph = require("./render/Graph");
 
 ter.vec = require("./geometry/vec");
