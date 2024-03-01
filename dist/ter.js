@@ -5203,18 +5203,18 @@ class Engine {
 
 		if (World.pairs[pairId]) { // Collision happened last frame, so it's active
 			pair.start = World.pairs[pairId].start;
-			bodyA.trigger("collisionActive", pair);
-			bodyB.trigger("collisionActive", pair);
+			bodyA.parentNode.trigger("collisionActive", pair);
+			bodyB.parentNode.trigger("collisionActive", pair);
 
-			bodyA.trigger("bodyInside", bodyB);
-			bodyB.trigger("bodyInside", bodyA);
+			bodyA.parentNode.trigger("bodyInside", bodyB.parentNode);
+			bodyB.parentNode.trigger("bodyInside", bodyA.parentNode);
 		}
 		else { // No collision between these bodies last frame, so collision just started
-			bodyA.trigger("collisionStart", pair);
-			bodyB.trigger("collisionStart", pair);
+			bodyA.parentNode.trigger("collisionStart", pair);
+			bodyB.parentNode.trigger("collisionStart", pair);
 
-			bodyA.trigger("bodyEnter", bodyB);
-			bodyB.trigger("bodyEnter", bodyA);
+			bodyA.parentNode.trigger("bodyEnter", bodyB.parentNode);
+			bodyB.parentNode.trigger("bodyEnter", bodyA.parentNode);
 			
 			bodyA.pairs.push(pairId);
 			bodyB.pairs.push(pairId);
@@ -5990,6 +5990,9 @@ class RigidBody extends Node {
 			this.#events[event].forEach(callback => {
 				callback(...args);
 			});
+		}
+		else {
+			console.warn(event + " is not a valid event");
 		}
 	}
 

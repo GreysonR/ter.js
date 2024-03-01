@@ -494,6 +494,9 @@ class RigidBody extends Node {
 				callback(...args);
 			});
 		}
+		else {
+			console.warn(event + " is not a valid event");
+		}
 	}
 
 	// 

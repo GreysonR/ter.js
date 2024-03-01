@@ -141,10 +141,15 @@
 			borderWidth: 3,
 			borderOffset: 0.5,
 		}).add();
+
+		bodyB.on("bodyEnter", bodyB => {
+			console.log(bodyB);
+		});
 	}
 	
 	function memory() {
 		// game.DebugRender.enabled.vertices = true;
+		function test() {
 		for (let i = 0; i < 1; ++i) {
 			let bodyA = Bodies.Rectangle(100, 100, new vec(0, 0), {
 				hasCollisions: true,
@@ -153,9 +158,12 @@
 				bodyA.delete();
 			}, 10);
 		}
+		}
+		Render.app.ticker.add(test);
 	}
 
-	Render.app.ticker.add(memory);
+	// Render.app.ticker.add(memory);
+	window.addEventListener("load", concave);
 
 	let mouseBody = Bodies.Circle(5, new vec(0, 0), {
 		isStatic: false,
