@@ -5669,6 +5669,9 @@ class RigidBody extends Node {
 		this._resetVertices();
 		this._updateInertia();
 
+		// Set mass
+		this._inverseMass = 1 / this.mass;
+
 		// Set angle from options
 		if (options.angle) {
 			this.angle = 0;
