@@ -1384,6 +1384,8 @@ class Composite { // Has 1+ children, processes them in a certain order each tic
 	 * @protected
 	 */
 	resolve;
+	curTick = 0;
+	interruptTick = -1;
 
 	constructor({ children = [] }) {
 		this.id = ++BehaviorTree.id;
@@ -1395,7 +1397,7 @@ class Composite { // Has 1+ children, processes them in a certain order each tic
 			child.interrupt(value);
 		}
 		if (this.resolve) {
-			this.hasInterrupt = true;
+			this.interruptTick = this.curTick++;
 			this.resolve(value);
 		}
 	}
@@ -1416,10 +1418,10 @@ class Selector extends Composite { // OR, returns success at first success / run
 		return new Promise((resolve, reject) => {
 			this.resolve = resolve;
 			let i = 0;
+			let curTick = this.curTick++;
 			function next() {
 				children[i].tick(blackboard).then(result => {
-					if (node.hasInterrupt) {
-						node.hasInterrupt = false;
+					if (node.interruptTick >= curTick) {
 						return;
 					}
 					if (result == BehaviorTree.SUCCESS) {
@@ -1455,10 +1457,10 @@ class Sequence extends Composite { // AND, returns failure at first failure, suc
 		return new Promise(resolve => {
 			this.resolve = resolve;
 			let i = 0;
+			let curTick = this.curTick++;
 			function next() {
 				children[i].tick(blackboard).then(result => {
-					if (node.hasInterrupt) {
-						node.hasInterrupt = false;
+					if (node.interruptTick >= curTick) {
 						return;
 					}
 					if (result == BehaviorTree.SUCCESS) {
@@ -1492,6 +1494,8 @@ class Decorator { // Has 1 child, transforms result / repeats / terminates
 	 * @protected
 	 */
 	resolve;
+	curTick = 0;
+	interruptTick = -1;
 
 	constructor({ child }) {
 		this.id = ++BehaviorTree.id;
@@ -1503,7 +1507,7 @@ class Decorator { // Has 1 child, transforms result / repeats / terminates
 		
 		if (this.resolve) {
 			this.resolve(value);
-			this.hasInterrupt = true;
+			this.interruptTick = this.curTick++;
 		}
 	}
 }
@@ -1519,9 +1523,9 @@ class Inverter extends Decorator { // Inverts result, SUCCESS -> FAILURE, FAILUR
 	}
 	tick(blackboard) {
 		let node = this;
+		let curTick = this.curTick++;
 		return new Promise(resolve => {
-			if (node.hasInterrupt) {
-				node.hasInterrupt = false;
+			if (node.interruptTick >= curTick) {
 				return;
 			}
 			this.resolve = resolve;
@@ -1548,12 +1552,12 @@ class Repeat extends Decorator { // Repeats child `count` times
 		let curCount = 0;
 		let maxCount = this.count;
 		let child = this.child;
+		let curTick = this.curTick++;
 		return new Promise(resolve => {
 			this.resolve = resolve;
 			function next() {
 				child.tick(blackboard).then(result => {
-					if (node.hasInterrupt) {
-						node.hasInterrupt = false;
+					if (node.interruptTick >= curTick) {
 						return;
 					}
 					if (++curCount >= maxCount) {
@@ -1584,12 +1588,12 @@ class RepeatUntilFail extends Decorator { // Repeats child `count` times (defaul
 		let maxCount = this.count;
 		let child = this.child;
 		let node = this;
+		let curTick = this.curTick++;
 		return new Promise(resolve => {
 			this.resolve = resolve;
 			function next() {
 				child.tick(blackboard).then(result => {
-					if (node.hasInterrupt) {
-						node.hasInterrupt = false;
+					if (node.interruptTick >= curTick) {
 						return;
 					}
 					if (result == BehaviorTree.FAILURE) {
@@ -1620,11 +1624,11 @@ class Succeeder extends Decorator { // Always returns SUCCESS
 	tick(blackboard) {
 		let child = this.child;
 		let node = this;
+		let curTick = this.curTick++;
 		return new Promise(resolve => {
 			this.resolve = resolve;
 			child.tick(blackboard).then(result => {
-				if (node.hasInterrupt) {
-					node.hasInterrupt = false;
+				if (node.interruptTick >= curTick) {
 					return;
 				}
 				resolve(BehaviorTree.SUCCESS);
