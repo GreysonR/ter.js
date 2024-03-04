@@ -144,10 +144,11 @@ class Animation {
 		if (!this.#running) return;
 
 		let time = this.getTime();
-		let percent = Math.max(0, Math.min(1, this.curve(time / this.duration)));
+		let duration = Math.max(this.duration, 0.00000000001);
+		let percent = Math.max(0, Math.min(1, this.curve(time / duration)));
 		if (this.ontick) this.ontick(percent);
 
-		if (percent >= 1) {
+		if (time / duration >= 1) {
 			this.end();
 		}
 	}
