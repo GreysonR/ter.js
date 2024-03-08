@@ -4223,6 +4223,95 @@ module.exports = Animation
 
 /***/ }),
 
+/***/ 218:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+const Animation = __webpack_require__(847);
+
+class DiscreteAnimation {
+	static all = new Set();
+	static update() {
+		const now = performance.now();
+		for (let animation of DiscreteAnimation.all) {
+			let { startTime, duration, frames, lastFrame, curve, totalLoops, loopNumber } = animation;
+			let pLinear = Math.max(0, Math.min(1, (now - startTime) / duration));
+			let p = curve(pLinear);
+			
+			if (pLinear >= 1) {
+				if (loopNumber + 1 < totalLoops) {
+					animation.loopNumber++;
+					animation.startTime = now;
+					p = curve(0);
+				}
+				else {
+					animation.lastFrame = frames - 1;
+					if (animation.stop) animation.stop();
+				}
+			}
+
+			let frame = Math.floor(p * frames);
+			animation.frame = frame;
+			if (p < 1 && frame !== lastFrame) {
+				animation.lastFrame = frame;
+				if (animation.callback) animation.callback(frame);
+			}
+		}
+	}
+
+	constructor({ frames, duration = 200, curve = Animation.ease.linear, callback, onstart, onend, totalLoops = 1, autostart = false }) {
+		this.frame = 0;
+		this.frames = frames;
+		this.duration = duration;
+		this.startTime = performance.now();
+		this.curve = curve;
+		this.pauseTime = 0;
+		this.lastFrame = -1;
+		this.loopNumber = 0;
+		this.totalLoops = totalLoops ?? 1;
+
+		this.callback = callback;
+		this.onstart = onstart;
+		this.onend = onend;
+		this.playing = false;
+
+		if (autostart && totalLoops > 0) {
+			DiscreteAnimation.all.add(this);
+			if (typeof this.onstart === "function") this.onstart();
+		}
+	}
+	stop() {
+		if (this.playing) {
+			if (typeof this.onend === "function") this.onend();
+			DiscreteAnimation.all.delete(this);
+			this.pauseTime = 0;
+			this.lastFrame = -1;
+			this.loopNumber = 0;
+			this.playing = false;
+		}
+	}
+	pause() {
+		if (this.playing) {
+			DiscreteAnimation.all.delete(this);
+			this.pauseTime = performance.now() - this.startTime;
+			this.playing = false;
+		}
+	}
+	start() {
+		this.startTime = performance.now() - this.pauseTime;
+		DiscreteAnimation.all.add(this);
+		this.playing = true;
+
+		if (this.pauseTime === 0 && typeof this.onstart === "function") {
+			this.onstart();
+		}
+	}
+}
+
+module.exports = DiscreteAnimation;
+
+
+/***/ }),
+
 /***/ 794:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
@@ -7579,7 +7668,8 @@ class Sprite extends Node {
 	}
 	create() {
 		let { width, height, layer, position, angle, src } = this;
-		let sprite = this.sprite = PIXI.Sprite.from(src);
+		let sprite = this.sprite = PIXI.Assets.cache.get(src);
+		
 		this.loaded = true;
 		sprite.anchor.set(0.5);
 
@@ -7769,6 +7859,244 @@ module.exports = Sprite;
 
 /***/ }),
 
+/***/ 281:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+const Node = __webpack_require__(593);
+const Common = __webpack_require__(929);
+const vec = __webpack_require__(811);
+
+class Spritesheet extends Node {
+	static all = new Set();
+	static imageDir = "./img/";
+	static defaultOptions = {
+		container: undefined, // {PIXI Container}
+		layer: 0, // number
+		position: new vec(0, 0), // {vec}
+		angle: 0, // number [0, 2PI]
+
+		visible: true,
+		alpha: 1,
+		speed: 1 / 6,
+		src: "",
+		animation: "",
+		
+		scale: new vec(1, 1),
+		width:  undefined,
+		height: undefined,
+	}
+
+	constructor(options) {
+		super();
+		let defaults = { ...Spritesheet.defaultOptions };
+		Common.merge(defaults, options, 1);
+		options = defaults;
+		Common.merge(this, options, 1);
+
+		this.src = Spritesheet.imageDir + this.src;
+		this.position = new vec(this.position ?? { x: 0, y: 0 });
+		this.add = this.add.bind(this);
+
+		this.create();
+
+	}
+	create() {
+		let { width, height, layer, position, angle, src, animation: animationName } = this;
+		const animations = PIXI.Assets.cache.get(src).data.animations;
+		const sprite = PIXI.AnimatedSprite.fromFrames(animations[animationName]);
+		sprite.animationSpeed = this.speed;
+		this.sprite = sprite;
+
+		this.loaded = true;
+		sprite.anchor.set(0.5);
+
+		if (width != undefined && height != undefined) {
+			this.setSize(width, height);
+		}
+
+		// Update alpha
+		this.setAlpha(this.alpha);
+
+		// Update layer
+		this.setLayer(layer);
+
+		// Translate to position
+		let translateDelta = new vec(position);
+		this.position.set(new vec(0, 0));
+		this.translate(translateDelta);
+		
+		// Rotate to angle
+		this.angle = 0;
+		this.translateAngle(angle);
+
+		
+		this.trigger("load");
+	}
+	/**
+	 * Adds the sprite to the world
+	 */
+	add() {
+		if (!this.sprite && this.isAdded()) {
+			this.on("load", this.add);
+			return;
+		}
+
+		super.add();
+		this.container.addChild(this.sprite);
+		Spritesheet.all.add(this);
+		this.sprite.play();
+	}
+	/**
+	 * Removes the sprite from the world
+	 */
+	delete() {
+		super.delete();
+		Spritesheet.all.delete(this);
+		this.container.removeChild(this.sprite);
+		this.sprite.stop();
+		
+		this.off("load", this.add);
+	}
+
+	/**
+	 * Sets the render layer (z index)
+	 * @param {number} layer - Render layer (z index) for the render
+	 */
+	setLayer(layer) {
+		this.layer = layer;
+		if (!this.loaded) return;
+		this.sprite.zIndex = layer;
+	}
+
+	/**
+	 * Sets the sprite's scale
+	 * @param {vec} scale - New scale
+	 */
+	setScale(scale) {
+		this.scale.set(scale);
+
+		if (!this.loaded) return;
+		let { sprite } = this;
+		sprite.scale.x = this.scale.x;
+		sprite.scale.y = this.scale.y;
+	}
+
+	/**
+	 * Sets the sprite's width and height
+	 * @param {number} width - New width
+	 * @param {number} height - New height
+	 */
+	setSize(width, height) {
+		if (width != undefined) this.width = width;
+		if (height != undefined) this.height = height;
+
+		if (!this.loaded) return;
+		let { sprite } = this;
+		sprite.width =  this.width;
+		sprite.height = this.height;
+	}
+
+	/**
+	 * Sets the sprite's alpha
+	 * @param {number} alpha - Opacity, between 0 and 1 inclusive
+	 */
+	setAlpha(alpha) {
+		this.alpha = alpha;
+		if (!this.loaded) return;
+		this.sprite.alpha = alpha;
+	}
+
+	/**
+	 * Changes if the sprite is visible
+	 * @param {boolean} visible - If the sprite is visible
+	 */
+	setVisible(visible) {
+		this.visible = visible;
+		if (!this.loaded) return;
+		this.sprite.visible = visible;
+	}
+
+	/**
+	 * Shifts the sprite's position by `delta`
+	 * @param {vec} delta - Amount sprite is shifted by
+	 */
+	translate(delta) {
+		super.translate(delta);
+
+		if (!this.loaded) return;
+		let { sprite } = this;
+		sprite.position.x += delta.x;
+		sprite.position.y += delta.y;
+	}
+	
+	/**
+	 * Rotates the sprite relative to current angle
+	 * @param {number} angle - Amount to rotate sprite, in radians
+	 */
+	translateAngle(angle) {
+		super.translateAngle(angle);
+
+		if (!this.loaded) return;
+		let { sprite } = this;
+		sprite.rotation += angle;
+	}
+	
+	/**
+	 * Destroys the sprite. Use when you know the sprite will no longer be used
+	 */
+	destroy() {
+		this.sprite.destroy();
+	}
+
+
+	#events = {
+		load: [],
+		add: [],
+		delete: [],
+	}
+	/**
+	 * Binds a function to an event
+	 * @param {("beforeTick"|"afterTick")} event - Name of the event
+	 * @param {function} callback - Function called when event fires
+	 */
+	on(event, callback) {
+		if (this.#events[event]) {
+			this.#events[event].push(callback);
+		}
+		else {
+			console.warn(event + " is not a valid event");
+		}
+	}
+	/**
+	 * Unbinds a function from an event
+	 * @param {("beforeTick"|"afterTick")} event - Name of the event
+	 * @param {function} callback - Function bound to event
+	 */
+	off(event, callback) {
+		event = this.#events[event];
+		if (event.includes(callback)) {
+			event.splice(event.indexOf(callback), 1);
+		}
+	}
+	/**
+	 * Fires an event
+	 * @param {("beforeTick"|"afterTick")} event - Name of the event
+	 */
+	trigger(event) {
+		// Trigger each event
+		if (this.#events[event]) {
+			this.#events[event].forEach(callback => {
+				callback();
+			});
+		}
+	}
+}
+
+module.exports = Spritesheet;
+
+
+/***/ }),
+
 /***/ 627:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
@@ -7789,6 +8117,8 @@ ter.Bodies = __webpack_require__(789);
 ter.Render = __webpack_require__(996);
 ter.RenderMethods = __webpack_require__(223);
 ter.Graph = __webpack_require__(141);
+ter.Sprite = __webpack_require__(416);
+ter.Spritesheet = __webpack_require__(281);
 
 ter.vec = __webpack_require__(811);
 ter.Grid = __webpack_require__(953);
@@ -7800,6 +8130,7 @@ ter.BehaviorTree = __webpack_require__(985);
 ter.Functions = __webpack_require__(794);
 ter.Inputs = __webpack_require__(764);
 ter.Animation = __webpack_require__(847);
+ter.DiscreteAnimation = __webpack_require__(218);
 
 ter.simplexNoise = __webpack_require__(99);
 ter.polyDecomp = __webpack_require__(371);

@@ -1,15 +1,9 @@
+const Node = require("../node/Node");
 const Common = require("../core/Common.js");
-const Node = require("../node/Node.js");
-const vec = require("../geometry/vec.js");
+const vec = require("../geometry/vec");
 
-// todo: load all sprites when game is loaded
-// todo: properly delete sprites when bodies no longer used
-
-/**
- * A sprite render object
- * @extends Node
- */
-class Sprite extends Node {
+class Spritesheet extends Node {
+	static all = new Set();
 	static imageDir = "./img/";
 	static defaultOptions = {
 		container: undefined, // {PIXI Container}
@@ -19,33 +13,36 @@ class Sprite extends Node {
 
 		visible: true,
 		alpha: 1,
+		speed: 1 / 6,
 		src: "",
+		animation: "",
 		
 		scale: new vec(1, 1),
 		width:  undefined,
 		height: undefined,
 	}
-	static all = new Set();
 
-	loaded = false;
-	nodeType = "Sprite";
 	constructor(options) {
 		super();
-		let defaults = { ...Sprite.defaultOptions };
+		let defaults = { ...Spritesheet.defaultOptions };
 		Common.merge(defaults, options, 1);
 		options = defaults;
 		Common.merge(this, options, 1);
 
-		this.src = Sprite.imageDir + this.src;
+		this.src = Spritesheet.imageDir + this.src;
 		this.position = new vec(this.position ?? { x: 0, y: 0 });
 		this.add = this.add.bind(this);
 
 		this.create();
+
 	}
 	create() {
-		let { width, height, layer, position, angle, src } = this;
-		let sprite = this.sprite = PIXI.Assets.cache.get(src);
-		
+		let { width, height, layer, position, angle, src, animation: animationName } = this;
+		const animations = PIXI.Assets.cache.get(src).data.animations;
+		const sprite = PIXI.AnimatedSprite.fromFrames(animations[animationName]);
+		sprite.animationSpeed = this.speed;
+		this.sprite = sprite;
+
 		this.loaded = true;
 		sprite.anchor.set(0.5);
 
@@ -71,7 +68,32 @@ class Sprite extends Node {
 		
 		this.trigger("load");
 	}
-	
+	/**
+	 * Adds the sprite to the world
+	 */
+	add() {
+		if (!this.sprite && this.isAdded()) {
+			this.on("load", this.add);
+			return;
+		}
+
+		super.add();
+		this.container.addChild(this.sprite);
+		Spritesheet.all.add(this);
+		this.sprite.play();
+	}
+	/**
+	 * Removes the sprite from the world
+	 */
+	delete() {
+		super.delete();
+		Spritesheet.all.delete(this);
+		this.container.removeChild(this.sprite);
+		this.sprite.stop();
+		
+		this.off("load", this.add);
+	}
+
 	/**
 	 * Sets the render layer (z index)
 	 * @param {number} layer - Render layer (z index) for the render
@@ -154,31 +176,6 @@ class Sprite extends Node {
 		let { sprite } = this;
 		sprite.rotation += angle;
 	}
-
-	/**
-	 * Adds the sprite to the world
-	 */
-	add() {
-		if (!this.sprite && this.isAdded()) {
-			this.on("load", this.add);
-			return;
-		}
-
-		super.add();
-		Sprite.all.add(this);
-		this.container.addChild(this.sprite);
-	}
-	
-	/**
-	 * Removes the sprite from the world
-	 */
-	delete() {
-		super.delete();
-		Sprite.all.delete(this);
-		this.container.removeChild(this.sprite);
-		
-		this.off("load", this.add);
-	}
 	
 	/**
 	 * Destroys the sprite. Use when you know the sprite will no longer be used
@@ -230,4 +227,5 @@ class Sprite extends Node {
 		}
 	}
 }
-module.exports = Sprite;
+
+module.exports = Spritesheet;

@@ -15,6 +15,8 @@ ter.Bodies = require("./bodies/Bodies");
 ter.Render = require("./render/RenderTypes");
 ter.RenderMethods = require("./render/RenderMethods");
 ter.Graph = require("./render/Graph");
+ter.Sprite = require("./render/Sprite");
+ter.Spritesheet = require("./render/Spritesheet");
 
 ter.vec = require("./geometry/vec");
 ter.Grid = require("./geometry/Grid");
@@ -26,6 +28,7 @@ ter.BehaviorTree = require("./behaviorTree/BehaviorTree");
 ter.Functions = require("./other/GameFunctions");
 ter.Inputs = require("./other/Inputs");
 ter.Animation = require("./other/Animation");
+ter.DiscreteAnimation = require("./other/DiscreteAnimation");
 
 ter.simplexNoise = require("simplex-noise");
 ter.polyDecomp = require("poly-decomp");
