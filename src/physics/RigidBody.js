@@ -3,6 +3,7 @@ const Node = require("../node/Node.js");
 const Common = require("../core/Common.js");
 const PolygonRender = require("../render/PolygonRender.js");
 const Sprite = require("../render/Sprite.js");
+const Spritesheet = require("../render/Spritesheet.js")
 const Bezier = require("../geometry/Bezier.js");
 const CollisionShape = require("../physics/CollisionShape.js");
 const decomp = require("poly-decomp");
@@ -257,7 +258,7 @@ class RigidBody extends Node {
 
 	/**
 	 * Adds a sprite to body
-	 * @param {PIXI.Container} container - Container polygon render is added to
+	 * @param {PIXI.Container} container - Container the Sprite is added to
 	 * @param {Object} options - (Sprite)[./Sprite.html] options
 	 * @return {RigidBody} `this`
 	 * @example
@@ -275,6 +276,25 @@ class RigidBody extends Node {
 	 */
 	addSprite(container, options) {
 		let render = new Sprite({
+			container: container,
+			position: new vec(this.position),
+			angle: this.angle,
+			
+			...options
+		});
+		if (this.isAdded()) render.add();
+		this.addChild(render);
+		
+		return this;
+	}
+	/**
+	 * Adds a new Spritesheet to body
+	 * @param {PIXI.Container} container - Container the Spritesheet is added to
+	 * @param {Object} options - (Spritesheet)[./Spritesheet.html] options
+	 * @return {RigidBody} `this`
+	 */
+	addSpritesheet(container, options) {
+		let render = new Spritesheet({
 			container: container,
 			position: new vec(this.position),
 			angle: this.angle,
