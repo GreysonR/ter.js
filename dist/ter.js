@@ -4538,14 +4538,14 @@ let GameFunctions = {
 			controls[controlName] = directions[controlName];
 		}
 	},
-	createTilingArea: function(areaBody, sprite) { // REMOVE and replace with its own render class
+	createTilingArea: function(areaBody, sprite, container) { // REMOVE and replace with its own render class
 		let texture = PIXI.Texture.from(sprite);
 		let { angle, position } = areaBody;
 		areaBody.setAngle(0);
 		let size = areaBody.bounds.max.sub(areaBody.bounds.min);
 		let tiling = new PIXI.TilingSprite(texture, size.x, size.y);
 		tiling.zIndex = -1;
-		mainWorld.addChild(tiling);
+		container.addChild(tiling);
 
 		let spritePos = size.mult(-0.5);
 		let curPosition = position.add(spritePos.rotate(angle));
@@ -4554,7 +4554,7 @@ let GameFunctions = {
 		tiling.spritePos = spritePos;
 
 		tiling.delete = function() {
-			mainWorld.removeChild(tiling);
+			container.removeChild(tiling);
 			tiling.destroy();
 		}
 
@@ -7372,6 +7372,7 @@ class Render {
 		ySort: false,
 		resizeTo: window,
 		antialias: true,
+		scaleMode: PIXI.SCALE_MODES.LINEAR,
 		getBoundSize: function(width, height) {
 			return Math.sqrt(width ** 2 + height ** 2) || 1;
 		}
@@ -7403,7 +7404,7 @@ class Render {
 		delete options.resizeTo;
 		Common.merge(defaults, options, 1);
 		options = defaults;
-		let { background, ySort, pixelRatio, antialias, getBoundSize } = options;
+		let { background, ySort, pixelRatio, antialias, getBoundSize, scaleMode } = options;
 
 		// Create camera
 		this.camera = new Camera();
@@ -7412,6 +7413,7 @@ class Render {
 		this.getBoundSize = getBoundSize;
 
 		// Set basic settings
+		PIXI.settings.SCALE_MODE = scaleMode;
 		let scale = PIXI.settings.RESOLUTION = this.pixelRatio = pixelRatio;
 		PIXI.Filter.defaultResolution = 0;
 		PIXI.Container.defaultSortableChildren = true
@@ -7688,7 +7690,7 @@ class Sprite extends Node {
 	}
 	create() {
 		let { width, height, layer, position, angle, src } = this;
-		let sprite = this.sprite = PIXI.Assets.cache.get(src);
+		let sprite = this.sprite = PIXI.Sprite.from(src);
 		
 		this.loaded = true;
 		sprite.anchor.set(0.5);

@@ -221,14 +221,14 @@ let GameFunctions = {
 			controls[controlName] = directions[controlName];
 		}
 	},
-	createTilingArea: function(areaBody, sprite) { // REMOVE and replace with its own render class
+	createTilingArea: function(areaBody, sprite, container) { // REMOVE and replace with its own render class
 		let texture = PIXI.Texture.from(sprite);
 		let { angle, position } = areaBody;
 		areaBody.setAngle(0);
 		let size = areaBody.bounds.max.sub(areaBody.bounds.min);
 		let tiling = new PIXI.TilingSprite(texture, size.x, size.y);
 		tiling.zIndex = -1;
-		mainWorld.addChild(tiling);
+		container.addChild(tiling);
 
 		let spritePos = size.mult(-0.5);
 		let curPosition = position.add(spritePos.rotate(angle));
@@ -237,7 +237,7 @@ let GameFunctions = {
 		tiling.spritePos = spritePos;
 
 		tiling.delete = function() {
-			mainWorld.removeChild(tiling);
+			container.removeChild(tiling);
 			tiling.destroy();
 		}
 

@@ -44,7 +44,7 @@ class Sprite extends Node {
 	}
 	create() {
 		let { width, height, layer, position, angle, src } = this;
-		let sprite = this.sprite = PIXI.Assets.cache.get(src);
+		let sprite = this.sprite = PIXI.Sprite.from(src);
 		
 		this.loaded = true;
 		sprite.anchor.set(0.5);

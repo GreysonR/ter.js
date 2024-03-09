@@ -12,6 +12,7 @@ class Render {
 		ySort: false,
 		resizeTo: window,
 		antialias: true,
+		scaleMode: PIXI.SCALE_MODES.LINEAR,
 		getBoundSize: function(width, height) {
 			return Math.sqrt(width ** 2 + height ** 2) || 1;
 		}
@@ -43,7 +44,7 @@ class Render {
 		delete options.resizeTo;
 		Common.merge(defaults, options, 1);
 		options = defaults;
-		let { background, ySort, pixelRatio, antialias, getBoundSize } = options;
+		let { background, ySort, pixelRatio, antialias, getBoundSize, scaleMode } = options;
 
 		// Create camera
 		this.camera = new Camera();
@@ -52,6 +53,7 @@ class Render {
 		this.getBoundSize = getBoundSize;
 
 		// Set basic settings
+		PIXI.settings.SCALE_MODE = scaleMode;
 		let scale = PIXI.settings.RESOLUTION = this.pixelRatio = pixelRatio;
 		PIXI.Filter.defaultResolution = 0;
 		PIXI.Container.defaultSortableChildren = true
