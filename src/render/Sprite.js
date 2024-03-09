@@ -147,8 +147,8 @@ class Sprite extends Node {
 	 * Rotates the sprite relative to current angle
 	 * @param {number} angle - Amount to rotate sprite, in radians
 	 */
-	translateAngle(angle) {
-		super.translateAngle(angle);
+	translateAngle(angle, pivot = this.position) {
+		super.translateAngle(angle, pivot);
 
 		if (!this.loaded) return;
 		let { sprite } = this;

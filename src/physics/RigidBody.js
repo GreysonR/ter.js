@@ -569,7 +569,9 @@ class RigidBody extends Node {
 
 		this.angularVelocity *= frictionAngular;
 		if (this.angularVelocity){
-			this.translateAngle((this.angularVelocity + lastAngularVelocity) * timescale / 2); // trapezoidal rule to take into account acceleration
+			let angleChange = (this.angularVelocity + lastAngularVelocity) * timescale / 2; // trapezoidal rule to take into account acceleration
+			let pivot = this.rotationPoint.rotate(this.angle + angleChange).add(this.position);
+			this.translateAngle(angleChange, pivot);
 		}
 		this._last.angularVelocity = this.angularVelocity;
 

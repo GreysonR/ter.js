@@ -3671,8 +3671,9 @@ class Node {
 	/**
 	 * Creates a Node
 	 */
-	constructor() {
+	constructor(position = new vec(0, 0)) {
 		this.id = Node.getUniqueId();
+		this.position = new vec(position);
 	}
 	
 	/**
@@ -3765,11 +3766,11 @@ class Node {
 	 * @example
 	 * node.setAngle(Math.PI); // Sets node's angle to Pi radians, or 180 degrees
 	 */
-	setAngle(angle) {
+	setAngle(angle, pivot = this.position) {
 		if (isNaN(angle)) return;
 		if (angle !== this.angle) {
 			let delta = Common.angleDiff(angle, this.angle);
-			this.translateAngle(delta);
+			this.translateAngle(delta, pivot);
 		}
 	}
 	
@@ -3777,13 +3778,21 @@ class Node {
 	 * Rotates the body by `angle`- Relative
 	 * @param {number} angle -Amount the body should be rotated, in radians
 	 */
-	translateAngle(angle) {
+	translateAngle(angle, pivot = this.position, pivotPosition = true) {
 		if (isNaN(angle)) return;
 
 		this.angle += angle;
 
+		if (pivotPosition) {
+			let sin = Math.sin(angle);
+			let cos = Math.cos(angle);
+			let dist = this.position.sub(pivot);
+			let newPosition = new vec((dist.x * cos - dist.y * sin), (dist.x * sin + dist.y * cos)).add(pivot);
+			this.setPosition(newPosition);
+		}
+
 		for (let child of this.children) {
-			child.translateAngle?.(angle);
+			child.translateAngle?.(angle, pivot);
 		}
 	}
 
@@ -4848,11 +4857,11 @@ class CollisionShape extends Node {
 	 * @example
 	 * body.setAngle(Math.PI); // Sets body's angle to Pi radians, or 180 degrees 
 	 */
-	setAngle(angle) {
+	setAngle(angle, pivot) {
 		if (isNaN(angle)) return;
 		if (angle !== this.angle) {
 			let delta = Common.angleDiff(angle, this.angle);
-			this.translateAngle(delta);
+			this.translateAngle(delta, pivot);
 		}
 	}
 
@@ -4860,18 +4869,16 @@ class CollisionShape extends Node {
 	 * Rotates the body by `angle`- Relative
 	 * @param {number} angle - Amount the body should be rotated, in radians
 	 */
-	translateAngle(angle) {
+	translateAngle(angle, pivot = this.parentNode.rotationPoint.rotate(this.angle + angle).add(this.parentNode.position)) {
 		if (isNaN(angle)) return;
 		let vertices = this.vertices;
-		let position = this.position;
-		let rotationPoint = this.parentNode.rotationPoint.rotate(this.angle + angle).add(this.parentNode.position);
 
 		let sin = Math.sin(angle);
 		let cos = Math.cos(angle);
 
 		for (let i = vertices.length; i-- > 0;) {
 			let vert = vertices[i];
-			let dist = vert.sub(rotationPoint);
+			let dist = vert.sub(pivot);
 			vert.x = this.parentNode.position.x + (dist.x * cos - dist.y * sin);
 			vert.y = this.parentNode.position.y + (dist.x * sin + dist.y * cos);
 		}
@@ -4882,7 +4889,7 @@ class CollisionShape extends Node {
 		this.bounds.update(this.vertices);
 		this.#updateAxes();
 
-		super.translateAngle(angle);
+		super.translateAngle(angle, pivot, false);
 	}
 	
 	/**
@@ -6160,7 +6167,9 @@ class RigidBody extends Node {
 
 		this.angularVelocity *= frictionAngular;
 		if (this.angularVelocity){
-			this.translateAngle((this.angularVelocity + lastAngularVelocity) * timescale / 2); // trapezoidal rule to take into account acceleration
+			let angleChange = (this.angularVelocity + lastAngularVelocity) * timescale / 2; // trapezoidal rule to take into account acceleration
+			let pivot = this.rotationPoint.rotate(this.angle + angleChange).add(this.position);
+			this.translateAngle(angleChange, pivot);
 		}
 		this._last.angularVelocity = this.angularVelocity;
 
@@ -7793,8 +7802,8 @@ class Sprite extends Node {
 	 * Rotates the sprite relative to current angle
 	 * @param {number} angle - Amount to rotate sprite, in radians
 	 */
-	translateAngle(angle) {
-		super.translateAngle(angle);
+	translateAngle(angle, pivot = this.position) {
+		super.translateAngle(angle, pivot);
 
 		if (!this.loaded) return;
 		let { sprite } = this;
@@ -8055,8 +8064,8 @@ class Spritesheet extends Node {
 	 * Rotates the sprite relative to current angle
 	 * @param {number} angle - Amount to rotate sprite, in radians
 	 */
-	translateAngle(angle) {
-		super.translateAngle(angle);
+	translateAngle(angle, pivot = this.position) {
+		super.translateAngle(angle, pivot);
 
 		if (!this.loaded) return;
 		let { sprite } = this;

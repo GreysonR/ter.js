@@ -107,11 +107,11 @@ class CollisionShape extends Node {
 	 * @example
 	 * body.setAngle(Math.PI); // Sets body's angle to Pi radians, or 180 degrees 
 	 */
-	setAngle(angle) {
+	setAngle(angle, pivot) {
 		if (isNaN(angle)) return;
 		if (angle !== this.angle) {
 			let delta = Common.angleDiff(angle, this.angle);
-			this.translateAngle(delta);
+			this.translateAngle(delta, pivot);
 		}
 	}
 
@@ -119,18 +119,16 @@ class CollisionShape extends Node {
 	 * Rotates the body by `angle`- Relative
 	 * @param {number} angle - Amount the body should be rotated, in radians
 	 */
-	translateAngle(angle) {
+	translateAngle(angle, pivot = this.parentNode.rotationPoint.rotate(this.angle + angle).add(this.parentNode.position)) {
 		if (isNaN(angle)) return;
 		let vertices = this.vertices;
-		let position = this.position;
-		let rotationPoint = this.parentNode.rotationPoint.rotate(this.angle + angle).add(this.parentNode.position);
 
 		let sin = Math.sin(angle);
 		let cos = Math.cos(angle);
 
 		for (let i = vertices.length; i-- > 0;) {
 			let vert = vertices[i];
-			let dist = vert.sub(rotationPoint);
+			let dist = vert.sub(pivot);
 			vert.x = this.parentNode.position.x + (dist.x * cos - dist.y * sin);
 			vert.y = this.parentNode.position.y + (dist.x * sin + dist.y * cos);
 		}
@@ -141,7 +139,7 @@ class CollisionShape extends Node {
 		this.bounds.update(this.vertices);
 		this.#updateAxes();
 
-		super.translateAngle(angle);
+		super.translateAngle(angle, pivot, false);
 	}
 	
 	/**
