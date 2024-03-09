@@ -1,6 +1,6 @@
 {
   "name": "ter",
-  "version": "2.2.19",
+  "version": "2.2.20",
   "description": "",
   "scripts": {
     "build": "webpack",

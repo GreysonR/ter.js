@@ -301,6 +301,7 @@ class RigidBody extends Node {
 			
 			...options
 		});
+		this.spritesheet = render;
 		if (this.isAdded()) render.add();
 		this.addChild(render);
 		
@@ -571,7 +572,7 @@ class RigidBody extends Node {
 		if (this.angularVelocity){
 			let angleChange = (this.angularVelocity + lastAngularVelocity) * timescale / 2; // trapezoidal rule to take into account acceleration
 			let pivot = this.rotationPoint.rotate(this.angle + angleChange).add(this.position);
-			this.translateAngle(angleChange, pivot);
+			this.translateAngle(angleChange, pivot, false);
 		}
 		this._last.angularVelocity = this.angularVelocity;
 

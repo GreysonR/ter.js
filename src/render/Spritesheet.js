@@ -4,7 +4,6 @@ const vec = require("../geometry/vec");
 
 class Spritesheet extends Node {
 	static all = new Set();
-	static imageDir = "./img/";
 	static defaultOptions = {
 		container: undefined, // {PIXI Container}
 		layer: 0, // number
@@ -29,7 +28,6 @@ class Spritesheet extends Node {
 		options = defaults;
 		Common.merge(this, options, 1);
 
-		this.src = Spritesheet.imageDir + this.src;
 		this.position = new vec(this.position ?? { x: 0, y: 0 });
 		this.add = this.add.bind(this);
 
@@ -39,6 +37,10 @@ class Spritesheet extends Node {
 	create() {
 		let { width, height, layer, position, angle, src, animation: animationName } = this;
 		const animations = PIXI.Assets.cache.get(src).data.animations;
+		const frames = animations[animationName];
+		if (!frames) {
+			throw new Error("No animation of name " + animationName);
+		}
 		const sprite = PIXI.AnimatedSprite.fromFrames(animations[animationName]);
 		sprite.animationSpeed = this.speed;
 		this.sprite = sprite;

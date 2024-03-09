@@ -114,6 +114,7 @@ class Grid {
 				}
 			}
 		}
+		delete body._Grids[this.id];
 	}
 	/**
 	 * Adds a vector point to the grid
@@ -152,6 +153,7 @@ class Grid {
 				}
 			}
 		}
+		delete point._Grids[this.id];
 	}
 	/**
 	 * Updates the body's position in the grid
