@@ -97,6 +97,15 @@ class Spritesheet extends Node {
 	}
 
 	/**
+	 * Sets the animation's speed
+	 * @param {Number} speed 
+	 */
+	setSpeed(speed) {
+		this.speed = speed;
+		this.sprite.animationSpeed = speed;
+	}
+
+	/**
 	 * Sets the render layer (z index)
 	 * @param {number} layer - Render layer (z index) for the render
 	 */

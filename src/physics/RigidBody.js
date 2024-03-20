@@ -252,6 +252,7 @@ class RigidBody extends Node {
 		});
 		if (this.isAdded()) render.add();
 		this.addChild(render);
+		this.polygonRender = render;
 		
 		return this;
 	}
@@ -284,6 +285,7 @@ class RigidBody extends Node {
 		});
 		if (this.isAdded()) render.add();
 		this.addChild(render);
+		this.sprite = render;
 		
 		return this;
 	}

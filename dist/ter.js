@@ -5852,6 +5852,7 @@ class RigidBody extends Node {
 		});
 		if (this.isAdded()) render.add();
 		this.addChild(render);
+		this.polygonRender = render;
 		
 		return this;
 	}
@@ -5884,6 +5885,7 @@ class RigidBody extends Node {
 		});
 		if (this.isAdded()) render.add();
 		this.addChild(render);
+		this.sprite = render;
 		
 		return this;
 	}
@@ -7992,6 +7994,15 @@ class Spritesheet extends Node {
 		this.sprite.stop();
 		
 		this.off("load", this.add);
+	}
+
+	/**
+	 * Sets the animation's speed
+	 * @param {Number} speed 
+	 */
+	setSpeed(speed) {
+		this.speed = speed;
+		this.sprite.animationSpeed = speed;
 	}
 
 	/**
