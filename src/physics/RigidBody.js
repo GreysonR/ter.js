@@ -31,6 +31,7 @@ class RigidBody extends Node {
 		},
 	}
 	/**
+	 * @private
 	 * Rounds corners on an array of vertices
 	 * @param {Array} vertices - Array of `vec` vertices to round
 	 * @param {number} round - Amount of rounding

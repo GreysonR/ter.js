@@ -41,9 +41,9 @@ class PolygonRender extends Node {
 		options = defaults;
 		Common.merge(this, options, 1);
 
-		this.create();
+		this.#create();
 	}
-	create() {
+	#create() {
 		let graphic = this.graphic = new PIXI.Graphics();
 		let { position, angle, subtype, vertices } = this;
 		let { layer, alpha, background, border, borderWidth, lineCap, lineJoin, borderOffset, round } = this;

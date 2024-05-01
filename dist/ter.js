@@ -3637,13 +3637,13 @@ class Node {
 	}
 	
 	/**
-	 * Type of node it is
+	 * Type of node, ie `Node` or `RigidBody`
 	 * @readonly
 	 */
 	nodeType = "Node";
 
 	/**
-	 * Position
+	 * Position of the node
 	 * @type {vec}
 	 * @readonly
 	 * @todo Implement getPosition method and make this private
@@ -3657,7 +3657,7 @@ class Node {
 	 */
 	angle = 0;
 	/**
-	 * Children of the node.
+	 * Children of the node
 	 * To modify, use `addChild()` or `removeChild`.
 	 * @readonly
 	 * @type {Set}
@@ -3671,7 +3671,7 @@ class Node {
 	#added = false;
 	
 	/**
-	 * Creates a Node
+	 * Creates a Node with the given position
 	 */
 	constructor(position = new vec(0, 0)) {
 		this.id = Node.getUniqueId();
@@ -3679,7 +3679,7 @@ class Node {
 	}
 	
 	/**
-	 * Adds this node and its children
+	 * Adds this node and its children, triggering the `add` event
 	 * @returns {Node} `this`
 	 */
 	add() {
@@ -3694,7 +3694,7 @@ class Node {
 		return this;
 	}
 	/**
-	 * Removes this node and its children
+	 * Removes this node and its children, triggering the `delete` event
 	 * @returns {Node} `this`
 	 */
 	delete() {
@@ -3709,6 +3709,10 @@ class Node {
 		return this;
 	}
 
+	/**
+	 * Gets if the node is added
+	 * @returns {Boolean} if the node is added
+	 */
 	isAdded() {
 		return this.#added;
 	}
@@ -4093,9 +4097,9 @@ class Animation {
 	 * Animation.ease.in.cubic // access the cubic ease in function
 	 */
 	static ease = {
-		/**
-		 * Linear animation
-		 */
+		/*
+		 Linear animation
+		*/
 		linear: x => x,
 		in: {
 			sine: x => 1 - Math.cos((x * Math.PI) / 2),
@@ -5631,6 +5635,7 @@ class RigidBody extends Node {
 		},
 	}
 	/**
+	 * @private
 	 * Rounds corners on an array of vertices
 	 * @param {Array} vertices - Array of `vec` vertices to round
 	 * @param {number} round - Amount of rounding
@@ -7186,9 +7191,9 @@ class PolygonRender extends Node {
 		options = defaults;
 		Common.merge(this, options, 1);
 
-		this.create();
+		this.#create();
 	}
-	create() {
+	#create() {
 		let graphic = this.graphic = new PIXI.Graphics();
 		let { position, angle, subtype, vertices } = this;
 		let { layer, alpha, background, border, borderWidth, lineCap, lineJoin, borderOffset, round } = this;

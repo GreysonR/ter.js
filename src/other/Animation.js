@@ -39,9 +39,9 @@ class Animation {
 	 * Animation.ease.in.cubic // access the cubic ease in function
 	 */
 	static ease = {
-		/**
-		 * Linear animation
-		 */
+		/*
+		 Linear animation
+		*/
 		linear: x => x,
 		in: {
 			sine: x => 1 - Math.cos((x * Math.PI) / 2),

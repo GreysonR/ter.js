@@ -17,13 +17,13 @@ class Node {
 	}
 	
 	/**
-	 * Type of node it is
+	 * Type of node, ie `Node` or `RigidBody`
 	 * @readonly
 	 */
 	nodeType = "Node";
 
 	/**
-	 * Position
+	 * Position of the node
 	 * @type {vec}
 	 * @readonly
 	 * @todo Implement getPosition method and make this private
@@ -37,7 +37,7 @@ class Node {
 	 */
 	angle = 0;
 	/**
-	 * Children of the node.
+	 * Children of the node
 	 * To modify, use `addChild()` or `removeChild`.
 	 * @readonly
 	 * @type {Set}
@@ -51,7 +51,7 @@ class Node {
 	#added = false;
 	
 	/**
-	 * Creates a Node
+	 * Creates a Node with the given position
 	 */
 	constructor(position = new vec(0, 0)) {
 		this.id = Node.getUniqueId();
@@ -59,7 +59,7 @@ class Node {
 	}
 	
 	/**
-	 * Adds this node and its children
+	 * Adds this node and its children, triggering the `add` event
 	 * @returns {Node} `this`
 	 */
 	add() {
@@ -74,7 +74,7 @@ class Node {
 		return this;
 	}
 	/**
-	 * Removes this node and its children
+	 * Removes this node and its children, triggering the `delete` event
 	 * @returns {Node} `this`
 	 */
 	delete() {
@@ -89,6 +89,10 @@ class Node {
 		return this;
 	}
 
+	/**
+	 * Gets if the node is added
+	 * @returns {Boolean} if the node is added
+	 */
 	isAdded() {
 		return this.#added;
 	}
