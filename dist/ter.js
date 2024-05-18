@@ -4669,7 +4669,7 @@ class Inputs {
 	}
 
 	/**
-	 * Check if a key (or set of keys) is currently being pressed
+	 * Check if key(s) are currently being pressed
 	 * @param {...string} keys - Key to check
 	 * @returns {boolean} If the set of keys is pressed
 	 * @example
@@ -6029,7 +6029,7 @@ class RigidBody extends Node {
 	/**
 	 * Applies a force to the body, ignoring mass. The body's velocity changes by force * delta
 	 * @param {vec} force - Amount of force to be applied, in px / sec^2
-	 * @param {number} delta - Amount of time that the force should be applied in seconds, set to 1 if only applying in one instant
+	 * @param {number} delta=Engine.delta - Amount of time that the force should be applied in seconds, set to 1 if only applying in one instant
 	 */
 	applyForce(force, delta = this.Engine.delta) { // set delta to 1 if you want to apply a force for only 1 frame
 		if (force.isNaN()) return;
@@ -7436,11 +7436,14 @@ class Render {
 		let scale = PIXI.settings.RESOLUTION = this.pixelRatio = pixelRatio;
 		PIXI.Filter.defaultResolution = 0;
 		PIXI.Container.defaultSortableChildren = true
-		
+
+		// Parse background color
+		background = Common.parseColor(background);
+
 		// Create PIXI app
 		let app = this.app = new PIXI.Application({
-			background: background ?? 0x0,
-			backgroundAlpha: (background && background != "transparent") ? 1 : 0,
+			background: background[0],
+			backgroundAlpha: background[1],
 			resizeTo: resizeTo ?? window,
 			antialias: antialias ?? true,
 		});

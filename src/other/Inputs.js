@@ -81,7 +81,7 @@ class Inputs {
 	}
 
 	/**
-	 * Check if a key (or set of keys) is currently being pressed
+	 * Check if key(s) are currently being pressed
 	 * @param {...string} keys - Key to check
 	 * @returns {boolean} If the set of keys is pressed
 	 * @example
