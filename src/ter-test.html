@@ -151,7 +151,7 @@
 	function friction() {
 		// game.DebugRender.enabled.vertices = true;
 		var bodyA = window.bodyA = Bodies.Polygon([new vec(0, 0), new vec(500, 500), new vec(0, 500)], new vec(-200, 300), {
-			friction: 0.2,
+			friction: 0.1,
 		}).addPolygonRender(Render.app.stage, {
 			border: "#46849A",
 			borderWidth: 3,
@@ -220,7 +220,7 @@
 	});
 	
 	game.DebugRender.enabled.collisions = true;
-	game.DebugRender.enabled.vertices = true;
+	game.DebugRender.enabled.vertices = false;
 	Engine.Performance.render.enabled = true;
 
 	let inputs = new ter.Inputs();

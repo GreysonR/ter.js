@@ -80,7 +80,7 @@ class RigidBody extends Node {
 	restitution = 0.5;
 	frictionAir = 0.05;
 	frictionAngular = 0.01;
-	friction = 0.01;
+	friction = 0.1;
 	round = 0;
 	roundQuality = 40;
 

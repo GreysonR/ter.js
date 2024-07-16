@@ -329,7 +329,7 @@ class Engine {
 
 			const restitution = 1 + Math.max(bodyA.restitution, bodyB.restitution);
 			const relVel = bodyB.velocity.sub(bodyA.velocity);
-			const friction = Math.max(bodyA.friction, bodyB.friction);
+			const friction = Math.sqrt(bodyA.friction ** 2 + bodyB.friction ** 2);
 
 			if (relVel.dot(normal) < 0) {
 				continue;

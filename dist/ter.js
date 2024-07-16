@@ -5379,7 +5379,7 @@ class Engine {
 
 			const restitution = 1 + Math.max(bodyA.restitution, bodyB.restitution);
 			const relVel = bodyB.velocity.sub(bodyA.velocity);
-			const friction = Math.max(bodyA.friction, bodyB.friction);
+			const friction = Math.sqrt(bodyA.friction ** 2 + bodyB.friction ** 2);
 
 			if (relVel.dot(normal) < 0) {
 				continue;
@@ -5621,7 +5621,7 @@ const decomp = __webpack_require__(371);
 class RigidBody extends Node {
 	static defaultOptions = { // not used, but consistent with other classes for documentation
 		mass: 1,
-		restitution: 0.01,
+		restitution: 0.2,
 		frictionAir: 0.05,
 		frictionAngular: 0.01,
 		friction: 0.5,
@@ -5686,7 +5686,7 @@ class RigidBody extends Node {
 	restitution = 0.5;
 	frictionAir = 0.05;
 	frictionAngular = 0.01;
-	friction = 0.01;
+	friction = 0.1;
 	round = 0;
 	roundQuality = 40;
 
