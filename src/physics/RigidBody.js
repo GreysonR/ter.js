@@ -15,10 +15,10 @@ const decomp = require("poly-decomp");
 class RigidBody extends Node {
 	static defaultOptions = { // not used, but consistent with other classes for documentation
 		mass: 1,
-		restitution: 0.5,
+		restitution: 0.2,
 		frictionAir: 0.05,
 		frictionAngular: 0.01,
-		friction: 0.01,
+		friction: 0.5,
 		round: 0,
 		roundQuality: 40,
 	

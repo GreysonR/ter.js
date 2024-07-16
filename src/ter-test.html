@@ -45,6 +45,7 @@
 
 	var floor = Bodies.Rectangle(1000, 100, new vec(0, 400), {
 		isStatic: true,
+		friction: 1,
 	}).addPolygonRender(Render.app.stage, {
 		// background: "#E0F2E9",
 		border: "#E0F2E9",
@@ -146,24 +147,45 @@
 			console.log(bodyB);
 		});
 	}
+
+	function friction() {
+		// game.DebugRender.enabled.vertices = true;
+		var bodyA = window.bodyA = Bodies.Polygon([new vec(0, 0), new vec(500, 500), new vec(0, 500)], new vec(-200, 300), {
+			friction: 0.2,
+		}).addPolygonRender(Render.app.stage, {
+			border: "#46849A",
+			borderWidth: 3,
+			borderOffset: 0.5,
+			round: 10,
+		}).add();
+		bodyA.add();
+
+		var bodyB = window.bodyB = Bodies.Rectangle(100, 100, new vec(-300, -200), {
+			friction: 0.1,
+			angle: Math.PI / 4,
+		}).addPolygonRender(Render.app.stage, {
+			border: "#D55769",
+			borderWidth: 3,
+			borderOffset: 0.5,
+		}).add();
+	}
 	
 	function memory() {
 		// game.DebugRender.enabled.vertices = true;
 		function test() {
-		for (let i = 0; i < 1; ++i) {
-			let bodyA = Bodies.Rectangle(100, 100, new vec(0, 0), {
-				hasCollisions: true,
-			}).add();
-			setTimeout(() => {
-				bodyA.delete();
-			}, 10);
-		}
+			for (let i = 0; i < 1; ++i) {
+				let bodyA = Bodies.Rectangle(100, 100, new vec(0, 0), {
+					hasCollisions: true,
+				}).add();
+				setTimeout(() => {
+					bodyA.delete();
+				}, 10);
+			}
 		}
 		Render.app.ticker.add(test);
 	}
 
-	// Render.app.ticker.add(memory);
-	window.addEventListener("load", concave);
+	window.addEventListener("load", friction);
 
 	let mouseBody = Bodies.Circle(5, new vec(0, 0), {
 		isStatic: false,
@@ -198,7 +220,6 @@
 	});
 	
 	game.DebugRender.enabled.collisions = true;
-	game.DebugRender.enabled.vertices = true;
 	game.DebugRender.enabled.vertices = true;
 	Engine.Performance.render.enabled = true;
 

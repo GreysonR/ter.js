@@ -5144,7 +5144,7 @@ class Engine {
 
 			// Solve for velocities
 			for (let i = 0; i < this.velocityIterations; i++) {
-				this.solveVelocity(delta);
+				this.solveVelocity();
 			}
 			for (let i = 0; i < this.positionIterations; i++) {
 				this.solvePositions();
@@ -5360,9 +5360,8 @@ class Engine {
 	/**
 	 * Solves velocity constriants on current collision pairs
 	 * Also clears collision pairs that are no longer valid (they haven't collided this frame)
-	 * @param {number} delta - Delta time in seconds
 	 */
-	solveVelocity(delta) {
+	solveVelocity() {
 		let { pairs } = this.World;
 		
 		for (let i in pairs) {
@@ -5418,8 +5417,14 @@ class Engine {
 
 				let share = 1 / (contacts.length * kNormal);
 				
-				const normalImpulse = restitution * normalVelocity * share * 0.5;
-				const tangentImpulse = tangentVelocity * share * 0.3;
+				const normalImpulse = normalVelocity * share * 0.5;
+				let tangentImpulse = tangentVelocity * share * 0.5;
+
+
+				// Coulomb Ff <= μFn
+				if (Math.abs(tangentImpulse) > Math.abs(normalVelocity) * friction) {
+					tangentImpulse = Math.abs(normalImpulse) * Math.sign(tangentImpulse) * friction;
+				}
 
 				// const normalMass = (kNormal > 0 ? 1 / kNormal : 0) / contacts.length;
 				// const bias = -depth / delta * 0;
@@ -5428,7 +5433,7 @@ class Engine {
 				// float bias = separation / delta
 				// float impulse = -cp->normalMass * 1 * (vn + bias) - impulseScale * cp->normalImpulse;
 
-				/**
+				/*
 				// Compute normal impulse
 				float impulse = -cp->normalMass * massScale * (vn + bias) - impulseScale * cp->normalImpulse;
 
@@ -5444,9 +5449,9 @@ class Engine {
 
 				vB = s2MulAdd(vB, mB, P);
 				wB += iB * s2Cross(rB, P);
-				 */
+				*/
 
-				const curImpulse = normal.mult(normalImpulse * restitution).add2(tangent.mult(tangentImpulse * friction));
+				const curImpulse = normal.mult(normalImpulse * restitution).add2(tangent.mult(tangentImpulse));
 				impulse.add2(curImpulse);
 				angImpulseA += offsetA.cross(curImpulse) * bodyA._inverseInertia;
 				angImpulseB += offsetB.cross(curImpulse) * bodyB._inverseInertia;
@@ -5472,14 +5477,11 @@ class Engine {
 		
 		for (let i in pairs) {
 			let pair = pairs[i];
-			if (!pair || this.cleansePair(pair)) continue;
 			let { depth, bodyA: collisionShapeA, bodyB: collisionShapeB, normal } = pair;
 			let bodyA = collisionShapeA.parentNode;
 			let bodyB = collisionShapeB.parentNode;
-			// depth = Math.min(depth, 15);
 			
 			if (bodyA.isSensor || bodyB.isSensor) continue;
-			
 			if (depth < 1) continue;
 
 			let impulse = normal.mult(depth - 1);
@@ -5619,10 +5621,10 @@ const decomp = __webpack_require__(371);
 class RigidBody extends Node {
 	static defaultOptions = { // not used, but consistent with other classes for documentation
 		mass: 1,
-		restitution: 0.5,
+		restitution: 0.01,
 		frictionAir: 0.05,
 		frictionAngular: 0.01,
-		friction: 0.01,
+		friction: 0.5,
 		round: 0,
 		roundQuality: 40,
 	
