@@ -5378,12 +5378,9 @@ class Engine {
 			if (bodyA.isSensor || bodyB.isSensor) continue;
 
 			const restitution = 1 + Math.max(bodyA.restitution, bodyB.restitution);
-			const relVel = bodyB.velocity.sub(bodyA.velocity);
 			const friction = Math.sqrt(bodyA.friction ** 2 + bodyB.friction ** 2);
-
-			if (relVel.dot(normal) < 0) {
-				continue;
-			}
+			const relVel = bodyB.velocity.sub(bodyA.velocity);
+			if (relVel.dot(normal) < 0) continue;
 
 			let impulse = new vec(0, 0);
 			let angImpulseA = 0;
@@ -5417,7 +5414,7 @@ class Engine {
 
 				let share = 1 / (contacts.length * kNormal);
 				
-				const normalImpulse = normalVelocity * share * 0.5;
+				const normalImpulse = normalVelocity * share * 1;
 				let tangentImpulse = tangentVelocity * share * 0.5;
 
 

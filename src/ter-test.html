@@ -54,9 +54,12 @@
 
 
 	function stack() {
-		for (let i = 2; --i >= 0;) {
-			Bodies.Rectangle(50, 50, new vec(300, 0 - i * 50), {
+		let width = 80;
+		for (let i = 12; --i >= 0;) {
+			Bodies.Rectangle(width, width, new vec(300, -200 - i * width), {
 				restitution: 0,
+				friction: 0.4,
+				mass: 1 + i,
 			}).addPolygonRender(Render.app.stage, {
 				// background: "#4B8F8C"
 				border: "#4B8F8C",
@@ -65,8 +68,27 @@
 		}
 	}
 
+	function pyramid() {
+		let width = 80;
+		let height = 5;
+
+		for (let y = 0; y <= height; ++y) {
+			for (let x = height - y; x >= 0; x--) {
+				window["stack" + x + "x" + y] = Bodies.Rectangle(width, width, new vec((-(height - y) / 2 + x) * width, -200 - y * width), {
+					restitution: 0,
+					friction: 1,
+					// mass: 1 + i,
+				}).addPolygonRender(Render.app.stage, {
+					// background: "#4B8F8C"
+					border: "#4B8F8C",
+					borderWidth: 2,
+				}).add();
+			}
+		}
+	}
+
 	function newton() {
-		World.gravity.y = 300;
+		World.gravity.y = 400;
 		let bodyA = Bodies.Rectangle(50, 50, new vec(-300, 0), {
 			restitution: 1,
 			friction: 0,
@@ -88,7 +110,7 @@
 		
 		for (let i = 4; --i >= 0;) {
 			Bodies.Rectangle(50, 50, new vec(-100 + i * 50, 0), {
-				restitution: 0.95,
+				restitution: 0.7,
 				friction: 0.4,
 				frictionAir: 0,
 			}).addPolygonRender(Render.app.stage, {
@@ -100,7 +122,7 @@
 
 		setTimeout(() => {
 			// bodyA.applyForce(new vec(400, 0), 1);
-			bodyB.applyForce(new vec(400, 0), 1);
+			bodyB.applyForce(new vec(500, 0), 1);
 		}, 400);
 	}
 
@@ -185,12 +207,13 @@
 		Render.app.ticker.add(test);
 	}
 
-	window.addEventListener("load", friction);
+	window.addEventListener("load", pyramid);
 
 	let mouseBody = Bodies.Circle(5, new vec(0, 0), {
 		isStatic: false,
 		frictionAir: 1,
 		isSensor: true,
+		mass: 100000000,
 	}).addPolygonRender(Render.app.stage, {
 		background: "#ffffff",
 	}).add();
