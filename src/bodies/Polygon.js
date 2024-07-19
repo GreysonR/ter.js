@@ -30,31 +30,25 @@ class Polygon extends RigidBody {
 
 		this.nodeType = "Polygon";
 	}
-	addPolygonRender(container, options) {
-		let render = new PolygonRender({
-			container: container,
+	addPolygonRender(options, container) {
+		super.addPolygonRender({
 			position: new vec(this.position),
 			vertices: this.vertices,
 			subtype: "Polygon",
 			angle: this.angle,
-			
-			...options
-		});
-		if (this.isAdded()) render.add();
-		this.addChild(render);
+
+			...options,
+		}, container);
 		
 		return this;
 	}
-	addSprite(container, options) {
-		let render = new Sprite({
-			container: container,
+	addSprite(options, container) {
+		super.addSprite({
 			position: new vec(this.position),
 			angle: this.angle,
 			
 			...options
-		});
-		if (this.isAdded()) render.add();
-		this.addChild(render);
+		}, container);
 
 		return this;
 	}

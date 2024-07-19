@@ -46,12 +46,22 @@
 	var floor = Bodies.Rectangle(1000, 100, new vec(0, 400), {
 		isStatic: true,
 		friction: 1,
-	}).addPolygonRender(Render.app.stage, {
-		// background: "#E0F2E9",
+		restitution: 0,
+	}).addPolygonRender({
+		background: "#E0F2E9",
 		border: "#E0F2E9",
 		borderWidth: 2,
 	}).add();
 
+	function sprite() {
+		let width = 150;
+		Bodies.RegularPolygon(width/2, 7, new vec(0, -200), {
+			friction: 0.4,
+		}).addSprite({
+			src: "test.png",
+			scale: new vec(1.5, 1),
+		}).add();
+	}
 
 	function stack() {
 		let width = 80;
@@ -60,7 +70,7 @@
 				restitution: 0,
 				friction: 0.4,
 				mass: 1 + i,
-			}).addPolygonRender(Render.app.stage, {
+			}).addPolygonRender({
 				// background: "#4B8F8C"
 				border: "#4B8F8C",
 				borderWidth: 2,
@@ -78,7 +88,7 @@
 					restitution: 0,
 					friction: 1,
 					// mass: 1 + i,
-				}).addPolygonRender(Render.app.stage, {
+				}).addPolygonRender({
 					// background: "#4B8F8C"
 					border: "#4B8F8C",
 					borderWidth: 2,
@@ -93,7 +103,7 @@
 			restitution: 1,
 			friction: 0,
 			frictionAir: 0,
-		}).addPolygonRender(Render.app.stage, {
+		}).addPolygonRender({
 			// background: "#4B8F8C"
 			border: "#4B8F8C",
 			borderWidth: 2,
@@ -102,7 +112,7 @@
 			restitution: 1,
 			friction: 0,
 			frictionAir: 0,
-		}).addPolygonRender(Render.app.stage, {
+		}).addPolygonRender({
 			// background: "#4B8F8C"
 			border: "#4B8F8C",
 			borderWidth: 2,
@@ -113,7 +123,7 @@
 				restitution: 0.7,
 				friction: 0.4,
 				frictionAir: 0,
-			}).addPolygonRender(Render.app.stage, {
+			}).addPolygonRender({
 				// background: "#4B8F8C"
 				border: "#4B8F8C",
 				borderWidth: 2,
@@ -135,7 +145,7 @@
 				let body = window[`body${x}-${y}`] = Bodies.Rectangle(50, 50, new vec(300 + 50 * (x - width/2), 50 * (y  - height/2) - 300), {
 					restitution: 0.2,
 					friction: 1,
-				}).addPolygonRender(Render.app.stage, {
+				}).addPolygonRender({
 					// background: "#4B8F8C"
 					border: "#46849A",
 					borderWidth: 2,
@@ -150,7 +160,7 @@
 		var bodyA = window.bodyA = Bodies.Polygon([new vec(0, 0), new vec(100, 0), new vec(50, 50), new vec(100, 100), new vec(0, 100)], new vec(220, 100), {
 			hasCollisions: true,
 			angle: Math.PI/2,
-		}).addPolygonRender(Render.app.stage, {
+		}).addPolygonRender({
 			border: "#46849A",
 			borderWidth: 3,
 			borderOffset: 0.5,
@@ -159,7 +169,7 @@
 		bodyA.add();
 
 		var bodyB = window.bodyB = Bodies.Polygon([new vec(0, 0), new vec(50, -50), new vec(100, 0), new vec(100, 100), new vec(0, 100)], new vec(200, 300), {
-		}).addPolygonRender(Render.app.stage, {
+		}).addPolygonRender({
 			border: "#D55769",
 			borderWidth: 3,
 			borderOffset: 0.5,
@@ -172,9 +182,10 @@
 
 	function friction() {
 		// game.DebugRender.enabled.vertices = true;
-		var bodyA = window.bodyA = Bodies.Polygon([new vec(0, 0), new vec(500, 500), new vec(0, 500)], new vec(-200, 300), {
-			friction: 0.1,
-		}).addPolygonRender(Render.app.stage, {
+		var bodyA = window.bodyA = Bodies.Polygon([new vec(0, 0), new vec(500, 500), new vec(0, 500)], new vec(-250, 180), {
+			friction: 0.33,
+			isStatic: true,
+		}).addPolygonRender({
 			border: "#46849A",
 			borderWidth: 3,
 			borderOffset: 0.5,
@@ -185,7 +196,7 @@
 		var bodyB = window.bodyB = Bodies.Rectangle(100, 100, new vec(-300, -200), {
 			friction: 0.1,
 			angle: Math.PI / 4,
-		}).addPolygonRender(Render.app.stage, {
+		}).addPolygonRender({
 			border: "#D55769",
 			borderWidth: 3,
 			borderOffset: 0.5,
@@ -207,14 +218,14 @@
 		Render.app.ticker.add(test);
 	}
 
-	window.addEventListener("load", pyramid);
+	window.addEventListener("load", friction);
 
 	let mouseBody = Bodies.Circle(5, new vec(0, 0), {
 		isStatic: false,
 		frictionAir: 1,
 		isSensor: true,
 		mass: 100000000,
-	}).addPolygonRender(Render.app.stage, {
+	}).addPolygonRender({
 		background: "#ffffff",
 	}).add();
 	window.addEventListener("mousemove", event => {
@@ -228,14 +239,14 @@
 			isStatic: false,
 			frictionAir: 1,
 			isSensor: true,
-		}).addPolygonRender(Render.app.stage, {
+		}).addPolygonRender({
 			background: "#ffffff01",
 		}).add();
 		let anchorB = Bodies.Rectangle(5,5, camera.screenPtToGame(new vec(window.innerWidth, window.innerHeight)), {
 			isStatic: false,
 			frictionAir: 1,
 			isSensor: true,
-		}).addPolygonRender(Render.app.stage, {
+		}).addPolygonRender({
 			background: "#ffffff01",
 		}).add();
 

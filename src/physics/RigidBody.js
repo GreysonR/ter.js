@@ -15,7 +15,7 @@ const decomp = require("poly-decomp");
 class RigidBody extends Node {
 	static defaultOptions = { // not used, but consistent with other classes for documentation
 		mass: 1,
-		restitution: 0.2,
+		restitution: 4,
 		frictionAir: 0.05,
 		frictionAngular: 0.01,
 		friction: 0.5,
@@ -77,7 +77,7 @@ class RigidBody extends Node {
 	vertices = [];
 
 	mass = 1;
-	restitution = 0.5;
+	restitution = 0.1;
 	frictionAir = 0.05;
 	frictionAngular = 0.01;
 	friction = 0.1;
@@ -94,19 +94,19 @@ class RigidBody extends Node {
 
 	/**
 	 * Creates a new RigidBody
-	 * @param {Engine} Engine - Engine the body should be simulated in
+	 * @param {Game} Game - Game object the body should be simulated in; If you're creating a RigidBody from a game object, like `game.Bodies.Rectangle(...)`, then you **must omit** this parameter.
 	 * @param {Array} vertices - Array of `vec` representing the body's vertices
 	 * @param {vec} position - Position of the body
 	 * @param {Object} options - RigidBody options
 	 * @example
 	 * // Includes all RigidBody options
-	 * new RigidBody(Engine, [new vec(0, 0), new vec(10, 0), new vec(10, 10), new vec(0, 10)], new vec(0, 0), {
+	 * new RigidBody(game, [new vec(0, 0), new vec(10, 0), new vec(10, 10), new vec(0, 10)], new vec(0, 0), {
 	 * 	mass: 1,
-	 * 	restitution: 0.5,
+	 * 	restitution: 0.1,
 	 * 
 	 * 	frictionAir: 0.05,
 	 * 	frictionAngular: 0.01,
-	 * 	friction: 0.01,
+	 * 	friction: 0.1,
 	 * 
 	 * 	round: 0,
 	 * 	roundQuality: 40,
@@ -120,9 +120,11 @@ class RigidBody extends Node {
 	 * 	},
 	 * });
 	 */
-	constructor(Engine, vertices, position, options = {}) {
+	constructor(Game, vertices, position, options = {}) {
 		super();
 		position = new vec(position);
+		let { Engine } = Game;
+		if (!this.Game) this.Game = Game;
 		if (!this.Engine) this.Engine = Engine;
 		
 		// Shallow copy World
@@ -216,8 +218,8 @@ class RigidBody extends Node {
 
 	/**
 	 * Adds a polygon render to body
-	 * @param {PIXI.Container} container - Container polygon render is added to
 	 * @param {Object} options - (Polygon Render)[./PolygonRender.html] options
+	 * @param {PIXI.Container} [container=this.Game.Render.app.stage] - Container polygon render is added to. Defaults to the main render container of the game the body is in.
 	 * @return {RigidBody} `this`
 	 * @example
 	 * body.addPolygonRender(Render.app.stage, {
@@ -242,7 +244,7 @@ class RigidBody extends Node {
 	 * 	radius: 50,
 	 * })
 	 */
-	addPolygonRender(container, options) {
+	addPolygonRender(options, container = this.Game.Render.app.stage) {
 		let render = new PolygonRender({
 			container: container,
 			position: new vec(this.position),
@@ -260,8 +262,8 @@ class RigidBody extends Node {
 
 	/**
 	 * Adds a sprite to body
-	 * @param {PIXI.Container} container - Container the Sprite is added to
 	 * @param {Object} options - (Sprite)[./Sprite.html] options
+	 * @param {PIXI.Container} [container=this.Game.Render.app.stage] - Container sprite is added to. Defaults to the main render container of the game the body is in.
 	 * @return {RigidBody} `this`
 	 * @example
 	 * body.addSprite(Render.app.stage, {
@@ -276,7 +278,7 @@ class RigidBody extends Node {
 	 * 	height: undefined, // number
 	 * });
 	 */
-	addSprite(container, options) {
+	addSprite(options, container = this.Game.Render.app.stage) {
 		let render = new Sprite({
 			container: container,
 			position: new vec(this.position),

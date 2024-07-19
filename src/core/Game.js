@@ -41,11 +41,7 @@ class Game {
 		this.Engine = new Engine(this.World, options.Engine);
 		this.Render = new Render(options.Render);
 		this.Ticker = new Ticker(this, options.Ticker);
-		this.Bodies = Bodies.createBodyFactory(this.Engine);
-		
-		setTimeout(() => {
-			window.scrollTo(0, 0);
-		}, 0);
+		this.Bodies = new Bodies(this);
 	}
 	/**
 	 * Creates a debug rendering context as `this.DebugRender`. See [DebugRender](./DebugRender.html) for more information.

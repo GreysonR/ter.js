@@ -364,7 +364,7 @@ class Engine {
 
 				let share = 1 / (contacts.length * kNormal);
 				
-				const normalImpulse = normalVelocity * share * 1;
+				const normalImpulse = normalVelocity * share * 0.7; // 2.56 is better for a restitution 1 bouncing box, but causes instabilities in most cases
 				let tangentImpulse = tangentVelocity * share * 0.5;
 
 

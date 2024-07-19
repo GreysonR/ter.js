@@ -34,34 +34,28 @@ class Circle extends RigidBody {
 		this.radius = radius;
 		this.nodeType = "Circle";
 	}
-	addPolygonRender(container, options) {
-		let render = new PolygonRender({
-			container: container,
+	addPolygonRender(options, container) {
+		super.addPolygonRender({
 			position: new vec(this.position),
 			vertices: this.vertices,
 			subtype: "Circle",
 			radius: this.radius,
 			angle: this.angle,
-			
-			...options
-		});
-		if (this.isAdded()) render.add();
-		this.addChild(render);
+
+			...options,
+		}, container);
 		
 		return this;
 	}
-	addSprite(container, options) {
-		let render = new Sprite({
-			container: container,
+	addSprite(options, container) {
+		super.addSprite({
 			position: new vec(this.position),
 			width:  this.radius * 2,
 			height: this.radius * 2,
 			angle: this.angle,
 			
 			...options
-		});
-		if (this.isAdded()) render.add();
-		this.addChild(render);
+		}, container);
 
 		return this;
 	}

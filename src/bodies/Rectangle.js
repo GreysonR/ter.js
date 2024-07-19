@@ -32,35 +32,28 @@ class Rectangle extends RigidBody {
 		this.height = height;
 		this.nodeType = "Rectangle";
 	}
-	addPolygonRender(container, options) {
-		let render = new PolygonRender({
-			container: container,
+	addPolygonRender(options, container) {
+		super.addPolygonRender({
 			position: new vec(this.position),
 			vertices: this.vertices,
 			subtype: "Rectangle",
 			width: this.width,
 			height: this.height,
 			angle: this.angle,
-			angle: this.angle,
-			
-			...options
-		});
-		if (this.isAdded()) render.add();
-		this.addChild(render);
+
+			...options,
+		}, container);
 		
 		return this;
 	}
-	addSprite(container, options) {
-		let render = new Sprite({
-			container: container,
+	addSprite(options, container) {
+		super.addSprite({
 			position: new vec(this.position),
 			width: this.width,
 			height: this.height,
 			
 			...options
-		});
-		if (this.isAdded()) render.add();
-		this.addChild(render);
+		}, container);
 
 		return this;
 	}

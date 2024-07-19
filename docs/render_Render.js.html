@@ -59,11 +59,14 @@ class Render {
 		let scale = PIXI.settings.RESOLUTION = this.pixelRatio = pixelRatio;
 		PIXI.Filter.defaultResolution = 0;
 		PIXI.Container.defaultSortableChildren = true
-		
+
+		// Parse background color
+		background = Common.parseColor(background);
+
 		// Create PIXI app
 		let app = this.app = new PIXI.Application({
-			background: background ?? 0x0,
-			backgroundAlpha: (background &amp;&amp; background != "transparent") ? 1 : 0,
+			background: background[0],
+			backgroundAlpha: background[1],
 			resizeTo: resizeTo ?? window,
 			antialias: antialias ?? true,
 		});

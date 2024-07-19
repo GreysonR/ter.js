@@ -91,8 +91,8 @@ class Sprite extends Node {
 
 		if (!this.loaded) return;
 		let { sprite } = this;
-		sprite.scale.x = this.scale.x;
-		sprite.scale.y = this.scale.y;
+		sprite.scale.set(this.scale.x, this.scale.y);
+		this.setSize();
 	}
 
 	/**
@@ -106,8 +106,8 @@ class Sprite extends Node {
 
 		if (!this.loaded) return;
 		let { sprite } = this;
-		sprite.width =  this.width;
-		sprite.height = this.height;
+		sprite.width =  this.width * this.scale.x;
+		sprite.height = this.height * this.scale.y;
 	}
 
 	/**
