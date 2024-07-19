@@ -100,7 +100,7 @@ class Animation {
 	/**
 	 * 
 	 * @param {object} options - Animation options
-	 * @param {number} [options.duration] - Duration of the animation
+	 * @param {number} [options.duration] - Duration of the animation in seconds
 	 * @param {function} [options.curve] - Curve function that takes a time between [0, 1] and returns a value between [0, 1]
 	 * @param {number} [options.delay] - The amount of delay before the animation starts
 	 * @param {function} [options.onstop] - Function that is fired when the animation is forcibly stopped
