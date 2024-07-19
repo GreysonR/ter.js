@@ -514,18 +514,4 @@ BehaviorTree.registerType(Repeat);
 BehaviorTree.registerType(RepeatUntilFail);
 BehaviorTree.registerType(Succeeder);
 BehaviorTree.registerType(Leaf);
-module.exports = {
-	BehaviorTree: BehaviorTree,
-	Leaf: Leaf,
-
-	Composite: Composite,
-	Selector: Selector,
-	Sequence: Sequence,
-
-	Decorator: Decorator,
-	Inverter: Inverter,
-	Repeat: Repeat,
-	RepeatUntilFail: RepeatUntilFail,
-	Succeeder: Succeeder,
-
-}
+module.exports = BehaviorTree;
