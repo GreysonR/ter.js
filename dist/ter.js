@@ -1731,14 +1731,14 @@ class Circle extends RigidBody {
 
 	/**
 	 * 
-	 * @param {Engine} Engine - Engine to add to
+	 * @param {Game} Game - Game object the body should be simulated in; If you're creating a RigidBody from a [Game](./Game.html) object, like `game.Bodies.Rectangle(...)`, then you **must omit** this parameter.
 	 * @param {number} radius - Radius of Circle
 	 * @param {vec} position - Position of body
-	 * @param {object} options - (RigidBody)[./RigidBody.html] options
+	 * @param {object} options - [RigidBody](./RigidBody.html) options
 	 * @param {number} [options.verticeCount] - Number of vertices in the circle
 	 */
-	constructor(Engine, radius, position, options = {}) {
-		super(Engine, Circle.createVertices(radius, options.verticeCount), position, options);
+	constructor(Game, radius, position, options = {}) {
+		super(Game, Circle.createVertices(radius, options.verticeCount), position, options);
 
 		this.radius = radius;
 		this.nodeType = "Circle";
@@ -1799,13 +1799,13 @@ class Polygon extends RigidBody {
 	
 	/**
 	 * 
-	 * @param {Engine} Engine - Engine to add to
+	 * @param {Game} Game - Game object the body should be simulated in; If you're creating a RigidBody from a [Game](./Game.html) object, like `game.Bodies.Rectangle(...)`, then you **must omit** this parameter.
 	 * @param {Array<vec>} vertices - Vertices of polygon
 	 * @param {vec} position - Position of body
-	 * @param {object} options - (RigidBody)[./RigidBody.html] options
+	 * @param {object} options - [RigidBody](./RigidBody.html) options
 	 */
-	constructor(Engine, vertices, position, options = {}) {
-		super(Engine, vertices, position, options);
+	constructor(Game, vertices, position, options = {}) {
+		super(Game, vertices, position, options);
 
 		this.nodeType = "Polygon";
 	}
@@ -1861,14 +1861,14 @@ class Rectangle extends RigidBody {
 
 	/**
 	 * 
-	 * @param {Engine} Engine - Engine to add to
+	 * @param {Game} Game - Game object the body should be simulated in; If you're creating a RigidBody from a [Game](./Game.html) object, like `game.Bodies.Rectangle(...)`, then you **must omit** this parameter.
 	 * @param {number} width - Width of rectangle
 	 * @param {number} height - Height of rectangle
 	 * @param {vec} position - Position of body
-	 * @param {object} options - (RigidBody)[./RigidBody.html] options
+	 * @param {object} options - [RigidBody](./RigidBody.html) options
 	 */
-	constructor(Engine, width, height, position, options = {}) {
-		super(Engine, Rectangle.createVertices(width, height), position, options);
+	constructor(Game, width, height, position, options = {}) {
+		super(Game, Rectangle.createVertices(width, height), position, options);
 
 		this.width = width;
 		this.height = height;
@@ -1930,14 +1930,14 @@ class RegularPolygon extends RigidBody {
 
 	/**
 	 * 
-	 * @param {Engine} Engine - Engine to add to
+	 * @param {Game} Game - Game object the body should be simulated in; If you're creating a RigidBody from a [Game](./Game.html) object, like `game.Bodies.Rectangle(...)`, then you **must omit** this parameter.
 	 * @param {number} radius - Radius of RegularPolygon
 	 * @param {number} verticeCount - Number of vertices and sides of the polygon
 	 * @param {vec} position - Position of body
-	 * @param {object} options - (RigidBody)[./RigidBody.html] options
+	 * @param {object} options - [RigidBody](./RigidBody.html) options
 	 */
-	constructor(Engine, radius, verticeCount, position, options = {}) {
-		super(Engine, RegularPolygon.createVertices(radius, verticeCount), position, options);
+	constructor(Game, radius, verticeCount, position, options = {}) {
+		super(Game, RegularPolygon.createVertices(radius, verticeCount), position, options);
 
 		this.radius = radius;
 		this.nodeType = "RegularPolygon";
@@ -5777,7 +5777,7 @@ class RigidBody extends Node {
 
 	/**
 	 * Adds a polygon render to body
-	 * @param {Object} options - (Polygon Render)[./PolygonRender.html] options
+	 * @param {Object} options - [Polygon Render](./PolygonRender.html) options
 	 * @param {PIXI.Container} [container=this.Game.Render.app.stage] - Container polygon render is added to. Defaults to the main render container of the game the body is in.
 	 * @return {RigidBody} `this`
 	 * @example
@@ -5821,7 +5821,7 @@ class RigidBody extends Node {
 
 	/**
 	 * Adds a sprite to body
-	 * @param {Object} options - (Sprite)[./Sprite.html] options
+	 * @param {Object} options - [Sprite](./Sprite.html) options
 	 * @param {PIXI.Container} [container=this.Game.Render.app.stage] - Container sprite is added to. Defaults to the main render container of the game the body is in.
 	 * @return {RigidBody} `this`
 	 * @example
@@ -5854,7 +5854,7 @@ class RigidBody extends Node {
 	/**
 	 * Adds a new Spritesheet to body
 	 * @param {PIXI.Container} container - Container the Spritesheet is added to
-	 * @param {Object} options - (Spritesheet)[./Spritesheet.html] options
+	 * @param {Object} options - [Spritesheet](./Spritesheet.html) options
 	 * @return {RigidBody} `this`
 	 */
 	addSpritesheet(container, options) {
@@ -6388,7 +6388,7 @@ class Camera {
 	 * 
 	 * @param {number} [intensity] - How much the camera shakes
 	 * @param {number} [duration] - How long the camera shakes, in seconds
-	 * @param {function} [intensityCurve] - Animation curve, see (Animation)[./Animation.html] for ease options
+	 * @param {function} [intensityCurve] - Animation curve, see [Animation](./Animation.html) for ease options
 	 * @param {vec|undefined} direction - Direction of the camera shake. Shakes in all directions if left undefined
 	 */
 	async shake(intensity = 30, duration = 1, intensityCurve = Animation.ease.out.cubic, direction = undefined) {
@@ -7867,6 +7867,10 @@ const Node = __webpack_require__(593);
 const Common = __webpack_require__(929);
 const vec = __webpack_require__(811);
 
+/**
+ * A spritesheet with animation support
+ * @extends Node
+ */
 class Spritesheet extends Node {
 	static all = new Set();
 	static defaultOptions = {
@@ -7989,8 +7993,8 @@ class Spritesheet extends Node {
 
 		if (!this.loaded) return;
 		let { sprite } = this;
-		sprite.scale.x = this.scale.x;
-		sprite.scale.y = this.scale.y;
+		sprite.scale.set(this.scale.x, this.scale.y);
+		this.setSize();
 	}
 
 	/**
@@ -8004,8 +8008,8 @@ class Spritesheet extends Node {
 
 		if (!this.loaded) return;
 		let { sprite } = this;
-		sprite.width =  this.width;
-		sprite.height = this.height;
+		sprite.width =  this.width * this.scale.x;
+		sprite.height = this.height * this.scale.y;
 	}
 
 	/**

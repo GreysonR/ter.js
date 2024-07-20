@@ -20,14 +20,14 @@ class Circle extends RigidBody {
 
 	/**
 	 * 
-	 * @param {Engine} Engine - Engine to add to
+	 * @param {Game} Game - Game object the body should be simulated in; If you're creating a RigidBody from a [Game](./Game.html) object, like `game.Bodies.Rectangle(...)`, then you **must omit** this parameter.
 	 * @param {number} radius - Radius of Circle
 	 * @param {vec} position - Position of body
-	 * @param {object} options - (RigidBody)[./RigidBody.html] options
+	 * @param {object} options - [RigidBody](./RigidBody.html) options
 	 * @param {number} [options.verticeCount] - Number of vertices in the circle
 	 */
-	constructor(Engine, radius, position, options = {}) {
-		super(Engine, Circle.createVertices(radius, options.verticeCount), position, options);
+	constructor(Game, radius, position, options = {}) {
+		super(Game, Circle.createVertices(radius, options.verticeCount), position, options);
 
 		this.radius = radius;
 		this.nodeType = "Circle";

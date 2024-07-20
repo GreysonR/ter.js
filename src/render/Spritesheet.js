@@ -2,6 +2,10 @@ const Node = require("../node/Node");
 const Common = require("../core/Common.js");
 const vec = require("../geometry/vec");
 
+/**
+ * A spritesheet with animation support
+ * @extends Node
+ */
 class Spritesheet extends Node {
 	static all = new Set();
 	static defaultOptions = {
@@ -124,8 +128,8 @@ class Spritesheet extends Node {
 
 		if (!this.loaded) return;
 		let { sprite } = this;
-		sprite.scale.x = this.scale.x;
-		sprite.scale.y = this.scale.y;
+		sprite.scale.set(this.scale.x, this.scale.y);
+		this.setSize();
 	}
 
 	/**
@@ -139,8 +143,8 @@ class Spritesheet extends Node {
 
 		if (!this.loaded) return;
 		let { sprite } = this;
-		sprite.width =  this.width;
-		sprite.height = this.height;
+		sprite.width =  this.width * this.scale.x;
+		sprite.height = this.height * this.scale.y;
 	}
 
 	/**

@@ -20,13 +20,13 @@ class Polygon extends RigidBody {
 	
 	/**
 	 * 
-	 * @param {Engine} Engine - Engine to add to
+	 * @param {Game} Game - Game object the body should be simulated in; If you're creating a RigidBody from a [Game](./Game.html) object, like `game.Bodies.Rectangle(...)`, then you **must omit** this parameter.
 	 * @param {Array<vec>} vertices - Vertices of polygon
 	 * @param {vec} position - Position of body
-	 * @param {object} options - (RigidBody)[./RigidBody.html] options
+	 * @param {object} options - [RigidBody](./RigidBody.html) options
 	 */
-	constructor(Engine, vertices, position, options = {}) {
-		super(Engine, vertices, position, options);
+	constructor(Game, vertices, position, options = {}) {
+		super(Game, vertices, position, options);
 
 		this.nodeType = "Polygon";
 	}

@@ -218,7 +218,7 @@ class RigidBody extends Node {
 
 	/**
 	 * Adds a polygon render to body
-	 * @param {Object} options - (Polygon Render)[./PolygonRender.html] options
+	 * @param {Object} options - [Polygon Render](./PolygonRender.html) options
 	 * @param {PIXI.Container} [container=this.Game.Render.app.stage] - Container polygon render is added to. Defaults to the main render container of the game the body is in.
 	 * @return {RigidBody} `this`
 	 * @example
@@ -262,7 +262,7 @@ class RigidBody extends Node {
 
 	/**
 	 * Adds a sprite to body
-	 * @param {Object} options - (Sprite)[./Sprite.html] options
+	 * @param {Object} options - [Sprite](./Sprite.html) options
 	 * @param {PIXI.Container} [container=this.Game.Render.app.stage] - Container sprite is added to. Defaults to the main render container of the game the body is in.
 	 * @return {RigidBody} `this`
 	 * @example
@@ -295,7 +295,7 @@ class RigidBody extends Node {
 	/**
 	 * Adds a new Spritesheet to body
 	 * @param {PIXI.Container} container - Container the Spritesheet is added to
-	 * @param {Object} options - (Spritesheet)[./Spritesheet.html] options
+	 * @param {Object} options - [Spritesheet](./Spritesheet.html) options
 	 * @return {RigidBody} `this`
 	 */
 	addSpritesheet(container, options) {

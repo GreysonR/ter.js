@@ -19,14 +19,14 @@ class Rectangle extends RigidBody {
 
 	/**
 	 * 
-	 * @param {Engine} Engine - Engine to add to
+	 * @param {Game} Game - Game object the body should be simulated in; If you're creating a RigidBody from a [Game](./Game.html) object, like `game.Bodies.Rectangle(...)`, then you **must omit** this parameter.
 	 * @param {number} width - Width of rectangle
 	 * @param {number} height - Height of rectangle
 	 * @param {vec} position - Position of body
-	 * @param {object} options - (RigidBody)[./RigidBody.html] options
+	 * @param {object} options - [RigidBody](./RigidBody.html) options
 	 */
-	constructor(Engine, width, height, position, options = {}) {
-		super(Engine, Rectangle.createVertices(width, height), position, options);
+	constructor(Game, width, height, position, options = {}) {
+		super(Game, Rectangle.createVertices(width, height), position, options);
 
 		this.width = width;
 		this.height = height;

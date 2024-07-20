@@ -59,7 +59,7 @@ class Camera {
 	 * 
 	 * @param {number} [intensity] - How much the camera shakes
 	 * @param {number} [duration] - How long the camera shakes, in seconds
-	 * @param {function} [intensityCurve] - Animation curve, see (Animation)[./Animation.html] for ease options
+	 * @param {function} [intensityCurve] - Animation curve, see [Animation](./Animation.html) for ease options
 	 * @param {vec|undefined} direction - Direction of the camera shake. Shakes in all directions if left undefined
 	 */
 	async shake(intensity = 30, duration = 1, intensityCurve = Animation.ease.out.cubic, direction = undefined) {

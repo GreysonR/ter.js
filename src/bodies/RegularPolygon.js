@@ -20,14 +20,14 @@ class RegularPolygon extends RigidBody {
 
 	/**
 	 * 
-	 * @param {Engine} Engine - Engine to add to
+	 * @param {Game} Game - Game object the body should be simulated in; If you're creating a RigidBody from a [Game](./Game.html) object, like `game.Bodies.Rectangle(...)`, then you **must omit** this parameter.
 	 * @param {number} radius - Radius of RegularPolygon
 	 * @param {number} verticeCount - Number of vertices and sides of the polygon
 	 * @param {vec} position - Position of body
-	 * @param {object} options - (RigidBody)[./RigidBody.html] options
+	 * @param {object} options - [RigidBody](./RigidBody.html) options
 	 */
-	constructor(Engine, radius, verticeCount, position, options = {}) {
-		super(Engine, RegularPolygon.createVertices(radius, verticeCount), position, options);
+	constructor(Game, radius, verticeCount, position, options = {}) {
+		super(Game, RegularPolygon.createVertices(radius, verticeCount), position, options);
 
 		this.radius = radius;
 		this.nodeType = "RegularPolygon";
