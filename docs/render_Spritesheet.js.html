@@ -27,6 +27,29 @@ class Spritesheet extends Node {
 		height: undefined,
 	}
 
+	
+	/**
+	 * Creates a new Spritesheet
+	 * @param {Object} options - Spritesheet options
+	 * @example
+	 * // Includes all Spritesheet options
+	 * new Spritesheet({
+	 * 	container: game.Render.app.stage, // PIXI Container
+	 * 	layer: 0,
+	 * 	position: new vec(0, 0),
+	 * 	angle: 0,
+	 * 
+	 * 	visible: true,
+	 * 	alpha: 1,
+	 * 	speed: 1 / 6,
+	 * 	src: "",
+	 * 	animation: "",
+	 * 	
+	 * 	scale: new vec(1, 1),
+	 * 	width:  undefined, // Number | undefined
+	 * 	height: undefined, // Number | undefined
+	 * });
+	 */
 	constructor(options) {
 		super();
 		let defaults = { ...Spritesheet.defaultOptions };
