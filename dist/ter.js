@@ -5370,7 +5370,7 @@ class Engine {
 
 				let share = 1 / (contacts.length * kNormal);
 				
-				const normalImpulse = normalVelocity * share * 0.7; // 2.56 is better for a restitution 1 bouncing box, but causes instabilities in most cases
+				const normalImpulse = normalVelocity * share * 0.95;
 				let tangentImpulse = tangentVelocity * share * 0.5;
 
 
@@ -7287,11 +7287,10 @@ class PolygonRender extends Node {
 		delete: [],
 		add: [],
 		load: [],
-		render: [],
 	}
 	/**
 	 * Binds a function to an event
-	 * @param {("beforeTick"|"afterTick")} event - Name of the event
+	 * @param {("load"|"add"|"delete")} event - Name of the event
 	 * @param {function} callback - Function called when event fires
 	 */
 	on(event, callback) {
@@ -7304,7 +7303,7 @@ class PolygonRender extends Node {
 	}
 	/**
 	 * Unbinds a function from an event
-	 * @param {("beforeTick"|"afterTick")} event - Name of the event
+	 * @param {("load"|"add"|"delete")} event - Name of the event
 	 * @param {function} callback - Function bound to event
 	 */
 	off(event, callback) {
@@ -7315,7 +7314,7 @@ class PolygonRender extends Node {
 	}
 	/**
 	 * Fires an event
-	 * @param {("beforeTick"|"afterTick")} event - Name of the event
+	 * @param {("load"|"add"|"delete")} event - Name of the event
 	 */
 	trigger(event) {
 		// Trigger each event
@@ -7820,7 +7819,7 @@ class Sprite extends Node {
 	}
 	/**
 	 * Binds a function to an event
-	 * @param {("beforeTick"|"afterTick")} event - Name of the event
+	 * @param {("load"|"add"|"delete")} event - Name of the event
 	 * @param {function} callback - Function called when event fires
 	 */
 	on(event, callback) {
@@ -7833,7 +7832,7 @@ class Sprite extends Node {
 	}
 	/**
 	 * Unbinds a function from an event
-	 * @param {("beforeTick"|"afterTick")} event - Name of the event
+	 * @param {("load"|"add"|"delete")} event - Name of the event
 	 * @param {function} callback - Function bound to event
 	 */
 	off(event, callback) {
@@ -7844,7 +7843,7 @@ class Sprite extends Node {
 	}
 	/**
 	 * Fires an event
-	 * @param {("beforeTick"|"afterTick")} event - Name of the event
+	 * @param {("load"|"add"|"delete")} event - Name of the event
 	 */
 	trigger(event) {
 		// Trigger each event
@@ -8095,7 +8094,7 @@ class Spritesheet extends Node {
 	}
 	/**
 	 * Binds a function to an event
-	 * @param {("beforeTick"|"afterTick")} event - Name of the event
+	 * @param {("load"|"add"|"delete")} event - Name of the event
 	 * @param {function} callback - Function called when event fires
 	 */
 	on(event, callback) {
@@ -8108,7 +8107,7 @@ class Spritesheet extends Node {
 	}
 	/**
 	 * Unbinds a function from an event
-	 * @param {("beforeTick"|"afterTick")} event - Name of the event
+	 * @param {("load"|"add"|"delete")} event - Name of the event
 	 * @param {function} callback - Function bound to event
 	 */
 	off(event, callback) {
@@ -8119,7 +8118,7 @@ class Spritesheet extends Node {
 	}
 	/**
 	 * Fires an event
-	 * @param {("beforeTick"|"afterTick")} event - Name of the event
+	 * @param {("load"|"add"|"delete")} event - Name of the event
 	 */
 	trigger(event) {
 		// Trigger each event

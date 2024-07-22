@@ -180,11 +180,10 @@ class PolygonRender extends Node {
 		delete: [],
 		add: [],
 		load: [],
-		render: [],
 	}
 	/**
 	 * Binds a function to an event
-	 * @param {("beforeTick"|"afterTick")} event - Name of the event
+	 * @param {("load"|"add"|"delete")} event - Name of the event
 	 * @param {function} callback - Function called when event fires
 	 */
 	on(event, callback) {
@@ -197,7 +196,7 @@ class PolygonRender extends Node {
 	}
 	/**
 	 * Unbinds a function from an event
-	 * @param {("beforeTick"|"afterTick")} event - Name of the event
+	 * @param {("load"|"add"|"delete")} event - Name of the event
 	 * @param {function} callback - Function bound to event
 	 */
 	off(event, callback) {
@@ -208,7 +207,7 @@ class PolygonRender extends Node {
 	}
 	/**
 	 * Fires an event
-	 * @param {("beforeTick"|"afterTick")} event - Name of the event
+	 * @param {("load"|"add"|"delete")} event - Name of the event
 	 */
 	trigger(event) {
 		// Trigger each event

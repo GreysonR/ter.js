@@ -120,7 +120,7 @@
 		
 		for (let i = 4; --i >= 0;) {
 			Bodies.Rectangle(50, 50, new vec(-100 + i * 50, 0), {
-				restitution: 0.7,
+				restitution: 1,
 				friction: 0.4,
 				frictionAir: 0,
 			}).addPolygonRender({
@@ -132,8 +132,8 @@
 
 		setTimeout(() => {
 			// bodyA.applyForce(new vec(400, 0), 1);
-			bodyB.applyForce(new vec(500, 0), 1);
-		}, 400);
+			bodyB.applyForce(new vec(1000, 0), 1);
+		}, 200);
 	}
 
 	function multistack() {
@@ -183,8 +183,9 @@
 	function friction() {
 		// game.DebugRender.enabled.vertices = true;
 		var bodyA = window.bodyA = Bodies.Polygon([new vec(0, 0), new vec(500, 500), new vec(0, 500)], new vec(-250, 180), {
-			friction: 0.33,
+			friction: 0.5,
 			isStatic: true,
+			restitution: 0,
 		}).addPolygonRender({
 			border: "#46849A",
 			borderWidth: 3,
@@ -196,6 +197,7 @@
 		var bodyB = window.bodyB = Bodies.Rectangle(100, 100, new vec(-300, -200), {
 			friction: 0.1,
 			angle: Math.PI / 4,
+			restitution: 0,
 		}).addPolygonRender({
 			border: "#D55769",
 			borderWidth: 3,
@@ -218,7 +220,7 @@
 		Render.app.ticker.add(test);
 	}
 
-	window.addEventListener("load", friction);
+	window.addEventListener("load", pyramid);
 
 	let mouseBody = Bodies.Circle(5, new vec(0, 0), {
 		isStatic: false,
