@@ -366,8 +366,8 @@ class Engine {
 
 				let share = 1 / (contacts.length * kNormal);
 				
-				const normalImpulse = normalVelocity * share * 0.95;
-				let tangentImpulse = tangentVelocity * share * 0.5;
+				const normalImpulse = normalVelocity * share * 0.8;
+				let tangentImpulse = tangentVelocity * share * 0.8;
 
 
 				// Coulomb Ff <= μFn

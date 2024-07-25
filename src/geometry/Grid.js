@@ -8,7 +8,15 @@ const vec = require("./vec.js");
  */
 class Grid {
 	static id = 0;
+	/**
+	 * Grid cells. You can access grid cells with `grid.grid[id]`, with `id` being the grid cell id corresponding to the x/y position of the cell. You can find the grid cell id with `grid.pair(cellPosition)` 
+	 * @type {Object}
+	 */
 	grid = {};
+	/**
+	 * Set of all created grid ids
+	 * @type {Set}
+	 */
 	gridIds = new Set();
 	
 	/**
@@ -26,11 +34,21 @@ class Grid {
 		this.gridSize = size;
 		this.id = Grid.id++;
 	}
+	/**
+	 * Takes a cell position and returns the corresponding grid cell id
+	 * @param {vec} pos
+	 * @returns {Number} grid cell id
+	 */
 	pair(pos) {
 		let x = pos.x >= 0 ? pos.x * 2 : pos.x * -2 - 1;
 		let y = pos.y >= 0 ? pos.y * 2 : pos.y * -2 - 1;
 		return (x >= y) ? (x * x + x + y) : (y * y + x);
 	}
+	/**
+	 * Takes a grid cell id and returns the corresponding cell position
+	 * @param {Number} n - Grid cell id
+	 * @returns {vec} Cell position
+	 */
 	unpair(n) {
 		let sqrtz = Math.floor(Math.sqrt(n));
 		let sqz = sqrtz * sqrtz;
@@ -39,13 +57,21 @@ class Grid {
 		let y = result1.y % 2 === 0 ? result1.y / 2 : (result1.y + 1) / -2;
 		return new vec(x, y);
 	}
+	/**
+	 * Takes a body with a bounding box and returns the range of grid cells that the body is in
+	 * @param {RigidBody|Bounds|vec} body - the RigidBody, global space vec, or global space bounds to convert to grid space Bounds 
+	 * @returns {Bounds} Grid space bounds
+	 */
 	getBounds(body) {
 		let size = this.gridSize;
 		if (typeof body.bounds === "object") {
+			return this.getBounds(body.bounds);
+		}
+		else if (typeof body.max === "object" && typeof body.min === "object") {
 			return {
-				min: body.bounds.min.div(size).floor2(),
-				max: body.bounds.max.div(size).floor2(),
-			}
+				min: body.min.div(size).floor2(),
+				max: body.max.div(size).floor2(),
+			};
 		}
 		else if (body.x !== undefined && body.y !== undefined) {
 			let x = Math.floor(body.x / size);
@@ -53,9 +79,15 @@ class Grid {
 			return {
 				min: new vec(x, y),
 				max: new vec(x, y),
-			}
+			};
 		}
 	}
+
+	/**
+	 * Takes grid-space bounds and returns an array of all bucket ids within those bounds
+	 * @param {Bounds} bounds - Bounding box in form of `{ min: vec, max: vec }` to get IDs of grid cells within
+	 * @returns {Array<Number>} Array of grid cell ids
+	 */
 	getBucketIds(bounds) {
 		let ids = [];
 		for (let x = bounds.min.x; x <= bounds.max.x; x++) {
@@ -69,6 +101,15 @@ class Grid {
 		}
 
 		return ids;
+	}
+
+	/**
+	 * Takes global-space bounds and returns an array of all buckets in those bounds
+	 * @param {*} bounds 
+	 */
+	getBuckets(bounds) {
+		let ids = this.getBucketIds(this.getBounds(bounds));
+		return ids.map(id => this.grid[id]);
 	}
 
 	/**
@@ -124,7 +165,7 @@ class Grid {
 		if (!point._Grids) point._Grids = {};
 		if (!point._Grids[this.id]) point._Grids[this.id] = [];
 
-		let position = point.x ? point : point.position;
+		let position = point.x !== undefined ? point : point.position;
 		let bucketPos = position.div(this.gridSize).floor2();
 		let n = this.pair(bucketPos);
 		point._Grids[this.id].push(n);
