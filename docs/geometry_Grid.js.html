@@ -69,7 +69,7 @@ class Grid {
 		if (typeof body.bounds === "object") {
 			return this.getBounds(body.bounds);
 		}
-		else if (body.max !== undefined &amp;&amp; body.min !== undefined) {
+		else if (typeof body.max === "object" &amp;&amp; typeof body.min === "object") {
 			return {
 				min: body.min.div(size).floor2(),
 				max: body.max.div(size).floor2(),
