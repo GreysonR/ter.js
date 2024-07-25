@@ -80,13 +80,13 @@
 
 	function pyramid() {
 		let width = 80;
-		let height = 5;
+		let height = 7;
 
 		for (let y = 0; y <= height; ++y) {
 			for (let x = height - y; x >= 0; x--) {
-				window["stack" + x + "x" + y] = Bodies.Rectangle(width, width, new vec((-(height - y) / 2 + x) * width, -200 - y * width), {
+				window["stack" + x + "x" + y] = Bodies.Rectangle(width, width, new vec((-(height - y) / 2 + x) * width, 200 - y * width), {
 					restitution: 0,
-					friction: 1,
+					friction: 2,
 					// mass: 1 + i,
 				}).addPolygonRender({
 					// background: "#4B8F8C"
@@ -317,5 +317,16 @@
 		await anim.run();
 		Render.app.stage.filters.splice(Render.app.stage.filters.indexOf(filter), 1);
 	}
+
+
+	// deub render test
+	const { DebugRender } = game;
+	const { ctx } = DebugRender;
+	DebugRender.on("afterRender", () => {
+		ctx.beginPath();
+		ctx.font = "30px sans-serif";
+		ctx.fillStyle = "white";
+		ctx.fillText("ter.js test scene", -500, 490);
+	});
 </script>
 </html>

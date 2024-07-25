@@ -4721,6 +4721,7 @@ const Bounds = __webpack_require__(60);
  * A node that detects collisions.
  * It's a child of a RigidBody and collisions detected by the CollisionShape are triggered and solved on the RigidBody
  * @extends Node
+ * @private
  */
 class CollisionShape extends Node {
 	nodeType = "CollisionShape";
@@ -5197,6 +5198,7 @@ class Engine {
 	 * Creates a collision pair between `bodyA` and `bodyB`
 	 * @param {CollisionShape} bodyA - 1st body to pair
 	 * @param {CollisionShape} bodyB - 2nd body to pair
+	 * @todo Make collision pairs their own class
 	 */
 	createPair(bodyA, bodyB) {
 		const { World, Performance } = this;
@@ -5249,6 +5251,7 @@ class Engine {
 		World.globalPoints.push(...contacts.map(v => v.vertice));
 
 		let pairId = Common.pairCommon(bodyA.id, bodyB.id);
+		// TODO: Make collision pairs their own class
 		let pair = {
 			bodyA: contactBody,
 			bodyB: normalBody,
@@ -5590,11 +5593,11 @@ class RigidBody extends Node {
 		},
 	}
 	/**
-	 * @private
 	 * Rounds corners on an array of vertices
 	 * @param {Array} vertices - Array of `vec` vertices to round
 	 * @param {number} round - Amount of rounding
 	 * @param {number} dx - Quality of round, lower value means higher quality
+	 * @private
 	 */
 	static roundVertices(vertices, round, dx = 40) {
 		let newVertices = [];
@@ -6539,17 +6542,21 @@ class DebugRender {
 		let translation = new vec({ x: -cameraPosition.x * scale + canvWidth/2, y: -cameraPosition.y * scale + canvHeight/2 });
 
 		ctx.clearRect(0, 0, canvWidth, canvHeight);
+		this.trigger("beforeSave");
 		ctx.save();
 		ctx.translate(translation.x, translation.y);
 		ctx.scale(scale, scale);
 
+		this.trigger("beforeRender");
 		for (let debugType in enabled) {
 			if (enabled[debugType] && typeof this[debugType] === "function") {
 				this[debugType]();
 			}
 		}
+		this.trigger("afterRender");
 
 		ctx.restore();
+		this.trigger("afterRestore");
 	}
 
 	
@@ -6672,6 +6679,51 @@ class DebugRender {
 			ctx.fillRect(pos.x, pos.y, size, size);
 			ctx.globalAlpha = 1;
 		});
+	}
+
+	
+	#events = {
+		beforeSave: [],
+		beforeRender: [],
+		afterRender: [],
+		afterRestore: [],
+	}
+	/**
+	 * Bind a callback to an event
+	 * @param {string} event - Name of the event
+	 * @param {Function} callback - Callback run when event is fired
+	 */
+	on(event, callback) {
+		if (this.#events[event]) {
+			this.#events[event].push(callback);
+		}
+		else {
+			console.warn(event + " is not a valid event");
+		}
+	}
+	/**
+	 * Unbinds a callback from an event
+	 * @param {string} event - Name of the event
+	 * @param {Function} callback - Function to unbind
+	 */
+	off(event, callback) {
+		let events = this.#events[event];
+		if (events.includes(callback)) {
+			events.splice(events.indexOf(callback), 1);
+		}
+	}
+	/**
+	 * Triggers an event, firing all bound callbacks
+	 * @param {string} event - Name of the event
+	 * @param {...*} args - Arguments passed to callbacks
+	 */
+	trigger(event, ...args) {
+		// Trigger each event
+		if (this.#events[event]) {
+			this.#events[event].forEach(callback => {
+				callback(...args);
+			});
+		}
 	}
 }
 module.exports = DebugRender;

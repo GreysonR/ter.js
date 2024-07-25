@@ -31,11 +31,11 @@ class RigidBody extends Node {
 		},
 	}
 	/**
-	 * @private
 	 * Rounds corners on an array of vertices
 	 * @param {Array} vertices - Array of `vec` vertices to round
 	 * @param {number} round - Amount of rounding
 	 * @param {number} dx - Quality of round, lower value means higher quality
+	 * @private
 	 */
 	static roundVertices(vertices, round, dx = 40) {
 		let newVertices = [];

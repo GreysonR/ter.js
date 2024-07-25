@@ -4,7 +4,6 @@ const { parseColor } = require("../core/Common");
 /**
  * Renders lines. Mainly used for rendering constraints
  * @private
- * @todo: Rewrite for new engine
  */
 class RenderLine {
 	static all = new Set();

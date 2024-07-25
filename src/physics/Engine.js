@@ -191,6 +191,7 @@ class Engine {
 	 * Creates a collision pair between `bodyA` and `bodyB`
 	 * @param {CollisionShape} bodyA - 1st body to pair
 	 * @param {CollisionShape} bodyB - 2nd body to pair
+	 * @todo Make collision pairs their own class
 	 */
 	createPair(bodyA, bodyB) {
 		const { World, Performance } = this;
@@ -243,6 +244,7 @@ class Engine {
 		World.globalPoints.push(...contacts.map(v => v.vertice));
 
 		let pairId = Common.pairCommon(bodyA.id, bodyB.id);
+		// TODO: Make collision pairs their own class
 		let pair = {
 			bodyA: contactBody,
 			bodyB: normalBody,

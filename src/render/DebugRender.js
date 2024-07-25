@@ -78,17 +78,21 @@ class DebugRender {
 		let translation = new vec({ x: -cameraPosition.x * scale + canvWidth/2, y: -cameraPosition.y * scale + canvHeight/2 });
 
 		ctx.clearRect(0, 0, canvWidth, canvHeight);
+		this.trigger("beforeSave");
 		ctx.save();
 		ctx.translate(translation.x, translation.y);
 		ctx.scale(scale, scale);
 
+		this.trigger("beforeRender");
 		for (let debugType in enabled) {
 			if (enabled[debugType] && typeof this[debugType] === "function") {
 				this[debugType]();
 			}
 		}
+		this.trigger("afterRender");
 
 		ctx.restore();
+		this.trigger("afterRestore");
 	}
 
 	
@@ -211,6 +215,51 @@ class DebugRender {
 			ctx.fillRect(pos.x, pos.y, size, size);
 			ctx.globalAlpha = 1;
 		});
+	}
+
+	
+	#events = {
+		beforeSave: [],
+		beforeRender: [],
+		afterRender: [],
+		afterRestore: [],
+	}
+	/**
+	 * Bind a callback to an event
+	 * @param {string} event - Name of the event
+	 * @param {Function} callback - Callback run when event is fired
+	 */
+	on(event, callback) {
+		if (this.#events[event]) {
+			this.#events[event].push(callback);
+		}
+		else {
+			console.warn(event + " is not a valid event");
+		}
+	}
+	/**
+	 * Unbinds a callback from an event
+	 * @param {string} event - Name of the event
+	 * @param {Function} callback - Function to unbind
+	 */
+	off(event, callback) {
+		let events = this.#events[event];
+		if (events.includes(callback)) {
+			events.splice(events.indexOf(callback), 1);
+		}
+	}
+	/**
+	 * Triggers an event, firing all bound callbacks
+	 * @param {string} event - Name of the event
+	 * @param {...*} args - Arguments passed to callbacks
+	 */
+	trigger(event, ...args) {
+		// Trigger each event
+		if (this.#events[event]) {
+			this.#events[event].forEach(callback => {
+				callback(...args);
+			});
+		}
 	}
 }
 module.exports = DebugRender;

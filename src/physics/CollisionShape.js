@@ -7,6 +7,7 @@ const Bounds = require("../geometry/Bounds");
  * A node that detects collisions.
  * It's a child of a RigidBody and collisions detected by the CollisionShape are triggered and solved on the RigidBody
  * @extends Node
+ * @private
  */
 class CollisionShape extends Node {
 	nodeType = "CollisionShape";
