@@ -12,15 +12,14 @@ class Engine {
 		velocityIterations: 1,
 		positionIterations: 1,
 		constraintIterations: 1,
-		maxShare: 1,
 	}
 
 	delta = 1;
+	inverseDelta = 1;
 	substeps = 6;
 	velocityIterations = 1;
 	positionIterations = 1;
 	constraintIterations = 1;
-	maxShare = 1;
 
 	/**
 	 * 
@@ -30,7 +29,6 @@ class Engine {
 	 * @param {number} [options.velocityIterations=1] - Number of velocity solver iterations per tick
 	 * @param {number} [options.positionIterations=1] - Number of position solver iterations per tick
 	 * @param {number} [options.constraintIterations=1] - Number of constraint solver iterations per tick
-	 * @param {number} [options.maxShare=1] - Maximum share of collision impulse a body can have. Not recommended to change
 	 */
 	constructor(World, options = {}) {
 		let defaults = { ...Engine.defaultOptions };
@@ -38,7 +36,7 @@ class Engine {
 		options = defaults;
 		
 		// Shallow copy options
-		let mutableProperties = [`substeps`, `velocityIterations`, `positionIterations`, `constraintIterations`, `maxShare`];
+		let mutableProperties = [`substeps`, `velocityIterations`, `positionIterations`, `constraintIterations`];
 		for (let propertyName of mutableProperties) {
 			if (options[propertyName] != undefined && typeof this[propertyName] != "function") {
 				this[propertyName] = options[propertyName];
@@ -50,9 +48,9 @@ class Engine {
 
 	/**
 	 * Ticks the engine one frame
-	 * @param {number} [delta] - (Optional) Engine tick duration, in seconds
+	 * @param {number} [delta] - Engine tick duration, in seconds
 	 */
-	update(delta) {
+	update(delta = undefined) {
 		const { World, Performance, substeps } = this;
 		const { rigidBodies } = World;
 
@@ -63,6 +61,7 @@ class Engine {
 		World.time += delta;
 		delta /= substeps;
 		this.delta = delta;
+		this.inverseDelta = 1 / this.delta;
 
 		// Get timing
 		Performance.update();
@@ -92,17 +91,29 @@ class Engine {
 				body._preUpdate(delta);
 			}
 
+			let contactHertz = Math.min(30, 0.25 * this.inverseDelta / this.velocityIterations);
+			// let jointHertz = Math.min(60, 0.125 * this.inverseDelta);
+
+			// Prepare contacts
+			this.prepareContacts(delta, contactHertz);
+
 			// Solve for velocities
 			for (let i = 0; i < this.velocityIterations; i++) {
-				this.solveVelocity();
+				this.solveVelocity(true);
+				this.solveVelocity(false);
 			}
+
+			// Solve positions
 			for (let i = 0; i < this.positionIterations; i++) {
 				this.solvePositions();
 			}
+
+			// Solve constraints
 			this.solveConstraints(delta);
 		}
 
 		this.delta = delta * substeps;
+		this.inverseDelta = 1 / this.delta;
 	}
 
 	/**
@@ -115,6 +126,7 @@ class Engine {
 		if (bodyA.parentNode.isStatic && bodyB.parentNode.isStatic) return false;
 
 		let collision = true;
+		let overlapMargin = 0;
 
 		function getAllSupports(body, direction) {
 			let vertices = body.vertices;
@@ -146,7 +158,7 @@ class Engine {
 			let supportsB = getAllSupports(bodyB, axis);
 			let overlap = Math.min(supportsA.max - supportsB.min, supportsB.max - supportsA.min);
 
-			if (overlap < 0.01) {
+			if (overlap < overlapMargin) {
 				collision = false;
 			}
 			else {
@@ -162,7 +174,7 @@ class Engine {
 				let supportsB = getAllSupports(bodyB, axis);
 				let overlap = Math.min(supportsA.max - supportsB.min, supportsB.max - supportsA.min);
 
-				if (overlap < 0.01) {
+				if (overlap < overlapMargin) {
 					collision = false;
 					bodyA._lastSeparations[bodyB.id] = axis;
 					bodyB._lastSeparations[bodyA.id] = axis;
@@ -176,7 +188,7 @@ class Engine {
 				let supportsB = getAllSupports(bodyA, axis);
 				let overlap = Math.min(supportsA.max - supportsB.min, supportsB.max - supportsA.min);
 				
-				if (overlap < 0) {
+				if (overlap < overlapMargin) {
 					collision = false;
 					bodyA._lastSeparations[bodyB.id] = axis;
 					bodyB._lastSeparations[bodyA.id] = axis;
@@ -213,7 +225,14 @@ class Engine {
 				let support = bodyB._getSupport(curNormal, curVertice);
 
 				if (bodyB.containsPoint(curVertice)) {
-					contacts.push({ vertice: curVertice, body: bodyA });
+					contacts.push({
+						vertice: curVertice,
+						incidentBody: bodyA,
+						referenceBody: bodyB,
+
+						normalImpulse: 0,
+						tangentImpulse: 0,
+					});
 					numContacts++;
 				}
 
@@ -232,7 +251,14 @@ class Engine {
 		findNormal(bodyB, bodyA);
 
 		if (contacts.length === 0) {
-			contacts.push({ vertice: new vec(bodyA.position), body: bodyA });
+			contacts.push({
+				vertice: new vec(bodyA.position),
+				incidentBody: bodyA,
+				referenceBody: bodyB,
+				
+				normalImpulse: 0,
+				tangentImpulse: 0,
+			});
 		}
 		if (normal === undefined) {
 			console.error(bodyA, bodyB);
@@ -244,7 +270,6 @@ class Engine {
 		World.globalPoints.push(...contacts.map(v => v.vertice));
 
 		let pairId = Common.pairCommon(bodyA.id, bodyB.id);
-		// TODO: Make collision pairs their own class
 		let pair = {
 			bodyA: contactBody,
 			bodyB: normalBody,
@@ -254,6 +279,9 @@ class Engine {
 			totalContacts: numContacts,
 			normal: normal,
 			tangent: normal.normal(),
+
+			friction: Math.sqrt(contactBody.parentNode.friction ** 2 + normalBody.parentNode.friction ** 2),
+			restitution: 1 + Math.max(contactBody.parentNode.restitution, normalBody.parentNode.restitution),
 
 			id: pairId,
 			frame: Performance.frame,
@@ -309,110 +337,173 @@ class Engine {
 		return false;
 	}
 
+	prepareContacts(delta, hertz) {
+		let { pairs } = this.World;
+		for (let i in pairs) {
+			let pair = pairs[i];
+			const { bodyA: collisionShapeA, bodyB: collisionShapeB, normal, tangent, contacts, depth: rawDepth } = pair;
+			const depth = rawDepth;
+			const bodyA = collisionShapeA.parentNode;
+			const bodyB = collisionShapeB.parentNode;
+
+			const { _inverseMass: mA, _inverseInertia : iA, position: positionA } = bodyA;
+			const { _inverseMass: mB, _inverseInertia : iB, position: positionB } = bodyB;
+
+			// Stiffer for dynamic vs static
+			let contactHertz = (mA === 0 || mB === 0) ? 2 * hertz : hertz;
+			
+			for (let cp of contacts) {
+				// warm starting, but that's not implemented yet
+				cp.normalImpulse = 0;
+				cp.tangentImpulse = 0;
+
+				// Adjusted separation
+				let rA = cp.vertice.sub(positionA);
+				let rB = cp.vertice.sub(positionB);
+				cp.adjustedSeparation = depth;// - rB.sub(rA).dot(normal);
+
+				// Normal mass
+				let rnA = rA.cross(normal);
+				let rnB = rB.cross(normal);
+				let kNormal = mA + mB + (iA * rnA**2) + (iB * rnB ** 2);
+				cp.normalMass = kNormal > 0 ? 1 / kNormal : 0;
+
+				// Tangent mass
+				let rtA = rA.cross(tangent);
+				let rtB = rB.cross(tangent);
+				let kTangent = mA + mB + (iA * rtA ** 2) + (iB * rtB ** 2);
+				cp.tangentMass = kTangent > 0 ? 1 / kTangent : 0;
+
+				// Soft constraint coefficients
+				const zeta = 10;
+				let omega = 2 * Math.PI * contactHertz;
+				let c = delta * omega * (2 * zeta + delta * omega);
+				cp.biasCoefficient = omega / (2 * zeta + delta * omega);
+				cp.impulseCoefficient = 1 / (1 + c);
+				cp.massCoefficient = c * cp.impulseCoefficient / contacts.length;
+			}
+		}
+	}
 	/**
 	 * Solves velocity constriants on current collision pairs
 	 * Also clears collision pairs that are no longer valid (they haven't collided this frame)
 	 */
-	solveVelocity() {
+	solveVelocity(useBias = true) {
 		let { pairs } = this.World;
+		let inv_h = this.inverseDelta;
 		
 		for (let i in pairs) {
 			let pair = pairs[i];
 			if (!pair || this.cleansePair(pair)) continue;
 
-			let { bodyA: collisionShapeA, bodyB: collisionShapeB, normal, tangent, contacts, depth } = pair;
-			let bodyA = collisionShapeA.parentNode;
-			let bodyB = collisionShapeB.parentNode;
+			const { bodyA: collisionShapeA, bodyB: collisionShapeB, normal, tangent, contacts, friction, restitution } = pair;
+			const bodyA = collisionShapeA.parentNode;
+			const bodyB = collisionShapeB.parentNode;
 
-			let numContacts = contacts.length;
-			if (numContacts === 0) continue;
-
+			if (contacts.length === 0) continue;
 			if (bodyA.isSensor || bodyB.isSensor) continue;
 
-			const restitution = 1 + Math.max(bodyA.restitution, bodyB.restitution);
-			const friction = Math.sqrt(bodyA.friction ** 2 + bodyB.friction ** 2);
-			const relVel = bodyB.velocity.sub(bodyA.velocity);
-			if (relVel.dot(normal) < 0) continue;
+			let { _inverseMass: mA, _inverseInertia : iA, angularVelocity: wA, velocity: vA, position: positionA } = bodyA;
+			let { _inverseMass: mB, _inverseInertia : iB, angularVelocity: wB, velocity: vB, position: positionB } = bodyB;
 
-			let impulse = new vec(0, 0);
-			let angImpulseA = 0;
-			let angImpulseB = 0;
+			for (let contact of contacts) {
+				const { vertice: cp } = contact;
 
-			let totalMass = bodyA.mass + bodyB.mass;
-			let shareA = (bodyB.mass / totalMass) || 0;
-			let shareB = (bodyA.mass / totalMass) || 0;
-			let maxShare = this.maxShare;
-			shareA = Math.min(maxShare, shareA);
-			shareB = Math.min(maxShare, shareB);
-			if (bodyA.isStatic) shareB = 1;
-			if (bodyB.isStatic) shareA = 1;
+				const rA = cp.sub(positionA); // radius vector A
+				const rB = cp.sub(positionB); // radius vector B
 
-			for (let c = 0; c < numContacts; c++) {
-				const { vertice } = contacts[c];
+				// Relative velocity
+				const vrA = bodyA.velocity.add(rA.cross(bodyA.angularVelocity));
+				const vrB = bodyB.velocity.add(rB.cross(bodyB.angularVelocity));
+				const normalVelocity = vrB.sub(vrA).dot(normal);
 
-				const offsetA = vertice.sub(bodyA.position);
-				const offsetB = vertice.sub(bodyB.position);
-				const vrA = bodyA.velocity.add(offsetA.cross(bodyA.angularVelocity));
-				const vrB = bodyB.velocity.add(offsetB.cross(bodyB.angularVelocity));
-				const relativeVelocity = vrA.sub(vrB);
-				const normalVelocity = relativeVelocity.dot(normal);
-				const tangentVelocity = relativeVelocity.dot(tangent);
+				// Separation
+				const ds = bodyB.velocity.sub(bodyA.velocity).add(rB.sub(rA));
+				const s = Math.max(ds.dot(normal) * this.delta + contact.adjustedSeparation - 2, 0); // separation scalar
 
-				if (normalVelocity > 0) continue;
-
-				let rnA = offsetA.cross(normal);
-				let rnB = offsetB.cross(normal);
-				let kNormal = bodyA._inverseMass + bodyB._inverseMass + bodyA._inverseInertia * rnA * rnA + bodyB._inverseInertia * rnB * rnB;
-
-				let share = 1 / (contacts.length * kNormal);
+				// Impulse scale, mass scale (meff), and bias (baumgarte stabilization)
+				let bias = 0;
+				let massScale = 1;
+				let impulseScale = 0;
+				const maxBaumgarteVelocity = 4;
+				if (s < 0) {
+					bias = s * inv_h; // Speculative
+				}
+				else if (useBias) {
+					bias = Math.max(contact.biasCoefficient * s, -maxBaumgarteVelocity);
+					massScale = contact.massCoefficient;
+					impulseScale = contact.impulseCoefficient;
+				}
 				
-				const normalImpulse = normalVelocity * share * 0.8;
-				let tangentImpulse = tangentVelocity * share * 0.8;
+				let impulse = contact.normalMass * massScale * (normalVelocity * restitution + bias);// - impulseScale * contact.normalImpulse;
 
+				if (false) { // Clamping current impulse rather than accumulated works better under certain circumstances (ie newton pendulum test) and makes no difference in others
+					// Clamp accumulated impulse
+					let newImpulse = Math.max(contact.normalImpulse + impulse, 0);
+					impulse = newImpulse - contact.normalImpulse;
+					contact.normalImpulse = newImpulse;
+				}
+				else {
+					// Clamp current impulse
+					impulse = Math.max(impulse, 0);
+					contact.normalImpulse += impulse;
+				}
+				
+				// Apply contact impulse
+				let P = normal.mult(impulse);
 
-				// Coulomb Ff <= μFn
-				if (Math.abs(tangentImpulse) > Math.abs(normalVelocity) * friction) {
-					tangentImpulse = Math.abs(normalImpulse) * Math.sign(tangentImpulse) * friction;
+				vA = vA.add(P.mult(mA));
+				wA += iA * rA.cross(P);
+
+				vB = vB.sub(P.mult(mB));
+				wB -= iB * rB.cross(P);
+			}
+
+			for (let contact of contacts) {
+				const { vertice: cp, tangentMass } = contact;
+
+				const rA = cp.sub(positionA); // radius vector A
+				const rB = cp.sub(positionB); // radius vector B
+
+				// Relative velocity
+				const vrA = vA.add(rA.cross(wA));
+				const vrB = vB.add(rB.cross(wB));
+				const vt = vrB.sub(vrA).dot(tangent);
+
+				// Tangent force
+				let impulse = -tangentMass * vt;
+				
+				if (true) {
+					// Clamp accumulated force
+					const maxFriction = friction * contact.normalImpulse;
+					let newImpulse = Common.clamp(contact.tangentImpulse + impulse, -maxFriction, maxFriction);
+					impulse = newImpulse - contact.tangentImpulse;
+					contact.tangentImpulse = newImpulse;
+				}
+				else {
+					// Clamp current force
+					const maxFriction = friction * contact.normalImpulse;
+					impulse = Common.clamp(impulse, -maxFriction, maxFriction);
+					contact.tangentImpulse += impulse;
 				}
 
-				// const normalMass = (kNormal > 0 ? 1 / kNormal : 0) / contacts.length;
-				// const bias = -depth / delta * 0;
-				// let normalImpulse = normalMass * (normalVelocity + bias) * 0.4 * restitution;
-				
-				// float bias = separation / delta
-				// float impulse = -cp->normalMass * 1 * (vn + bias) - impulseScale * cp->normalImpulse;
-
-				/*
-				// Compute normal impulse
-				float impulse = -cp->normalMass * massScale * (vn + bias) - impulseScale * cp->normalImpulse;
-
-				// Clamp the accumulated impulse
-				float newImpulse = S2_MAX(cp->normalImpulse + impulse, 0.0f);
-				impulse = newImpulse - cp->normalImpulse;
-				cp->normalImpulse = newImpulse;
-
 				// Apply contact impulse
-				s2Vec2 P = s2MulSV(impulse, normal);
-				vA = s2MulSub(vA, mA, P);
-				wA -= iA * s2Cross(rA, P);
+				let P = tangent.mult(impulse);
 
-				vB = s2MulAdd(vB, mB, P);
-				wB += iB * s2Cross(rB, P);
-				*/
-
-				const curImpulse = normal.mult(normalImpulse * restitution).add2(tangent.mult(tangentImpulse));
-				impulse.add2(curImpulse);
-				angImpulseA += offsetA.cross(curImpulse) * bodyA._inverseInertia;
-				angImpulseB += offsetB.cross(curImpulse) * bodyB._inverseInertia;
+				vA = vA.sub(P.mult(mA));
+				wA -= iA * rA.cross(P);
+				
+				vB = vB.add(P.mult(mB));
+				wB += iB * rB.cross(P);
 			}
 			
 			if (!bodyA.isStatic) {
-				bodyA.velocity.sub2(impulse.mult(bodyA._inverseMass));
-				bodyA.angularVelocity -= angImpulseA * bodyA._inverseMass;
+				bodyA.velocity.set(vA);
+				bodyA.angularVelocity = wA;
 			}
 			if (!bodyB.isStatic) {
-				bodyB.velocity.add2(impulse.mult(bodyB._inverseMass));
-				bodyB.angularVelocity += angImpulseB * bodyB._inverseMass;
+				bodyB.velocity.set(vB);
+				bodyB.angularVelocity = wB;
 			}
 		}
 	}
@@ -426,32 +517,25 @@ class Engine {
 		
 		for (let i in pairs) {
 			let pair = pairs[i];
-			let { depth, bodyA: collisionShapeA, bodyB: collisionShapeB, normal } = pair;
+			let { depth, bodyA: collisionShapeA, bodyB: collisionShapeB, normal, contacts } = pair;
 			let bodyA = collisionShapeA.parentNode;
 			let bodyB = collisionShapeB.parentNode;
-			
 			if (bodyA.isSensor || bodyB.isSensor) continue;
-			if (depth < 1) continue;
+			
+			let { _inverseMass: mA } = bodyA;
+			let { _inverseMass: mB } = bodyB;
 
-			let impulse = normal.mult(depth - 1);
-			let totalMass = bodyA.mass + bodyB.mass;
-			let shareA = (bodyB.mass / totalMass) || 0;
-			let shareB = (bodyA.mass / totalMass) || 0;
-			let maxShare = this.maxShare;
-			shareA = Math.min(maxShare, shareA);
-			shareB = Math.min(maxShare, shareB);
-			if (bodyA.isStatic) shareB = 1;
-			if (bodyB.isStatic) shareA = 1;
+			let impulse = Math.max(-0.01, depth - 0.1);
+			pair.depth -= impulse;
+
+			let totalM = mA + mB;
 
 			if (!bodyA.isStatic) {
-				let a = impulse.mult(shareA * 1 / collisionShapeA.pairs.length);
-				bodyA.translate(a)
+				bodyA.translate(normal.mult( impulse * mA / totalM));
 			}
 			if (!bodyB.isStatic) {
-				let a = impulse.mult(-shareB * 1 / collisionShapeB.pairs.length);
-				bodyB.translate(a)
+				bodyB.translate(normal.mult(-impulse * mB / totalM));
 			}
-			pair.depth -= impulse.length;
 		}
 	}
 
@@ -480,9 +564,6 @@ class Engine {
 				let totalMass = bodyA.mass + bodyB.mass;
 				let shareA = (bodyB.mass / totalMass) || 0;
 				let shareB = (bodyA.mass / totalMass) || 0;
-				let maxShare = this.maxShare;
-				shareA = Math.min(maxShare, shareA);
-				shareB = Math.min(maxShare, shareB);
 				if (bodyA.isStatic) shareB = 1;
 				if (bodyB.isStatic) shareA = 1;
 

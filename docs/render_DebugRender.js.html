@@ -219,6 +219,21 @@ class DebugRender {
 		});
 	}
 
+	// Random render functions
+	arrow(position, direction, size = 6) {
+		let ctx = this.ctx;
+
+		let endPos = new vec(position.x + direction.x, position.y + direction.y);
+		let sideA = direction.rotate(Math.PI * 3/4).normalize2().mult(size);
+		let sideB = sideA.reflect(direction.normalize());
+
+		ctx.moveTo(position.x, position.y);
+		ctx.lineTo(endPos.x, endPos.y);
+		ctx.lineTo(endPos.x + sideA.x, endPos.y + sideA.y);
+		ctx.moveTo(endPos.x, endPos.y);
+		ctx.lineTo(endPos.x + sideB.x, endPos.y + sideB.y);
+	}
+
 	
 	#events = {
 		beforeSave: [],

@@ -541,8 +541,8 @@ class RigidBody extends Node {
 		if (this.isStatic) return;
 
 		// apply forces
-		this.velocity.add2(this.force).add2(this.Engine.World.gravity.mult(delta));
-		this.angularVelocity += this.torque;
+		this.velocity.add2(this.force.mult(this._inverseMass)).add2(this.Engine.World.gravity.mult(delta));
+		this.angularVelocity += this.torque * this._inverseInertia;
 
 		// clear forces
 		this.force.x = 0;
@@ -559,25 +559,24 @@ class RigidBody extends Node {
 
 		if (this.isStatic) return;
 
-		const timescale = delta;
 		let { velocity: lastVelocity, angularVelocity: lastAngularVelocity } = this._last;
 
-		let frictionAir = (1 - this.frictionAir) ** timescale;
-		let frictionAngular = (1 - this.frictionAngular) ** timescale;
+		let frictionAir = (1 - this.frictionAir) ** delta;
+		let frictionAngular = (1 - this.frictionAngular) ** delta;
 
-		if (isNaN(timescale) || this.velocity.isNaN() || isNaN(frictionAir + frictionAngular)) {
+		if (this.velocity.isNaN() || isNaN(delta + frictionAir + frictionAngular)) {
 			return;
 		}
 		
 		this.velocity.mult2(frictionAir);
 		if (this.velocity.x !== 0 || this.velocity.y !== 0){
-			this.translate(this.velocity.add(lastVelocity).mult(timescale / 2)); // trapezoidal rule to take into account acceleration
+			this.translate(this.velocity.add(lastVelocity).mult(delta / 2)); // trapezoidal rule to take into account acceleration
 		}
 		this._last.velocity.set(this.velocity);
 
 		this.angularVelocity *= frictionAngular;
 		if (this.angularVelocity){
-			let angleChange = (this.angularVelocity + lastAngularVelocity) * timescale / 2; // trapezoidal rule to take into account acceleration
+			let angleChange = (this.angularVelocity + lastAngularVelocity) * delta / 2; // trapezoidal rule to take into account acceleration
 			let pivot = this.rotationPoint.rotate(this.angle + angleChange).add(this.position);
 			this.translateAngle(angleChange, pivot, false);
 		}
