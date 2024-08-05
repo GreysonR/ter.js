@@ -44,7 +44,7 @@ class Ticker {
 
 		Animation.update();
 		this.trigger("afterTick");
-		requestAnimationFrame(this.tick);
+		setTimeout(this.tick, 0);
 	}
 	
 	#events = {

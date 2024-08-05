@@ -429,7 +429,7 @@ class RigidBody extends Node {
 	/**
 	 * Applies a force to the body, ignoring mass. The body's velocity changes by force * delta
 	 * @param {vec} force - Amount of force to be applied, in px / sec^2
-	 * @param {number} delta=Engine.delta - Amount of time that the force should be applied in seconds, set to 1 if only applying in one instant
+	 * @param {number} [delta=Engine.delta] - Amount of time that the force should be applied in seconds, set to 1 if only applying in one instant
 	 */
 	applyForce(force, delta = this.Engine.delta) { // set delta to 1 if you want to apply a force for only 1 frame
 		if (force.isNaN()) return;
@@ -440,7 +440,7 @@ class RigidBody extends Node {
 	/**
 	 * Applies a rotational force (torque) to the body, ignoring mass. The body's angular velocity changes by force * delta
 	 * @param {number} force - Amount of torque to be applied, in radians / sec^2
-	 * @param {number} delta - Amount of time the force should be applied in seconds, set to 1 if only applying instantaneous force
+	 * @param {number} [delta=Engine.delta] - Amount of time the force should be applied in seconds, set to 1 if only applying instantaneous force
 	 */
 	applyTorque(force, delta = this.Engine.delta) { // set delta to 1 if you want to apply a force for only 1 frame
 		if (isNaN(force)) return;
@@ -463,7 +463,10 @@ class RigidBody extends Node {
 	
 	force = new vec(0, 0);
 	impulse = new vec(0, 0);
+	positionImpulse = new vec(0, 0);
 	torque = 0;
+
+	totalContacts = 0;
 	
 	rotationPoint = new vec(0, 0);
 

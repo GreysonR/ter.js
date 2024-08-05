@@ -22,6 +22,10 @@ class Engine {
 	velocityIterations = 1;
 	positionIterations = 1;
 	constraintIterations = 1;
+	
+	slop = 0.1;
+	positionWarming = 0.8;
+	positionDampen = 0.9;
 
 	/**
 	 * 
@@ -31,6 +35,7 @@ class Engine {
 	 * @param {number} [options.velocityIterations=1] - Number of velocity solver iterations per tick
 	 * @param {number} [options.positionIterations=1] - Number of position solver iterations per tick
 	 * @param {number} [options.constraintIterations=1] - Number of constraint solver iterations per tick
+	 * @param {number} [options.slop=0.1] - Amount of acceptable penetration
 	 */
 	constructor(World, options = {}) {
 		let defaults = { ...Engine.defaultOptions };
@@ -38,7 +43,7 @@ class Engine {
 		options = defaults;
 		
 		// Shallow copy options
-		let mutableProperties = [`substeps`, `velocityIterations`, `positionIterations`, `constraintIterations`];
+		let mutableProperties = [`substeps`, `velocityIterations`, `positionIterations`, `constraintIterations`, `slop`];
 		for (let propertyName of mutableProperties) {
 			if (options[propertyName] != undefined &amp;&amp; typeof this[propertyName] != "function") {
 				this[propertyName] = options[propertyName];
@@ -71,20 +76,15 @@ class Engine {
 		for (let step = 0; step &lt; substeps; step++) {
 			Performance.frame++;
 			
-			// Update positions / angles
-			for (let body of rigidBodies) {
-				body._update(delta);
-			}
-			
 			// Find collisions
-			World.globalVectors = [];
-			World.globalPoints = [];
+			World.globalVectors.length = 0;
+			World.globalPoints.length = 0;
 			
 			const pairs = World.collisionPairs;
 			for (let i = 0; i &lt; pairs.length; i++) {
 				let [ bodyA, bodyB ] = pairs[i];
 				if (this.collides(bodyA, bodyB)) {
-					this.createPair(bodyA, bodyB);
+					this.createManifold(bodyA, bodyB);
 				}
 			}
 
@@ -93,7 +93,7 @@ class Engine {
 				body._preUpdate(delta);
 			}
 
-			let contactHertz = Math.min(30, 0.25 * this.inverseDelta / this.velocityIterations);
+			let contactHertz = Math.min(30, 0.25 * this.inverseDelta);
 			// let jointHertz = Math.min(60, 0.125 * this.inverseDelta);
 
 			// Prepare contacts
@@ -106,8 +106,15 @@ class Engine {
 			}
 
 			// Solve positions
+			this.preSolvePosition();
 			for (let i = 0; i &lt; this.positionIterations; i++) {
-				this.solvePositions();
+				this.solvePosition();
+			}
+			this.postSolvePosition();
+			
+			// Update positions / angles
+			for (let body of rigidBodies) {
+				body._update(delta);
 			}
 
 			// Solve constraints
@@ -128,7 +135,7 @@ class Engine {
 		if (bodyA.parentNode.isStatic &amp;&amp; bodyB.parentNode.isStatic) return false;
 
 		let collision = true;
-		let overlapMargin = 0;
+		let overlapMargin = 0.01;
 
 		function getAllSupports(body, direction) {
 			let vertices = body.vertices;
@@ -207,50 +214,33 @@ class Engine {
 	 * @param {CollisionShape} bodyB - 2nd body to pair
 	 * @todo Make collision pairs their own class
 	 */
-	createPair(bodyA, bodyB) {
+	createManifold(bodyA, bodyB) {
 		const { World, Performance } = this;
-		let minDepth = Infinity;
-		let normal;
-		let normalPoint;
-		let contactBody;
-		let normalBody;
+		let depth = Infinity;
+		let normal, normalPoint;
+		let referenceBody, incidentBody;
 		let contacts = [];
-		let numContacts = 0;
 
 		// - get collision normal by finding point/edge pair with minimum depth
-		function findNormal(bodyA, bodyB) {
-			let vertices = bodyA.vertices;
-			for (let i = 0; i &lt; vertices.length; i++) {
-				let curVertice = vertices[i];
-				let nextVertice = vertices[(i + 1) % vertices.length];
-				let curNormal = curVertice.sub(nextVertice).normal().normalize();
-				let support = bodyB._getSupport(curNormal, curVertice);
+		let [contactsA, depthA, normalA, anchorB] = this.#findNormal(bodyA, bodyB);
+		let [contactsB, depthB, normalB, anchorA] = this.#findNormal(bodyB, bodyA);
 
-				if (bodyB.containsPoint(curVertice)) {
-					contacts.push({
-						vertice: curVertice,
-						incidentBody: bodyA,
-						referenceBody: bodyB,
-
-						normalImpulse: 0,
-						tangentImpulse: 0,
-					});
-					numContacts++;
-				}
-
-				if (support[1] &lt; minDepth) {
-					minDepth = support[1];
-					normal = curNormal.mult(-1);
-					normalPoint = curVertice.avg(nextVertice);
-
-					normalBody = bodyB;
-					contactBody = bodyA;
-				}
-			}
+		if (depthA &lt;= depthB) {
+			depth = depthA;
+			normal = normalA;
+			incidentBody = bodyA;
+			referenceBody = bodyB;
+			normalPoint = bodyA.vertices[anchorA].avg(bodyA.vertices[(anchorA - 1 + bodyA.vertices.length) % bodyA.vertices.length]);
 		}
+		else {
+			depth = depthB;
+			normal = normalB;
+			incidentBody = bodyB;
+			referenceBody = bodyA;
+			normalPoint = bodyB.vertices[anchorB].avg(bodyB.vertices[(anchorB - 1 + bodyB.vertices.length) % bodyB.vertices.length]);
+		}
+		contacts.push(...contactsA, ...contactsB);
 
-		findNormal(bodyA, bodyB);
-		findNormal(bodyB, bodyA);
 
 		if (contacts.length === 0) {
 			contacts.push({
@@ -271,45 +261,91 @@ class Engine {
 		World.globalVectors.push({ position: normalPoint, vector: new vec(normal) });
 		World.globalPoints.push(...contacts.map(v => v.vertice));
 
-		let pairId = Common.pairCommon(bodyA.id, bodyB.id);
-		let pair = {
-			bodyA: contactBody,
-			bodyB: normalBody,
-			depth: minDepth,
-			penetration: normal.mult(minDepth),
+		let manifoldId = Common.pairCommon(bodyA.id, bodyB.id);
+		let manifold = {
+			bodyA: incidentBody,
+			bodyB: referenceBody,
+			anchorA: bodyA.vertices[anchorA],
+			anchorB: bodyB.vertices[anchorB],
+
+			depth: depth,
+			penetration: normal.mult(depth),
 			contacts: contacts,
-			totalContacts: numContacts,
 			normal: normal,
 			tangent: normal.normal(),
 
-			friction: Math.sqrt(contactBody.parentNode.friction ** 2 + normalBody.parentNode.friction ** 2),
-			restitution: 1 + Math.max(contactBody.parentNode.restitution, normalBody.parentNode.restitution),
+			friction: Math.sqrt(referenceBody.parentNode.friction ** 2 + incidentBody.parentNode.friction ** 2),
+			restitution: 1 + Math.max(referenceBody.parentNode.restitution, incidentBody.parentNode.restitution),
 
-			id: pairId,
+			id: manifoldId,
 			frame: Performance.frame,
 			start: World.time,
 		}
 
-		if (World.pairs[pairId]) { // Collision happened last frame, so it's active
-			pair.start = World.pairs[pairId].start;
-			bodyA.parentNode.trigger("collisionActive", pair);
-			bodyB.parentNode.trigger("collisionActive", pair);
+		if (World.pairs[manifoldId]) { // Collision happened last frame, so it's active
+			let existingManifold = World.pairs[manifoldId];
+			let { start } = existingManifold;
+			Common.merge(existingManifold, manifold, 1);
+			existingManifold.start = start;
+
+			bodyA.parentNode.trigger("collisionActive", existingManifold);
+			bodyB.parentNode.trigger("collisionActive", existingManifold);
 
 			bodyA.parentNode.trigger("bodyInside", bodyB.parentNode);
 			bodyB.parentNode.trigger("bodyInside", bodyA.parentNode);
 		}
 		else { // No collision between these bodies last frame, so collision just started
-			bodyA.parentNode.trigger("collisionStart", pair);
-			bodyB.parentNode.trigger("collisionStart", pair);
+			bodyA.parentNode.trigger("collisionStart", manifold);
+			bodyB.parentNode.trigger("collisionStart", manifold);
 
 			bodyA.parentNode.trigger("bodyEnter", bodyB.parentNode);
 			bodyB.parentNode.trigger("bodyEnter", bodyA.parentNode);
 			
-			bodyA.pairs.push(pairId);
-			bodyB.pairs.push(pairId);
+			bodyA.pairs.push(manifoldId);
+			bodyB.pairs.push(manifoldId);
 		}
 
-		World.pairs[pairId] = pair;
+		World.pairs[manifoldId] = manifold;
+	}
+	/**
+	 * @private
+	 * @param {CollisionShape} bodyA - Incident body, where the edge is
+	 * @param {CollisionShape} bodyB - Reference body, where the collision point will likely be
+	 * @returns {Array&lt;*>} [contacts, minDepth, normal, vertice]
+	 */
+	#findNormal(bodyA, bodyB) {
+		let contacts = [];
+		let minDepth = Infinity;
+		let normal;
+		let vertice = 0;
+
+		let vertices = bodyA.vertices;
+		for (let i = 0; i &lt; vertices.length; i++) {
+			let curVertice = vertices[i];
+			let nextVertice = vertices[(i + 1) % vertices.length];
+			let curNormal = curVertice.sub(nextVertice).normal().normalize();
+			let [ verticeIndex, depth ] = bodyB._getSupport(curNormal, curVertice);
+			let containsPoint = bodyB.containsPoint(curVertice);
+
+			if (containsPoint) {
+				contacts.push({
+					vertice: curVertice,
+					incidentBody: bodyA,
+					referenceBody: bodyB,
+
+					normalImpulse: 0,
+					tangentImpulse: 0,
+				});
+			}
+
+			if (depth &lt; minDepth) {
+				minDepth = depth;
+				normal = curNormal.mult(-1);
+				vertice = verticeIndex;
+			}
+		}
+
+		return [contacts, minDepth, normal, vertice];
 	}
 
 	/**
@@ -348,8 +384,8 @@ class Engine {
 			const bodyA = collisionShapeA.parentNode;
 			const bodyB = collisionShapeB.parentNode;
 
-			const { _inverseMass: mA, _inverseInertia : iA, position: positionA } = bodyA;
-			const { _inverseMass: mB, _inverseInertia : iB, position: positionB } = bodyB;
+			const { _inverseMass: mA, _inverseInertia : iA, position: positionA, velocity: velocityA } = bodyA;
+			const { _inverseMass: mB, _inverseInertia : iB, position: positionB, velocity: velocityB } = bodyB;
 
 			// Stiffer for dynamic vs static
 			let contactHertz = (mA === 0 || mB === 0) ? 2 * hertz : hertz;
@@ -362,7 +398,7 @@ class Engine {
 				// Adjusted separation
 				let rA = cp.vertice.sub(positionA);
 				let rB = cp.vertice.sub(positionB);
-				cp.adjustedSeparation = depth;// - rB.sub(rA).dot(normal);
+				cp.adjustedSeparation = depth;// + rB.sub(rA).dot(normal);
 
 				// Normal mass
 				let rnA = rA.cross(normal);
@@ -382,7 +418,7 @@ class Engine {
 				let c = delta * omega * (2 * zeta + delta * omega);
 				cp.biasCoefficient = omega / (2 * zeta + delta * omega);
 				cp.impulseCoefficient = 1 / (1 + c);
-				cp.massCoefficient = c * cp.impulseCoefficient / contacts.length;
+				cp.massCoefficient = c * cp.impulseCoefficient;
 			}
 		}
 	}
@@ -390,7 +426,7 @@ class Engine {
 	 * Solves velocity constriants on current collision pairs
 	 * Also clears collision pairs that are no longer valid (they haven't collided this frame)
 	 */
-	solveVelocity(useBias = true) {
+	solveVelocity(useBias) {
 		let { pairs } = this.World;
 		let inv_h = this.inverseDelta;
 		
@@ -398,7 +434,7 @@ class Engine {
 			let pair = pairs[i];
 			if (!pair || this.cleansePair(pair)) continue;
 
-			const { bodyA: collisionShapeA, bodyB: collisionShapeB, normal, tangent, contacts, friction, restitution } = pair;
+			const { bodyA: collisionShapeA, bodyB: collisionShapeB, normal, tangent, contacts, friction, restitution, anchorA, anchorB } = pair;
 			const bodyA = collisionShapeA.parentNode;
 			const bodyB = collisionShapeB.parentNode;
 
@@ -419,9 +455,13 @@ class Engine {
 				const vrB = bodyB.velocity.add(rB.cross(bodyB.angularVelocity));
 				const normalVelocity = vrB.sub(vrA).dot(normal);
 
+				// if (normalVelocity &lt; 0) continue;
+
 				// Separation
 				const ds = bodyB.velocity.sub(bodyA.velocity).add(rB.sub(rA));
-				const s = Math.max(ds.dot(normal) * this.delta + contact.adjustedSeparation - 2, 0); // separation scalar
+				let s = ds.dot(normal) * this.delta + contact.adjustedSeparation; // separation scalar
+				s = Math.max(Math.abs(s) - 1, 0) * Math.sign(s); // maintain a little separation
+				
 
 				// Impulse scale, mass scale (meff), and bias (baumgarte stabilization)
 				let bias = 0;
@@ -511,32 +551,69 @@ class Engine {
 	}
 	
 	/**
-	 * Solves position intersections between bodies based on their collision pairs
+	 * Prepares contacts for position solver
 	 */
-	solvePositions() {
+	preSolvePosition() {
 		const { World } = this;
 		let { pairs } = World;
-		
 		for (let i in pairs) {
 			let pair = pairs[i];
-			let { depth, bodyA: collisionShapeA, bodyB: collisionShapeB, normal, contacts } = pair;
+			let contacts = pair.contacts.length;
+			pair.bodyA.parentNode.totalContacts += contacts;
+			pair.bodyB.parentNode.totalContacts += contacts;
+		}
+	}
+	/**
+	 * Solves position intersections between bodies based on their collision pairs
+	 */
+	solvePosition() {
+		const { World, slop, positionDampen } = this;
+		let { pairs } = World;
+
+		for (let i in pairs) {
+			let pair = pairs[i];
+			let { depth, bodyA: collisionShapeA, bodyB: collisionShapeB, normal } = pair;
 			let bodyA = collisionShapeA.parentNode;
 			let bodyB = collisionShapeB.parentNode;
 			if (bodyA.isSensor || bodyB.isSensor) continue;
+
+			let seperation = depth + normal.dot(bodyB.positionImpulse.sub(bodyA.positionImpulse));
+			let impulse = seperation - slop;
+			if (bodyA.isStatic || bodyB.isStatic)
+				impulse *= 2;
 			
-			let { _inverseMass: mA } = bodyA;
-			let { _inverseMass: mB } = bodyB;
-
-			let impulse = Math.max(-0.01, depth - 0.1);
-			pair.depth -= impulse;
-
-			let totalM = mA + mB;
-
 			if (!bodyA.isStatic) {
-				bodyA.translate(normal.mult( impulse * mA / totalM));
+				let contactShare = positionDampen / bodyA.totalContacts;
+				bodyA.positionImpulse.add2(normal.mult( impulse * contactShare));
 			}
 			if (!bodyB.isStatic) {
-				bodyB.translate(normal.mult(-impulse * mB / totalM));
+				let contactShare = positionDampen / bodyB.totalContacts;
+				bodyB.positionImpulse.add2(normal.mult(-impulse * contactShare));
+			}
+		}
+	}
+
+	/**
+	 * Cleans up after position solver
+	 */
+	postSolvePosition() {
+		const { World, positionWarming } = this;
+		let { rigidBodies } = World;
+		for (let body of rigidBodies) {
+			body.totalContacts = 0;
+
+			let { positionImpulse, velocity } = body;
+			if (positionImpulse.x !== 0 || positionImpulse.y !== 0) {
+				body.translate(positionImpulse);
+			}
+
+			if (positionImpulse.dot(velocity) &lt; 0) {
+				positionImpulse.x = 0;
+				positionImpulse.y = 0;
+			}
+			else {
+				// warm start next iteration
+				positionImpulse.mult2(positionWarming);
 			}
 		}
 	}

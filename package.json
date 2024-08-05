@@ -1,10 +1,10 @@
 {
   "name": "ter",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "description": "",
   "scripts": {
     "build": "webpack",
-    "dev": "webpack serve",
+    "start": "webpack serve",
     "build-prod": "webpack --config webpack-prod.config.js & webpack --config webpack-prod.config.js --env minify noclean",
     "build-docs": "jsdoc -c jsdoc.json --verbose",
     "build-release": "npm i & npm run build-prod & npm run build-docs"

@@ -126,10 +126,10 @@ class CollisionShape extends Node {
 		let cos = Math.cos(angle);
 
 		for (let i = vertices.length; i-- > 0;) {
-			let vert = vertices[i];
-			let dist = vert.sub(pivot);
-			vert.x = this.parentNode.position.x + (dist.x * cos - dist.y * sin);
-			vert.y = this.parentNode.position.y + (dist.x * sin + dist.y * cos);
+			let vertice = vertices[i];
+			let dist = vertice.sub(pivot);
+			vertice.x = this.parentNode.position.x + (dist.x * cos - dist.y * sin);
+			vertice.y = this.parentNode.position.y + (dist.x * sin + dist.y * cos);
 		}
 
 		// let posOffset = rotationPoint.sub(rotationPoint.rotate(angle));

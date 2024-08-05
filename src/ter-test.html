@@ -33,9 +33,10 @@
 			gravity: new vec(0, 500),
 		},
 		Engine: {
-			substeps: 3,
-			velocityIterations: 1,
-			positionIterations: 1,
+			substeps: 1,
+			velocityIterations: 4,
+			positionIterations: 4,
+			slop: 0.1,
 		},
 	});
 	game.createDebugRender();
@@ -45,8 +46,27 @@
 	const { World } = Engine;
 
 	camera.setPosition(new vec(0, 0));
+	camera.fov = 1500;
 
-	var floor = Bodies.Rectangle(1000, 100, new vec(0, 400), {
+	var floor = Bodies.Rectangle(1100, 100, new vec(0, 400), {
+		isStatic: true,
+		friction: 0.01,
+		restitution: 0,
+	}).addPolygonRender({
+		background: "#E0F2E9",
+		border: "#E0F2E9",
+		borderWidth: 2,
+	}).add();
+	var wallA = Bodies.Rectangle(100, 900, new vec(-600, 0), {
+		isStatic: true,
+		friction: 0.01,
+		restitution: 0,
+	}).addPolygonRender({
+		background: "#E0F2E9",
+		border: "#E0F2E9",
+		borderWidth: 2,
+	}).add();
+	var wallB = Bodies.Rectangle(100, 900, new vec(600, 0), {
 		isStatic: true,
 		friction: 0.01,
 		restitution: 0,
@@ -68,13 +88,14 @@
 	}
 
 	function stack() {
-		let width = 40;
-		let stackHeight = 10;
+		let width = 80;
+		let stackHeight = 2;
 		for (let i = stackHeight; --i >= 0;) {
-			window.bodyA = Bodies.Rectangle(width, width, new vec(-100 + i * width * 0, 240 - i * width), {
-				restitution: 0,
-				friction: 0.4,
-				mass: 1 + i,
+			window.bodyA = Bodies.Rectangle(width, width, new vec(-100 + i * width * 0, 0 - i * width), {
+				restitution: 1,
+				friction: 0.5,
+				mass: 1 + i * 2,
+				// angle: 0.2,
 			}).addPolygonRender({
 				// background: "#4B8F8C"
 				border: "#4B8F8C",
@@ -143,12 +164,13 @@
 	}
 
 	function multistack() {
-		let width =  18;
+		let width =  25; // 25x18
 		let height = 18;
+		let blockWidth = 40;
 
 		for (let y = 0; y < height; ++y) {
 			for (let x = 0; x < width; ++x) {
-				let body = window[`body${x}-${y}`] = Bodies.Rectangle(50, 50, new vec(0 + 50 * (x - width/2), 50 * (y  - height/2) - 300), {
+				let body = window[`body${x}-${y}`] = Bodies.Rectangle(blockWidth, blockWidth, new vec(0 + blockWidth * (x - width / 2), blockWidth * (y - height) + 300), {
 					restitution: 0,
 					friction: 1,
 				}).addPolygonRender({
@@ -225,7 +247,7 @@
 		Render.app.ticker.add(test);
 	}
 
-	window.addEventListener("load", stack);
+	window.addEventListener("load", friction);
 
 	let mouseBody = Bodies.Circle(5, new vec(0, 0), {
 		isStatic: false,
@@ -338,16 +360,5 @@
 		await anim.run();
 		Render.app.stage.filters.splice(Render.app.stage.filters.indexOf(filter), 1);
 	}
-
-
-	// deub render test
-	const { DebugRender } = game;
-	const { ctx } = DebugRender;
-	DebugRender.on("afterRender", () => {
-		ctx.beginPath();
-		ctx.font = "30px sans-serif";
-		ctx.fillStyle = "white";
-		ctx.fillText("ter.js v2.4.0 test scene", -500, 490);
-	});
 </script>
 </html>
