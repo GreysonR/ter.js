@@ -2568,6 +2568,7 @@ class Ticker {
 		Animation.update();
 		this.trigger("afterTick");
 		requestAnimationFrame(this.tick);
+		// setTimeout(this.tick, 20);
 	}
 	
 	#events = {
@@ -5064,14 +5065,14 @@ class Engine {
 
 	delta = 1;
 	inverseDelta = 1;
-	substeps = 6;
+	substeps = 3;
 	velocityIterations = 1;
-	positionIterations = 1;
+	positionIterations = 0;
 	constraintIterations = 1;
 	
-	slop = 0.1;
+	slop = 0.5;
 	positionWarming = 0.8;
-	positionDampen = 0.9;
+	positionDampen = 0.7;
 
 	/**
 	 * 
@@ -5079,9 +5080,10 @@ class Engine {
 	 * @param {Object} options - Physics options
 	 * @param {number} [options.substeps=6] - Number of substeps per tick
 	 * @param {number} [options.velocityIterations=1] - Number of velocity solver iterations per tick
-	 * @param {number} [options.positionIterations=1] - Number of position solver iterations per tick
+	 * @param {number} [options.positionIterations=0] - Number of position solver iterations per tick
 	 * @param {number} [options.constraintIterations=1] - Number of constraint solver iterations per tick
-	 * @param {number} [options.slop=0.1] - Amount of acceptable penetration
+	 * @param {number} [options.slop=0.5] - Amount of acceptable penetration
+	 * @param {number} [options.positionDampen=0.7] - How much the position impulse is multiplied by. Decrease if unstable.
 	 */
 	constructor(World, options = {}) {
 		let defaults = { ...Engine.defaultOptions };
@@ -5089,7 +5091,7 @@ class Engine {
 		options = defaults;
 		
 		// Shallow copy options
-		let mutableProperties = [`substeps`, `velocityIterations`, `positionIterations`, `constraintIterations`, `slop`];
+		let mutableProperties = [`substeps`, `velocityIterations`, `positionIterations`, `constraintIterations`, `slop`, `positionDampen`];
 		for (let propertyName of mutableProperties) {
 			if (options[propertyName] != undefined && typeof this[propertyName] != "function") {
 				this[propertyName] = options[propertyName];
@@ -5118,32 +5120,30 @@ class Engine {
 
 		// Get timing
 		Performance.update();
+		Performance.frame++;
+
+		// Find collisions
+		World.globalVectors.length = 0;
+		World.globalPoints.length = 0;
+		
+		const pairs = World.collisionPairs;
+		for (let i = 0; i < pairs.length; i++) {
+			let [ bodyA, bodyB ] = pairs[i];
+			if (this.collides(bodyA, bodyB)) {
+				this.createManifold(bodyA, bodyB);
+			}
+		}
+
+		let contactHertz = Math.min(30, 0.25 * this.inverseDelta);
+		// let jointHertz = Math.min(60, 0.125 * this.inverseDelta);
+		// Prepare contacts
+		this.prepareContacts(delta, contactHertz);
 
 		for (let step = 0; step < substeps; step++) {
-			Performance.frame++;
-			
-			// Find collisions
-			World.globalVectors.length = 0;
-			World.globalPoints.length = 0;
-			
-			const pairs = World.collisionPairs;
-			for (let i = 0; i < pairs.length; i++) {
-				let [ bodyA, bodyB ] = pairs[i];
-				if (this.collides(bodyA, bodyB)) {
-					this.createManifold(bodyA, bodyB);
-				}
-			}
-
 			// Apply forces
 			for (let body of rigidBodies) {
 				body._preUpdate(delta);
 			}
-
-			let contactHertz = Math.min(30, 0.25 * this.inverseDelta);
-			// let jointHertz = Math.min(60, 0.125 * this.inverseDelta);
-
-			// Prepare contacts
-			this.prepareContacts(delta, contactHertz);
 
 			// Solve for velocities
 			for (let i = 0; i < this.velocityIterations; i++) {
@@ -5152,19 +5152,19 @@ class Engine {
 			}
 
 			// Solve positions
-			this.preSolvePosition();
-			for (let i = 0; i < this.positionIterations; i++) {
-				this.solvePosition();
-			}
-			this.postSolvePosition();
-			
-			// Update positions / angles
-			for (let body of rigidBodies) {
-				body._update(delta);
+			if (this.positionIterations > 0) {
+				this.preSolvePosition();
+				for (let i = 0; i < this.positionIterations; i++) {
+					this.solvePosition();
+				}
+				this.postSolvePosition();
 			}
 
-			// Solve constraints
-			this.solveConstraints(delta);
+			// Update positions / angles
+			let lastStep = step + 1 == substeps;
+			for (let body of rigidBodies) {
+				body._update(delta, lastStep);
+			}
 		}
 
 		this.delta = delta * substeps;
@@ -5311,8 +5311,8 @@ class Engine {
 		let manifold = {
 			bodyA: incidentBody,
 			bodyB: referenceBody,
-			anchorA: bodyA.vertices[anchorA],
-			anchorB: bodyB.vertices[anchorB],
+			anchorA: incidentBody.vertices[incidentBody === bodyA ? anchorA : anchorB],
+			anchorB: referenceBody.vertices[referenceBody === bodyA ? anchorA : anchorB],
 
 			depth: depth,
 			penetration: normal.mult(depth),
@@ -5430,8 +5430,8 @@ class Engine {
 			const bodyA = collisionShapeA.parentNode;
 			const bodyB = collisionShapeB.parentNode;
 
-			const { _inverseMass: mA, _inverseInertia : iA, position: positionA, velocity: velocityA } = bodyA;
-			const { _inverseMass: mB, _inverseInertia : iB, position: positionB, velocity: velocityB } = bodyB;
+			const { _inverseMass: mA, _inverseInertia : iA, position: positionA, velocity: velocityA, angle: angleA } = bodyA;
+			const { _inverseMass: mB, _inverseInertia : iB, position: positionB, velocity: velocityB, angle: angleB } = bodyB;
 
 			// Stiffer for dynamic vs static
 			let contactHertz = (mA === 0 || mB === 0) ? 2 * hertz : hertz;
@@ -5445,6 +5445,9 @@ class Engine {
 				let rA = cp.vertice.sub(positionA);
 				let rB = cp.vertice.sub(positionB);
 				cp.adjustedSeparation = depth;// + rB.sub(rA).dot(normal);
+				
+				cp.anchorA = rA.rotate(-angleA);
+				cp.anchorB = rB.rotate(-angleB);
 
 				// Normal mass
 				let rnA = rA.cross(normal);
@@ -5480,21 +5483,22 @@ class Engine {
 			let pair = pairs[i];
 			if (!pair || this.cleansePair(pair)) continue;
 
-			const { bodyA: collisionShapeA, bodyB: collisionShapeB, normal, tangent, contacts, friction, restitution, anchorA, anchorB } = pair;
+			const { bodyA: collisionShapeA, bodyB: collisionShapeB, normal, tangent, contacts, friction, restitution } = pair;
 			const bodyA = collisionShapeA.parentNode;
 			const bodyB = collisionShapeB.parentNode;
 
 			if (contacts.length === 0) continue;
 			if (bodyA.isSensor || bodyB.isSensor) continue;
 
-			let { _inverseMass: mA, _inverseInertia : iA, angularVelocity: wA, velocity: vA, position: positionA } = bodyA;
-			let { _inverseMass: mB, _inverseInertia : iB, angularVelocity: wB, velocity: vB, position: positionB } = bodyB;
+
+			let { _inverseMass: mA, _inverseInertia : iA, angularVelocity: wA, velocity: vA, position: positionA, angle: angleA } = bodyA;
+			let { _inverseMass: mB, _inverseInertia : iB, angularVelocity: wB, velocity: vB, position: positionB, angle: angleB } = bodyB;
 
 			for (let contact of contacts) {
-				const { vertice: cp } = contact;
+				const { vertice: cp, anchorA, anchorB } = contact;
 
-				const rA = cp.sub(positionA); // radius vector A
-				const rB = cp.sub(positionB); // radius vector B
+				const rA = anchorA.rotate(angleA); // radius vector A
+				const rB = anchorB.rotate(angleB); // radius vector B
 
 				// Relative velocity
 				const vrA = bodyA.velocity.add(rA.cross(bodyA.angularVelocity));
@@ -5608,7 +5612,9 @@ class Engine {
 
 		for (let i in pairs) {
 			let pair = pairs[i];
-			let { depth, bodyA: collisionShapeA, bodyB: collisionShapeB, normal } = pair;
+			let { bodyA: collisionShapeA, bodyB: collisionShapeB, normal, anchorA, anchorB } = pair;
+			let depth = pair.depth = anchorB.sub(anchorA).dot(normal);
+			if (depth < 0) continue;
 			let bodyA = collisionShapeA.parentNode;
 			let bodyB = collisionShapeB.parentNode;
 			if (bodyA.isSensor || bodyB.isSensor) continue;
@@ -5651,93 +5657,6 @@ class Engine {
 				// warm start next iteration
 				positionImpulse.mult2(positionWarming);
 			}
-		}
-	}
-
-	/**
-	 * Solves physics constraints for their new position and velocity
-	 * @param {number} delta - Engine tick duration, in seconds
-	 */
-	solveConstraints(delta) {
-		delta *= 1000;
-		const constraints = this.World.constraints;
-		const constraintIterations = this.constraintIterations;
-		delta /= constraintIterations;
-
-		for (let step = 0; step < constraintIterations; step++) {
-			for (let i = 0; i < constraints.length; i++) {
-				let constraint = constraints[i];
-				let { bodyA, bodyB, offsetA, offsetB, stiffness, angularStiffness, length, ignoreSlack } = constraint;
-				let pointA = bodyA.position.add(offsetA.rotate(bodyA.angle));
-				let pointB = bodyB.position.add(offsetB.rotate(bodyB.angle));
-
-				// constraint velocity solver
-				let diff = pointA.sub(pointB);
-				let normal = diff.normalize();
-				let tangent = normal.normal();
-
-				let totalMass = bodyA.mass + bodyB.mass;
-				let shareA = (bodyB.mass / totalMass) || 0;
-				let shareB = (bodyA.mass / totalMass) || 0;
-				if (bodyA.isStatic) shareB = 1;
-				if (bodyB.isStatic) shareA = 1;
-
-				function solveImpulse(vertice, point, body) { // vertice = where the constraint goes to, point = where the constraint is
-					let offset = point.sub(body.position);
-					let offsetLen = offset.length;
-					if (offsetLen > length * 3) {
-						offset.mult2(length / offsetLen);
-					}
-					const vp1 = body.velocity.add(offset.normal().mult(-body.angularVelocity));
-					const vp2 = vertice.sub(point).mult(stiffness * 30);
-					if (ignoreSlack && diff.length < length * (1 + stiffness)) { // idk how to get this to work
-						vp1.mult2(0);
-						vp2.mult2(0);
-					}
-					const relativeVelocity = vp1.sub(vp2);
-					const normalVelocity = relativeVelocity.dot(normal);
-					const tangentVelocity = relativeVelocity.dot(tangent);
-					let tangentImpulse = tangentVelocity;
-					
-					let normalImpulse = (stiffness) * normalVelocity; // min is to prevent breakage
-					normalImpulse = Math.min(Math.abs(normalImpulse), 300) * Math.sign(normalImpulse);
-					let curImpulse = normal.mult(normalImpulse).add2(tangent.mult(tangentImpulse * angularStiffness));
-
-					return {
-						angularImpulse: offset.cross(curImpulse) * body._inverseInertia / 2,
-						normalImpulse: curImpulse.mult(0.5),
-					}
-				}
-
-				let impulseDiff = pointA.sub(pointB).normalize().mult(length);
-				let impulsePtA = bodyA.isStatic ? pointA : pointB.add(impulseDiff);
-				let impulsePtB = bodyB.isStatic ? pointB : pointA.sub(impulseDiff);
-
-				let { angularImpulse: angImpulseA, normalImpulse: impulseA } = solveImpulse(impulsePtA, pointA, bodyA);
-				let { angularImpulse: angImpulseB, normalImpulse: impulseB } = solveImpulse(impulsePtB, pointB, bodyB);
-				
-				if (!bodyA.isStatic) {
-					bodyA.velocity.sub2(impulseA.mult(shareA * delta));
-					bodyA.angularVelocity -= angImpulseA * shareA * delta;
-				}
-				if (!bodyB.isStatic) {
-					bodyB.velocity.sub2(impulseB.mult(shareB * delta));
-					bodyB.angularVelocity -= angImpulseB * shareB * delta;
-				}
-
-				// constraint position solver
-				// let nextLength = pointA.sub(pointB).length + (length - pointA.sub(pointB).length) * stiffness;
-				// let changeA = nextLength - impulsePtB.sub(bodyA.position).length;
-				// changeA = Math.min(50, Math.abs(changeA)) * Math.sign(changeA);
-				// let changeB = nextLength - impulsePtA.sub(bodyB.position).length;
-				// changeB = Math.min(50, Math.abs(changeB)) * Math.sign(changeB);
-
-				// bodyA.translate(normal.mult((changeA) * shareA * delta * 0.05));
-				// bodyB.translate(normal.mult((changeB) * shareB * delta * 0.05));
-
-				constraint.updateBounds();
-			}
-
 		}
 	}
 };
@@ -6306,7 +6225,7 @@ class RigidBody extends Node {
 	 * @param {number} delta - Engine tick duration, in seconds
 	 * @private
 	 */
-	_update(delta) {
+	_update(delta, updateGrid = true) {
 		this.trigger("duringUpdate");
 
 		if (this.isStatic) return;
@@ -6334,7 +6253,7 @@ class RigidBody extends Node {
 		}
 		this._last.angularVelocity = this.angularVelocity;
 
-		if (this.hasCollisions) {
+		if (updateGrid && this.hasCollisions) {
 			for (let child of this.children) {
 				if (child instanceof CollisionShape) {
 					this.Engine.World.dynamicGrid.updateBody(child);

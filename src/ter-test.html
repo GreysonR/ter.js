@@ -33,10 +33,9 @@
 			gravity: new vec(0, 500),
 		},
 		Engine: {
-			substeps: 1,
-			velocityIterations: 4,
-			positionIterations: 4,
-			slop: 0.1,
+			substeps: 4,
+			velocityIterations: 1,
+			positionIterations: 1,
 		},
 	});
 	game.createDebugRender();
@@ -89,7 +88,7 @@
 
 	function stack() {
 		let width = 80;
-		let stackHeight = 2;
+		let stackHeight = 1;
 		for (let i = stackHeight; --i >= 0;) {
 			window.bodyA = Bodies.Rectangle(width, width, new vec(-100 + i * width * 0, 0 - i * width), {
 				restitution: 1,
@@ -107,7 +106,6 @@
 	function pyramid() {
 		let width = 80;
 		let height = 8;
-		camera.fov = 3000;
 
 		for (let y = 0; y <= height; ++y) {
 			for (let x = height - y; x >= 0; x--) {
@@ -115,6 +113,25 @@
 					restitution: 0,
 					friction: 1,
 					// mass: 1 + i,
+				}).addPolygonRender({
+					// background: "#4B8F8C",
+					border: "#4B8F8C",
+					borderWidth: 2,
+				}).add();
+			}
+		}
+	}
+	
+	function pyramidStack() {
+		let width = 40;
+		let height = 10;
+
+		for (let x = height * 2 - 1; x >= 0; x--) {
+			for (let y = 0; y <= Math.floor(height - Math.abs(height - x)) - 1; ++y) {
+				window["stack" + x + "x" + y] = Bodies.Rectangle(width, width, new vec((-height + x) * width, 200 - y * width), {
+					restitution: 0,
+					friction: 1,
+					// mass: 1 + y,
 				}).addPolygonRender({
 					// background: "#4B8F8C",
 					border: "#4B8F8C",
@@ -189,6 +206,7 @@
 			hasCollisions: true,
 			angle: Math.PI/2,
 			friction: 0,
+			restitution: 0,
 		}).addPolygonRender({
 			border: "#46849A",
 			borderWidth: 3,
@@ -199,6 +217,7 @@
 
 		var bodyB = window.bodyB = Bodies.Polygon([new vec(0, 0), new vec(50, -50), new vec(100, 0), new vec(100, 100), new vec(0, 100)], new vec(200, 300), {
 			friction: 0,
+			restitution: 0,
 		}).addPolygonRender({
 			border: "#D55769",
 			borderWidth: 3,
@@ -247,7 +266,7 @@
 		Render.app.ticker.add(test);
 	}
 
-	window.addEventListener("load", friction);
+	window.addEventListener("load", pyramidStack);
 
 	let mouseBody = Bodies.Circle(5, new vec(0, 0), {
 		isStatic: false,

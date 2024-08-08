@@ -555,7 +555,7 @@ class RigidBody extends Node {
 	 * @param {number} delta - Engine tick duration, in seconds
 	 * @private
 	 */
-	_update(delta) {
+	_update(delta, updateGrid = true) {
 		this.trigger("duringUpdate");
 
 		if (this.isStatic) return;
@@ -583,7 +583,7 @@ class RigidBody extends Node {
 		}
 		this._last.angularVelocity = this.angularVelocity;
 
-		if (this.hasCollisions) {
+		if (updateGrid && this.hasCollisions) {
 			for (let child of this.children) {
 				if (child instanceof CollisionShape) {
 					this.Engine.World.dynamicGrid.updateBody(child);
