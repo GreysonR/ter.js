@@ -5070,7 +5070,7 @@ class Engine {
 	positionIterations = 0;
 	constraintIterations = 1;
 	
-	slop = 0.5;
+	slop = 0.2;
 	positionWarming = 0.8;
 	positionDampen = 0.7;
 

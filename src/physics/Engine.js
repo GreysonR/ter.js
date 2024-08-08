@@ -414,7 +414,7 @@ class Engine {
 
 				// Soft constraint coefficients
 				const zeta = 10;
-				let omega = 2 * 2 * Math.PI * contactHertz;
+				let omega = 2 * Math.PI * contactHertz;
 				let c = delta * omega * (2 * zeta + delta * omega);
 				cp.biasCoefficient = omega / (2 * zeta + delta * omega);
 				cp.impulseCoefficient = 1 / (1 + c);
