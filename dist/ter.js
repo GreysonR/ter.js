@@ -5008,7 +5008,7 @@ class CollisionShape extends Node {
 	 */
 	_getSupport(vector, position = this.position) {
 		let vertices = this.vertices;
-		let bestDist = 0;
+		let bestDist = -Infinity;
 		let bestVert;
 		for (let i = 0; i < vertices.length; i++) {
 			let dist = vector.dot(vertices[i].sub(position));
@@ -5024,15 +5024,16 @@ class CollisionShape extends Node {
 	/**
 	 * Finds if a point is inside the body
 	 * @param {vec} point - Point to query
+	 * @param {Number} margin - How much the point has to be penetrating by
 	 * @return {boolean} If the point is inside the body's vertices
 	 */
-	containsPoint(point) {
+	containsPoint(point, margin = 0) {
 		let vertices = this.vertices;
 		for (let i = 0; i < vertices.length; i++) {
 			let curVertice = vertices[i];
 			let nextVertice = vertices[(i + 1) % vertices.length];
 			
-			if ((point.x - curVertice.x) * (nextVertice.y - curVertice.y) + (point.y - curVertice.y) * (curVertice.x - nextVertice.x) >= 0) {
+			if ((point.x - curVertice.x) * (nextVertice.y - curVertice.y) + (point.y - curVertice.y) * (curVertice.x - nextVertice.x) >= margin) {
 				return false;
 			}
 		}
@@ -5071,8 +5072,9 @@ class Engine {
 	constraintIterations = 1;
 	
 	slop = 0.2;
+	overlapMargin = 0.01;
 	positionWarming = 0.8;
-	positionDampen = 0.7;
+	positionDampen = 0.9;
 
 	/**
 	 * 
@@ -5083,7 +5085,7 @@ class Engine {
 	 * @param {number} [options.positionIterations=0] - Number of position solver iterations per tick
 	 * @param {number} [options.constraintIterations=1] - Number of constraint solver iterations per tick
 	 * @param {number} [options.slop=0.5] - Amount of acceptable penetration
-	 * @param {number} [options.positionDampen=0.7] - How much the position impulse is multiplied by. Decrease if unstable.
+	 * @param {number} [options.positionDampen=0.9] - How much the position impulse is multiplied by. Decrease if unstable.
 	 */
 	constructor(World, options = {}) {
 		let defaults = { ...Engine.defaultOptions };
@@ -5181,7 +5183,7 @@ class Engine {
 		if (bodyA.parentNode.isStatic && bodyB.parentNode.isStatic) return false;
 
 		let collision = true;
-		let overlapMargin = 0.01;
+		let overlapMargin = this.overlapMargin;
 
 		function getAllSupports(body, direction) {
 			let vertices = body.vertices;
@@ -5307,6 +5309,14 @@ class Engine {
 		World.globalVectors.push({ position: normalPoint, vector: new vec(normal) });
 		World.globalPoints.push(...contacts.map(v => v.vertice));
 
+		// Get local anchor points
+		for (let cp of contacts) {
+			let rA = cp.vertice.sub(incidentBody.parentNode.position);
+			let rB = cp.vertice.sub(referenceBody.parentNode.position);
+			cp.anchorA = rA.rotate(-incidentBody.parentNode.angle);
+			cp.anchorB = rB.rotate(-referenceBody.parentNode.angle);
+		}
+
 		let manifoldId = Common.pairCommon(bodyA.id, bodyB.id);
 		let manifold = {
 			bodyA: incidentBody,
@@ -5362,6 +5372,7 @@ class Engine {
 	#findNormal(bodyA, bodyB) {
 		let contacts = [];
 		let minDepth = Infinity;
+		let overlapMargin = this.overlapMargin;
 		let normal;
 		let vertice = 0;
 
@@ -5371,7 +5382,7 @@ class Engine {
 			let nextVertice = vertices[(i + 1) % vertices.length];
 			let curNormal = curVertice.sub(nextVertice).normal().normalize();
 			let [ verticeIndex, depth ] = bodyB._getSupport(curNormal, curVertice);
-			let containsPoint = bodyB.containsPoint(curVertice);
+			let containsPoint = bodyB.containsPoint(curVertice, overlapMargin);
 
 			if (containsPoint) {
 				contacts.push({
@@ -5442,12 +5453,9 @@ class Engine {
 				cp.tangentImpulse = 0;
 
 				// Adjusted separation
-				let rA = cp.vertice.sub(positionA);
-				let rB = cp.vertice.sub(positionB);
-				cp.adjustedSeparation = depth;// + rB.sub(rA).dot(normal);
-				
-				cp.anchorA = rA.rotate(-angleA);
-				cp.anchorB = rB.rotate(-angleB);
+				let rA = cp.anchorA.rotate(angleA);
+				let rB = cp.anchorB.rotate(angleB);
+				cp.adjustedSeparation = depth + rB.add(positionB).sub(rA.add(positionA)).dot(normal);
 
 				// Normal mass
 				let rnA = rA.cross(normal);
@@ -5477,7 +5485,8 @@ class Engine {
 	 */
 	solveVelocity(useBias) {
 		let { pairs } = this.World;
-		let inv_h = this.inverseDelta;
+		const inv_h = this.inverseDelta;
+		const slop = this.slop;
 		
 		for (let i in pairs) {
 			let pair = pairs[i];
@@ -5493,6 +5502,9 @@ class Engine {
 
 			let { _inverseMass: mA, _inverseInertia : iA, angularVelocity: wA, velocity: vA, position: positionA, angle: angleA } = bodyA;
 			let { _inverseMass: mB, _inverseInertia : iB, angularVelocity: wB, velocity: vB, position: positionB, angle: angleB } = bodyB;
+
+			vA = new vec(vA);
+			vB = new vec(vB);
 
 			for (let contact of contacts) {
 				const { vertice: cp, anchorA, anchorB } = contact;
@@ -5510,25 +5522,30 @@ class Engine {
 				// Separation
 				const ds = bodyB.velocity.sub(bodyA.velocity).add(rB.sub(rA));
 				let s = ds.dot(normal) * this.delta + contact.adjustedSeparation; // separation scalar
-				s = Math.max(Math.abs(s) - 1, 0) * Math.sign(s); // maintain a little separation
+				s = (Math.abs(s) - slop) * Math.sign(s); // maintain a little separation
+				if (s < 0) continue;
 				
 
-				// Impulse scale, mass scale (meff), and bias (baumgarte stabilization)
+				// Impulse scale, effective mass (meff), and bias (baumgarte stabilization)
 				let bias = 0;
 				let massScale = 1;
 				let impulseScale = 0;
-				const maxBaumgarteVelocity = 4;
+				const maxBaumgarteVelocity = 100;
 				if (s < 0) {
 					bias = s * inv_h; // Speculative
 				}
 				else if (useBias) {
-					bias = Math.max(contact.biasCoefficient * s, -maxBaumgarteVelocity);
+					bias = Math.min(contact.biasCoefficient * s, maxBaumgarteVelocity);
 					massScale = contact.massCoefficient;
 					impulseScale = contact.impulseCoefficient;
 				}
+
+				if (bodyA.isStatic || bodyB.isStatic) {
+					bias *= 2;
+				}
 				
 				let impulse = contact.normalMass * massScale * (normalVelocity * restitution + bias);// - impulseScale * contact.normalImpulse;
-
+				
 				if (false) {}
 				else {
 					// Clamp current impulse
@@ -5539,18 +5556,18 @@ class Engine {
 				// Apply contact impulse
 				let P = normal.mult(impulse);
 
-				vA = vA.add(P.mult(mA));
+				vA.add2(P.mult(mA));
 				wA += iA * rA.cross(P);
 
-				vB = vB.sub(P.mult(mB));
+				vB.sub2(P.mult(mB));
 				wB -= iB * rB.cross(P);
 			}
 
 			for (let contact of contacts) {
-				const { vertice: cp, tangentMass } = contact;
+				const { vertice: cp, anchorA, anchorB } = contact;
 
-				const rA = cp.sub(positionA); // radius vector A
-				const rB = cp.sub(positionB); // radius vector B
+				const rA = anchorA.rotate(angleA); // radius vector A
+				const rB = anchorB.rotate(angleB); // radius vector B
 
 				// Relative velocity
 				const vrA = vA.add(rA.cross(wA));
@@ -5558,27 +5575,26 @@ class Engine {
 				const vt = vrB.sub(vrA).dot(tangent);
 
 				// Tangent force
-				let impulse = -tangentMass * vt;
+				let impulse = -contact.tangentMass * vt;
 				
-				if (true) {
-					// Clamp accumulated force
+				if (false) {}
+				else {
+					// Clamp current force
 					const maxFriction = friction * contact.normalImpulse;
-					let newImpulse = Common.clamp(contact.tangentImpulse + impulse, -maxFriction, maxFriction);
-					impulse = newImpulse - contact.tangentImpulse;
-					contact.tangentImpulse = newImpulse;
+					impulse = Common.clamp(impulse, -maxFriction, maxFriction);
+					contact.tangentImpulse += impulse;
 				}
-				else {}
 
 				// Apply contact impulse
 				let P = tangent.mult(impulse);
 
-				vA = vA.sub(P.mult(mA));
+				vA.sub2(P.mult(mA));
 				wA -= iA * rA.cross(P);
 				
-				vB = vB.add(P.mult(mB));
+				vB.add2(P.mult(mB));
 				wB += iB * rB.cross(P);
 			}
-			
+
 			if (!bodyA.isStatic) {
 				bodyA.velocity.set(vA);
 				bodyA.angularVelocity = wA;
@@ -5620,6 +5636,7 @@ class Engine {
 			if (bodyA.isSensor || bodyB.isSensor) continue;
 
 			let seperation = depth + normal.dot(bodyB.positionImpulse.sub(bodyA.positionImpulse));
+			if (seperation < 0) continue;
 			let impulse = seperation - slop;
 			if (bodyA.isStatic || bodyB.isStatic)
 				impulse *= 2;
@@ -5688,7 +5705,7 @@ class RigidBody extends Node {
 		restitution: 4,
 		frictionAir: 0.05,
 		frictionAngular: 0.01,
-		friction: 0.5,
+		friction: 0.1,
 		round: 0,
 		roundQuality: 40,
 	

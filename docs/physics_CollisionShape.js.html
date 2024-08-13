@@ -254,7 +254,7 @@ class CollisionShape extends Node {
 	 */
 	_getSupport(vector, position = this.position) {
 		let vertices = this.vertices;
-		let bestDist = 0;
+		let bestDist = -Infinity;
 		let bestVert;
 		for (let i = 0; i &lt; vertices.length; i++) {
 			let dist = vector.dot(vertices[i].sub(position));
@@ -270,15 +270,16 @@ class CollisionShape extends Node {
 	/**
 	 * Finds if a point is inside the body
 	 * @param {vec} point - Point to query
+	 * @param {Number} margin - How much the point has to be penetrating by
 	 * @return {boolean} If the point is inside the body's vertices
 	 */
-	containsPoint(point) {
+	containsPoint(point, margin = 0) {
 		let vertices = this.vertices;
 		for (let i = 0; i &lt; vertices.length; i++) {
 			let curVertice = vertices[i];
 			let nextVertice = vertices[(i + 1) % vertices.length];
 			
-			if ((point.x - curVertice.x) * (nextVertice.y - curVertice.y) + (point.y - curVertice.y) * (curVertice.x - nextVertice.x) >= 0) {
+			if ((point.x - curVertice.x) * (nextVertice.y - curVertice.y) + (point.y - curVertice.y) * (curVertice.x - nextVertice.x) >= margin) {
 				return false;
 			}
 		}

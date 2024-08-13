@@ -31,11 +31,13 @@
 		},
 		World: {
 			gravity: new vec(0, 500),
+			gridSize: 100,
 		},
 		Engine: {
-			substeps: 4,
+			substeps: 7,
 			velocityIterations: 1,
-			positionIterations: 1,
+			positionIterations: 0,
+			slop: 0,
 		},
 	});
 	game.createDebugRender();
@@ -90,11 +92,11 @@
 		let width = 80;
 		let stackHeight = 1;
 		for (let i = stackHeight; --i >= 0;) {
-			window.bodyA = Bodies.Rectangle(width, width, new vec(-100 + i * width * 0, 0 - i * width), {
+			Bodies.Rectangle(width, width, new vec(-100 + i * width * 0, 0 - i * width), {
 				restitution: 1,
 				friction: 0.5,
 				mass: 1 + i * 2,
-				// angle: 0.2,
+				// angle: Math.PI/4,
 			}).addPolygonRender({
 				// background: "#4B8F8C"
 				border: "#4B8F8C",
@@ -107,12 +109,12 @@
 		let width = 80;
 		let height = 8;
 
-		for (let y = 0; y <= height; ++y) {
-			for (let x = height - y; x >= 0; x--) {
-				window["stack" + x + "x" + y] = Bodies.Rectangle(width, width, new vec((-(height - y) / 2 + x) * width, 200 - y * width), {
-					restitution: 0,
-					friction: 1,
-					// mass: 1 + i,
+		for (let y = 0; y < height; ++y) {
+			for (let x = height - y - 1; x >= 0; x--) {
+				window["stack" + x + "x" + y] = Bodies.Rectangle(width, width, new vec((-(height - 1 - y) / 2 + x) * width, 300 - y * width), {
+					restitution: 0.5,
+					friction: 0.1,
+					// mass: 1 + y,
 				}).addPolygonRender({
 					// background: "#4B8F8C",
 					border: "#4B8F8C",
@@ -130,12 +132,12 @@
 			for (let y = 0; y <= Math.floor(height - Math.abs(height - x)) - 1; ++y) {
 				window["stack" + x + "x" + y] = Bodies.Rectangle(width, width, new vec((-height + x) * width, 200 - y * width), {
 					restitution: 0,
-					friction: 1,
+					friction: 0.1,
 					// mass: 1 + y,
 				}).addPolygonRender({
 					// background: "#4B8F8C",
 					border: "#4B8F8C",
-					borderWidth: 2,
+					borderWidth: 1,
 				}).add();
 			}
 		}
@@ -162,7 +164,7 @@
 			borderWidth: 2,
 		}).add();
 		
-		for (let i = 4; --i >= 0;) {
+		for (let i = 2; --i >= 0;) {
 			Bodies.Rectangle(50, 50, new vec(-100 + i * 50, 0), {
 				restitution: 1,
 				friction: 1,
@@ -266,18 +268,19 @@
 		Render.app.ticker.add(test);
 	}
 
-	window.addEventListener("load", pyramidStack);
+	window.addEventListener("load", multistack);
 
-	let mouseBody = Bodies.Circle(5, new vec(0, 0), {
+	let mouseBody = Bodies.Circle(5, new vec(-10000, -10000), {
 		isStatic: false,
 		frictionAir: 0,
 		restitution: 0,
+		frictionAngular: 1,
 		mass: 0.1,
 		isSensor: true,
 	}).addPolygonRender({
 		background: "#ffffff",
 	}).add();
-	let mousePosition = new vec(0, 0);
+	let mousePosition = new vec(mouseBody.position);
 	window.addEventListener("mousemove", event => {
 		let position = camera.screenPtToGame(new vec(event.clientX, event.clientY));
 		mousePosition.set(position);
@@ -300,16 +303,14 @@
 	window.addEventListener("load", () => {
 		// bodies at edges of screen required to get filters to work correctly
 		let anchorA = Bodies.Rectangle(5,5, camera.screenPtToGame(new vec(0, 0)), {
-			isStatic: false,
-			frictionAir: 1,
-			isSensor: true,
+			isStatic: true,
+			hasCollisions: false,
 		}).addPolygonRender({
 			background: "#ffffff01",
 		}).add();
 		let anchorB = Bodies.Rectangle(5,5, camera.screenPtToGame(new vec(window.innerWidth, window.innerHeight)), {
-			isStatic: false,
-			frictionAir: 1,
-			isSensor: true,
+			isStatic: true,
+			hasCollisions: false,
 		}).addPolygonRender({
 			background: "#ffffff01",
 		}).add();
