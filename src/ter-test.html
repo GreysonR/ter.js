@@ -34,8 +34,8 @@
 			gridSize: 100,
 		},
 		Engine: {
-			substeps: 7,
-			velocityIterations: 1,
+			substeps: 2,
+			velocityIterations: 2,
 			positionIterations: 0,
 			slop: 0,
 		},
@@ -89,11 +89,11 @@
 	}
 
 	function stack() {
-		let width = 80;
-		let stackHeight = 1;
+		let width = 50;
+		let stackHeight = 3;
 		for (let i = stackHeight; --i >= 0;) {
 			Bodies.Rectangle(width, width, new vec(-100 + i * width * 0, 0 - i * width), {
-				restitution: 1,
+				restitution: 0,
 				friction: 0.5,
 				mass: 1 + i * 2,
 				// angle: Math.PI/4,
