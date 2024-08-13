@@ -2567,8 +2567,8 @@ class Ticker {
 
 		Animation.update();
 		this.trigger("afterTick");
-		// requestAnimationFrame(this.tick);
-		setTimeout(this.tick, 0);
+		requestAnimationFrame(this.tick);
+		// setTimeout(this.tick, 0);
 	}
 	
 	#events = {
@@ -5066,8 +5066,8 @@ class Engine {
 
 	delta = 1;
 	inverseDelta = 1;
-	substeps = 3;
-	velocityIterations = 1;
+	substeps = 2;
+	velocityIterations = 2;
 	positionIterations = 0;
 	constraintIterations = 1;
 	
@@ -5471,7 +5471,7 @@ class Engine {
 
 				// Soft constraint coefficients
 				const zeta = 10;
-				let omega = 2 * Math.PI * contactHertz;
+				let omega = 1 * 2 * Math.PI * contactHertz;
 				let c = delta * omega * (2 * zeta + delta * omega);
 				cp.biasCoefficient = omega / (2 * zeta + delta * omega);
 				cp.impulseCoefficient = 1 / (1 + c);
@@ -5515,7 +5515,8 @@ class Engine {
 				// Relative velocity
 				const vrA = bodyA.velocity.add(rA.cross(bodyA.angularVelocity));
 				const vrB = bodyB.velocity.add(rB.cross(bodyB.angularVelocity));
-				const normalVelocity = vrB.sub(vrA).dot(normal);
+				const vn = vrB.sub(vrA).dot(normal);
+				const vt = vrB.sub(vrA).dot(tangent);
 
 				// if (normalVelocity < 0) continue;
 
@@ -5544,55 +5545,31 @@ class Engine {
 					bias *= 2;
 				}
 				
-				let impulse = contact.normalMass * massScale * (normalVelocity * restitution + bias);// - impulseScale * contact.normalImpulse;
+				let normalImpulse = contact.normalMass * massScale * (vn * restitution + bias);// - impulseScale * contact.normalImpulse;
+				let tangentImpulse = -contact.tangentMass * vt;
 				
 				if (false) {}
 				else {
 					// Clamp current impulse
-					impulse = Math.max(impulse, 0);
-					contact.normalImpulse += impulse;
+					normalImpulse = Math.max(normalImpulse, 0);
+					contact.normalImpulse += normalImpulse;
+				}
+				if (false) {}
+				else {
+					// Clamp current force
+					const maxFriction = friction * normalImpulse;
+					tangentImpulse = Common.clamp(tangentImpulse, -maxFriction, maxFriction);
+					contact.tangentImpulse += tangentImpulse;
 				}
 				
 				// Apply contact impulse
-				let P = normal.mult(impulse);
+				let P = normal.mult(normalImpulse).sub2(tangent.mult(tangentImpulse));
 
 				vA.add2(P.mult(mA));
 				wA += iA * rA.cross(P);
 
 				vB.sub2(P.mult(mB));
 				wB -= iB * rB.cross(P);
-			}
-
-			for (let contact of contacts) {
-				const { vertice: cp, anchorA, anchorB } = contact;
-
-				const rA = anchorA.rotate(angleA); // radius vector A
-				const rB = anchorB.rotate(angleB); // radius vector B
-
-				// Relative velocity
-				const vrA = vA.add(rA.cross(wA));
-				const vrB = vB.add(rB.cross(wB));
-				const vt = vrB.sub(vrA).dot(tangent);
-
-				// Tangent force
-				let impulse = -contact.tangentMass * vt;
-				
-				if (false) {}
-				else {
-					// Clamp current force
-					const maxFriction = friction * contact.normalImpulse;
-					impulse = Common.clamp(impulse, -maxFriction, maxFriction);
-					contact.tangentImpulse += impulse;
-				}
-
-				// Apply contact impulse
-				let P = tangent.mult(impulse);
-
-				vA.sub2(P.mult(mA));
-				wA -= iA * rA.cross(P);
-				
-				vB.add2(P.mult(mB));
-				wB += iB * rB.cross(P);
 			}
 
 			if (!bodyA.isStatic) {

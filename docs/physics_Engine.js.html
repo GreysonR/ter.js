@@ -18,8 +18,8 @@ class Engine {
 
 	delta = 1;
 	inverseDelta = 1;
-	substeps = 3;
-	velocityIterations = 1;
+	substeps = 2;
+	velocityIterations = 2;
 	positionIterations = 0;
 	constraintIterations = 1;
 	
@@ -467,7 +467,8 @@ class Engine {
 				// Relative velocity
 				const vrA = bodyA.velocity.add(rA.cross(bodyA.angularVelocity));
 				const vrB = bodyB.velocity.add(rB.cross(bodyB.angularVelocity));
-				const normalVelocity = vrB.sub(vrA).dot(normal);
+				const vn = vrB.sub(vrA).dot(normal);
+				const vt = vrB.sub(vrA).dot(tangent);
 
 				// if (normalVelocity &lt; 0) continue;
 
@@ -496,66 +497,42 @@ class Engine {
 					bias *= 2;
 				}
 				
-				let impulse = contact.normalMass * massScale * (normalVelocity * restitution + bias);// - impulseScale * contact.normalImpulse;
+				let normalImpulse = contact.normalMass * massScale * (vn * restitution + bias);// - impulseScale * contact.normalImpulse;
+				let tangentImpulse = -contact.tangentMass * vt;
 				
 				if (false) { // Clamping current impulse rather than accumulated is more stable
 					// Clamp accumulated impulse
-					let newImpulse = Math.max(contact.normalImpulse + impulse, 0);
-					impulse = newImpulse - contact.normalImpulse;
+					let newImpulse = Math.max(contact.normalImpulse + normalImpulse, 0);
+					normalImpulse = newImpulse - contact.normalImpulse;
 					contact.normalImpulse = newImpulse;
 				}
 				else {
 					// Clamp current impulse
-					impulse = Math.max(impulse, 0);
-					contact.normalImpulse += impulse;
+					normalImpulse = Math.max(normalImpulse, 0);
+					contact.normalImpulse += normalImpulse;
+				}
+				if (false) {
+					// Clamp accumulated force
+					const maxFriction = friction * contact.normalImpulse;
+					let newImpulse = Common.clamp(contact.tangentImpulse + tangentImpulse, -maxFriction, maxFriction);
+					tangentImpulse = newImpulse - contact.tangentImpulse;
+					contact.tangentImpulse = newImpulse;
+				}
+				else {
+					// Clamp current force
+					const maxFriction = friction * normalImpulse;
+					tangentImpulse = Common.clamp(tangentImpulse, -maxFriction, maxFriction);
+					contact.tangentImpulse += tangentImpulse;
 				}
 				
 				// Apply contact impulse
-				let P = normal.mult(impulse);
+				let P = normal.mult(normalImpulse).sub2(tangent.mult(tangentImpulse));
 
 				vA.add2(P.mult(mA));
 				wA += iA * rA.cross(P);
 
 				vB.sub2(P.mult(mB));
 				wB -= iB * rB.cross(P);
-			}
-
-			for (let contact of contacts) {
-				const { vertice: cp, anchorA, anchorB } = contact;
-
-				const rA = anchorA.rotate(angleA); // radius vector A
-				const rB = anchorB.rotate(angleB); // radius vector B
-
-				// Relative velocity
-				const vrA = vA.add(rA.cross(wA));
-				const vrB = vB.add(rB.cross(wB));
-				const vt = vrB.sub(vrA).dot(tangent);
-
-				// Tangent force
-				let impulse = -contact.tangentMass * vt;
-				
-				if (false) {
-					// Clamp accumulated force
-					const maxFriction = friction * contact.normalImpulse;
-					let newImpulse = Common.clamp(contact.tangentImpulse + impulse, -maxFriction, maxFriction);
-					impulse = newImpulse - contact.tangentImpulse;
-					contact.tangentImpulse = newImpulse;
-				}
-				else {
-					// Clamp current force
-					const maxFriction = friction * contact.normalImpulse;
-					impulse = Common.clamp(impulse, -maxFriction, maxFriction);
-					contact.tangentImpulse += impulse;
-				}
-
-				// Apply contact impulse
-				let P = tangent.mult(impulse);
-
-				vA.sub2(P.mult(mA));
-				wA -= iA * rA.cross(P);
-				
-				vB.add2(P.mult(mB));
-				wB += iB * rB.cross(P);
 			}
 
 			if (!bodyA.isStatic) {
