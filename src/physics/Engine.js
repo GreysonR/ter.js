@@ -8,15 +8,21 @@ const CollisionShape = require("./CollisionShape.js");
  */
 class Engine {
 	static defaultOptions = {
-		substeps: 6,
-		velocityIterations: 1,
-		positionIterations: 1,
+		substeps: 3,
+		velocityIterations: 2,
+		positionIterations: 0,
 		constraintIterations: 1,
+		
+		slop: 0.5,
+		overlapMargin: 0.01,
+		positionWarming: 0.8,
+		positionDampen: 0.9,
 	}
 
 	delta = 1;
 	inverseDelta = 1;
-	substeps = 2;
+	
+	substeps = 3;
 	velocityIterations = 2;
 	positionIterations = 0;
 	constraintIterations = 1;
@@ -74,24 +80,24 @@ class Engine {
 		Performance.update();
 		Performance.frame++;
 
-		// Find collisions
-		World.globalVectors.length = 0;
-		World.globalPoints.length = 0;
-		
-		const pairs = World.collisionPairs;
-		for (let i = 0; i < pairs.length; i++) {
-			let [ bodyA, bodyB ] = pairs[i];
-			if (this.collides(bodyA, bodyB)) {
-				this.createManifold(bodyA, bodyB);
-			}
-		}
-
-		let contactHertz = Math.min(30, 0.25 * this.inverseDelta);
-		// let jointHertz = Math.min(60, 0.125 * this.inverseDelta);
-		// Prepare contacts
-		this.prepareContacts(delta, contactHertz);
-
 		for (let step = 0; step < substeps; step++) {
+			// Find collisions
+			World.globalVectors.length = 0;
+			World.globalPoints.length = 0;
+			
+			const pairs = World.collisionPairs;
+			for (let i = 0; i < pairs.length; i++) {
+				let [ bodyA, bodyB ] = pairs[i];
+				if (this.collides(bodyA, bodyB)) {
+					this.createManifold(bodyA, bodyB);
+				}
+			}
+	
+			// Prepare contacts
+			let contactHertz = Math.min(30, 0.25 * this.inverseDelta);
+			// let jointHertz = Math.min(60, 0.125 * this.inverseDelta);
+			this.prepareContacts(delta, contactHertz);
+			
 			// Apply forces
 			for (let body of rigidBodies) {
 				body._preUpdate(delta);

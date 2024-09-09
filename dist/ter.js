@@ -688,7 +688,7 @@ Which is based on example code by Stefan Gustavson (stegu@itn.liu.se).
 With Optimisations by Peter Eastman (peastman@drizzle.stanford.edu).
 Better rank ordering method by Stefan Gustavson in 2012.
 
- Copyright (c) 2022 Jonas Wagner
+ Copyright (c) 2024 Jonas Wagner
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -710,14 +710,16 @@ Better rank ordering method by Stefan Gustavson in 2012.
  */
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.buildPermutationTable = exports.createNoise4D = exports.createNoise3D = exports.createNoise2D = void 0;
-// these #__PURE__ comments help uglifyjs with dead code removal
-// 
-const F2 = /*#__PURE__*/ 0.5 * (Math.sqrt(3.0) - 1.0);
-const G2 = /*#__PURE__*/ (3.0 - Math.sqrt(3.0)) / 6.0;
+// these __PURE__ comments help uglifyjs with dead code removal
+//
+const SQRT3 = /*#__PURE__*/ Math.sqrt(3.0);
+const SQRT5 = /*#__PURE__*/ Math.sqrt(5.0);
+const F2 = 0.5 * (SQRT3 - 1.0);
+const G2 = (3.0 - SQRT3) / 6.0;
 const F3 = 1.0 / 3.0;
 const G3 = 1.0 / 6.0;
-const F4 = /*#__PURE__*/ (Math.sqrt(5.0) - 1.0) / 4.0;
-const G4 = /*#__PURE__*/ (5.0 - Math.sqrt(5.0)) / 20.0;
+const F4 = (SQRT5 - 1.0) / 4.0;
+const G4 = (5.0 - SQRT5) / 20.0;
 // I'm really not sure why this | 0 (basically a coercion to int)
 // is making this faster but I get ~5 million ops/sec more on the
 // benchmarks across the board or a ~10% speedup.
@@ -2568,7 +2570,7 @@ class Ticker {
 		Animation.update();
 		this.trigger("afterTick");
 		requestAnimationFrame(this.tick);
-		// setTimeout(this.tick, 0);
+		// setTimeout(this.tick, 16);
 	}
 	
 	#events = {
@@ -5058,15 +5060,21 @@ const CollisionShape = __webpack_require__(769);
  */
 class Engine {
 	static defaultOptions = {
-		substeps: 6,
-		velocityIterations: 1,
-		positionIterations: 1,
+		substeps: 3,
+		velocityIterations: 2,
+		positionIterations: 0,
 		constraintIterations: 1,
+		
+		slop: 0.5,
+		overlapMargin: 0.01,
+		positionWarming: 0.8,
+		positionDampen: 0.9,
 	}
 
 	delta = 1;
 	inverseDelta = 1;
-	substeps = 2;
+	
+	substeps = 3;
 	velocityIterations = 2;
 	positionIterations = 0;
 	constraintIterations = 1;
@@ -5124,24 +5132,24 @@ class Engine {
 		Performance.update();
 		Performance.frame++;
 
-		// Find collisions
-		World.globalVectors.length = 0;
-		World.globalPoints.length = 0;
-		
-		const pairs = World.collisionPairs;
-		for (let i = 0; i < pairs.length; i++) {
-			let [ bodyA, bodyB ] = pairs[i];
-			if (this.collides(bodyA, bodyB)) {
-				this.createManifold(bodyA, bodyB);
-			}
-		}
-
-		let contactHertz = Math.min(30, 0.25 * this.inverseDelta);
-		// let jointHertz = Math.min(60, 0.125 * this.inverseDelta);
-		// Prepare contacts
-		this.prepareContacts(delta, contactHertz);
-
 		for (let step = 0; step < substeps; step++) {
+			// Find collisions
+			World.globalVectors.length = 0;
+			World.globalPoints.length = 0;
+			
+			const pairs = World.collisionPairs;
+			for (let i = 0; i < pairs.length; i++) {
+				let [ bodyA, bodyB ] = pairs[i];
+				if (this.collides(bodyA, bodyB)) {
+					this.createManifold(bodyA, bodyB);
+				}
+			}
+	
+			// Prepare contacts
+			let contactHertz = Math.min(30, 0.25 * this.inverseDelta);
+			// let jointHertz = Math.min(60, 0.125 * this.inverseDelta);
+			this.prepareContacts(delta, contactHertz);
+			
 			// Apply forces
 			for (let body of rigidBodies) {
 				body._preUpdate(delta);
