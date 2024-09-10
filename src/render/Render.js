@@ -7,7 +7,7 @@ const vec = require("../geometry/vec.js");
  */
 class Render {
 	static defaultOptions = {
-		background: false,
+		background: "transparent",
 		pixelRatio: window.devicePixelRatio ?? 1,
 		ySort: false,
 		resizeTo: window,

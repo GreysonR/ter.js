@@ -34,6 +34,11 @@ class PolygonRender extends Node {
 	}
 	static all = new Set();
 	nodeType = "PolygonRender";
+	/**
+	 * Creates a PolygonRender for rendering rigid bodies
+	 * @param {Object} options 
+	 * @returns {PolygonRender} `this`
+	 */
 	constructor(options = {}) {
 		super();
 		let defaults = { ...PolygonRender.defaultOptions };

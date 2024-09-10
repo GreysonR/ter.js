@@ -223,27 +223,22 @@ class RigidBody extends Node {
 	 * @return {RigidBody} `this`
 	 * @example
 	 * body.addPolygonRender(Render.app.stage, {
-	 * 	layer: 0, // number
-	 * 	subtype: "polygon", // "polygon" | "rectangle" | "circle"
-	 * 
+	 * 	layer: 0, // Render layer, higher means it is rendered "closer" to the camera and above other objects
 	 * 	visible: true,
-	 * 	alpha: 1,
-	 * 	background: "transparent",
-	 * 	border: "transparent",
-	 * 	borderWidth: 3,
-	 * 	borderOffset: 0.5,
-	 * 	lineCap: "butt",
-	 * 	lineJoin: "miter",
+	 * 	alpha: 1, // Opacity, between 0-1
+	 * 	
+	 * 	// All colors can be a hex code, rgb, rgba, or "transparent"
+	 * 	background: "#ffffff80", // fill color
 	 * 
-	 * 	// subtype = "rectangle" only options
-	 * 	width: 100,
-	 * 	height: 100,
-	 * 	round: 0,
-	 * 
-	 * 	// subtype = "circle" only options
-	 * 	radius: 50,
-	 * })
+	 * 	border: "#ff0000", // border color
+	 * 	borderWidth: 3, // How thick border is, set to 0 to disable border
+	 * 	lineCap: "butt", // How border should end. Doesn't do anything for closed bodies
+	 * 	lineJoin: "miter", // How border's corners should look. Same options as ctx.lineJoin property
+	 * 	
+	 * 	round: 0, // How rounded the polygon should look. Only works for Rectangles
+	 * });
 	 */
+	
 	addPolygonRender(options, container = this.Game.Render.app.stage) {
 		let render = new PolygonRender({
 			container: container,
