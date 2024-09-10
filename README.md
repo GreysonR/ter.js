@@ -32,7 +32,7 @@ Next, create a `Game` object, which will handle much of the setup for you:
 // There are numerous options (this is just a few, check the docs for all of them!):
 let game = new ter.Game({
 	Render: {
-		resizeTo: window, // See https://pixijs.download/release/docs/app.Application.html#resizeTo
+		resizeTo: window, // See pixijs.download/release/docs/app.Application.html#resizeTo
 		background: "#1C1C25", // Can be a hex code, rgb, rgba, or "transparent"
 	},
 	World: {
