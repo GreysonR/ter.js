@@ -47,7 +47,7 @@ let game = new ter.Game({
 	}
 });
 ```
-Or create a `Game` all default options:
+Or create a `Game` with all default options:
 ```JavaScript
 // Can be simple as this!
 let game = new ter.Game();
@@ -58,10 +58,12 @@ let vec = ter.vec;
 let Bodies = game.Bodies;
 
 // Create a rectangle with a width of 100, height of 90, and initial position of (0, -200)
-let body = Bodies.Rectangle(100, 90, new vec(0, -200), { // Creates the physics body: greysonr.github.io/ter.js/RigidBody.html#constructor
+let body = Bodies.Rectangle(100, 90, new vec(0, -200), { // Creates the physics body
+	// All options: greysonr.github.io/ter.js/RigidBody.html#constructor
 	friction: 0.05,
 	restitution: 0.1,
-}).addPolygonRender({ // Creates the renderer so we can see the body: greysonr.github.io/ter.js/RigidBody.html#addPolygonRender
+}).addPolygonRender({ // Creates the renderer so we can see the body
+	// All options: greysonr.github.io/ter.js/RigidBody.html#addPolygonRender
 	background: "#C8553D",
 }).add(); // Adds the body to the world
 
