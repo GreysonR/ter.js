@@ -45,8 +45,8 @@ class Graph {
 	 * @param {string} [options.background="#0D0D0DE6"] - Background color of graph
 	 * @param {number} [options.padding=8] - Amount of padding around the graph
 	 * @param {number} [options.round=5] - Amount of round around the graph
-	 * @param {number} [options.scaleRange=100] - Minimum range for auto scaling
-	 * @param {Array} [options.scaleRange=undefined] - Minimum and maximum y value of the graph, as Array of `[min, max]`. Leaving `undefined` uses auto scaling.
+	 * @param {number} [options.scaleRange=100] - Minimum y range. When specified as an integer rather than an array of min and max values, it uses auto scaling
+	 * @param {Array} [options.scaleRange=undefined] - Minimum and maximum y values of the graph, as Array of `[min, max]`. Leaving `undefined` or specifying a number uses auto scaling.
 	 * @param {number} [options.maxLength=200] - Maximum number of points the graph can have
 	 * @param {string} [options.lineColor="#9C9C9C"] - Color of the line. Use this if you only have 1 value you're graphing
 	 * @param {object} [options.lineColor={ default: "#9C9C9C" }] - Colors of each line name. Use this notation if you have multiple lines on one graph

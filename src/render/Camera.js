@@ -24,10 +24,8 @@ class Camera {
 
 	/**
 	 * Creates a new camera object used by [Render](./Render.html)
-	 * @param {number} fov - Field of view, how much you can see
 	 */
-	constructor(fov = 2000) {
-		this.fov = fov;
+	constructor() {
 	}
 
 	/**
@@ -39,7 +37,7 @@ class Camera {
 	}
 
 	/**
-	 * Sets the camera's FOV
+	 * Sets the camera's field of view
 	 * @param {number} fov - New field of view
 	 */
 	setFov(fov) {

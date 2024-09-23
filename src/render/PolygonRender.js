@@ -4,6 +4,14 @@ const Common = require("../core/Common.js");
 
 /**
  * A polygon render object
+ * 
+ * ## Events
+ * | Name | Description | Arguments |
+ * | ---- | ----------- | --------- |
+ * | load | Renderer is fully initialized and ready to use | None |
+ * | add | PolygonRender is added to the renderer | None |
+ * | delete | PolygonRender is removed from the renderer | None |
+ * 
  * @extends Node
  */
 class PolygonRender extends Node {

@@ -21,7 +21,7 @@ let Common = {
 	},
 
 	/**
-	 * Pairs 2 positive integers, returning a unique number for each possible pairing using elegant pairing - http://szudzik.com/ElegantPairing.pdf
+	 * Pairs 2 positive integers, returning a unique number for each possible pairing using [elegant pairing](http://szudzik.com/ElegantPairing.pdf)
 	 * @param {number} x - 1st number, must be positive integer
 	 * @param {number} y - 2nd number, must be positive integer
 	 * @return {number} Unique number from those 
@@ -43,11 +43,11 @@ let Common = {
 	},
 
 	/**
-	 * Pairs 2 positive integers, returning a unique number for each possible pairing using elegant pairing - http://szudzik.com/ElegantPairing.pdf
+	 * Pairs 2 positive integers, returning a unique number for each possible pairing using [elegant pairing](http://szudzik.com/ElegantPairing.pdf)
 	 * Returns the same value if x/y are switched
 	 * @param {number} x - 1st number, must be positive integer
 	 * @param {number} y - 2nd number, must be positive integer
-	 * @return {number} Unique number from those 
+	 * @return {number} Unique number given inputs
 	 */
 	pairCommon: function(x, y) { // Elegant pairing function, but gives the same result if x/y are switched
 		if (x > y)
@@ -56,8 +56,8 @@ let Common = {
 	},
 
 	/**
-	 * Calculates the center of mass of a convex body. Uses algorithm from https://bell0bytes.eu/centroid-convex/
-	 * @param {Array} vertices - Array of `vec`s to find the center of 
+	 * Calculates the center of mass of a convex body. Uses algorithm from [bell0bytes.eu/centroid-convex](https://bell0bytes.eu/centroid-convex/)
+	 * @param {Array} vertices - Convex body vertices
 	 */
 	getCenterOfMass(vertices) {
 		let centroid = new vec(0, 0);
@@ -350,7 +350,7 @@ let Common = {
 			verticeIndex: minVert,
 		};
 	},
-	raycastSimple: function(start, end, bodies) { // raycast that only tells you if there is a collision (usually faster), returns true/false
+	raycastSimple: function(start, end, bodies) { // raycast that only tells you if there is a collision; faster than full raycast; returns true/false
 		let lineIntersectsBody = Common.lineIntersectsBody;
 
 		for (let body of bodies) {

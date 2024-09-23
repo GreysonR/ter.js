@@ -4,6 +4,12 @@ const vec = require("../geometry/vec.js");
 
 /**
  * Main render object that handles the camera, pixel ratio, resizing, what is rendered, etc
+ * 
+ * ## Events
+ * | Name | Description | Arguments |
+ * | ---- | ----------- | --------- |
+ * | beforeUpdate | Before the render scene is moved to match the camera position and scale. Triggered every frame. | None |
+ * | afterUpdate | After the render scene is moved to match the camera position and scale. Triggered every frame. | None |
  */
 class Render {
 	static defaultOptions = {

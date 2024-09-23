@@ -1,5 +1,3 @@
-const RigidBody = require("../physics/RigidBody.js");
-
 const types = {
 	Rectangle: require("../bodies/Rectangle.js"),
 	Circle: require("../bodies/Circle.js"),

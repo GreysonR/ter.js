@@ -9,7 +9,18 @@ const CollisionShape = require("../physics/CollisionShape.js");
 const decomp = require("poly-decomp");
 
 /**
- * A rigid body with physics
+ * A rigid body with physics.
+ * ## Events
+ * | Name | Description | Arguments |
+ * | ---- | ----------- | --------- |
+ * | bodyEnter | Body starts colliding with another | `(otherBody: Boolean, collision: Object)` |
+ * | bodyInside | Body is currently colliding with another. Triggered every frame after the initial collision. In other words, it won't trigger the same frame as `bodyEnter` but will every subsequent frame the bodies are still colliding | `(otherBody: Boolean, collision: Object)` |
+ * | bodyExit | Triggered the frame bodies stop colliding | `(otherBody: Boolean, collision: Object)` |
+ * | beforeUpdate | Triggered right before forces are applied to the body's velocity and cleared every frame. Best used to apply forces to the body. It's only called when the body is in the world | None |
+ * | duringUpdate | Triggered right before body's position is updated from its velocity every frame. Best used to clear forces from the body. It's only called when the body is in the world | None |
+ * | add | Triggered right before the body is added to the world | None |
+ * | delete | Triggered right before the body is removed from the world | None |
+ * 
  * @extends Node
  */
 class RigidBody extends Node {
@@ -57,8 +68,8 @@ class RigidBody extends Node {
 			let curRound = Math.min(prevRound, nextRound);
 
 			let start = prevCurNormalized.mult(-curRound).add(cur);
-			let cp1 = prevCurNormalized.mult(-curRound * 0.45).add(cur);
-			let cp2 = curNextNormalized.mult(curRound *  0.45).add(cur);
+			let cp1 = prevCurNormalized.mult(-curRound * 0.5).add(cur);
+			let cp2 = curNextNormalized.mult(curRound *  0.5).add(cur);
 			let end = curNextNormalized.mult(curRound).add(cur);
 			let bezier = new Bezier(start, cp1, cp2, end);
 			for (let i = 0; i < bezier.length;) {
@@ -73,23 +84,81 @@ class RigidBody extends Node {
 	//
 	// Public user options
 	//
+	/**
+	 * Indicates type of node. In this case, "RigidBody"
+	 * @readonly
+	 */
 	nodeType = "RigidBody";
+	/**
+	 * @private
+	 */
 	vertices = [];
 
+	/**
+	 * @type {Number}
+	 * @readonly
+	 */
 	mass = 1;
+	/**
+	 * Bounciness
+	 * @type {Number}
+	 */
 	restitution = 0.1;
+	/**
+	 * How much the body is always slowed down
+	 * @type {Number}
+	 */
 	frictionAir = 0.05;
+	/**
+	 * How much body's rotation is always slowed down
+	 * @type {Number}
+	 */
 	frictionAngular = 0.01;
+	/**
+	 * @type {Number}
+	 */
 	friction = 0.1;
 	round = 0;
-	roundQuality = 40;
+	roundQuality = 20;
 
+	/**
+	 * If the body is static (unmoving). Change through body.setStatic()
+	 * @type {Boolean}
+	 * @readonly
+	 */
 	isStatic = false;
+	/**
+	 * If the body acts like a sensor, detecting collisions while not hitting anything
+	 * @type {Boolean}
+	 */
 	isSensor = false;
+	/**
+	 * If the body has any collisions. Change through body.setCollisions()
+	 * @type {Boolean}
+	 * @readonly
+	 */
 	hasCollisions = true;
+	/**
+	 * What bodies it can collide with.
+	 * The layer is like what collision group the body belongs to and the mask is what layers the body will collide with. 
+	 * They are compared using their bits to indicate what layer it is in/collides with. 
+	 * @type {Object}
+	 * @example
+	 * // In every layer, collides with everything (the default)
+	 * body.collisionFilter = {
+	 * 	layer: 0xFFFFFF,
+	 * 	mask:  0xFFFFFF,
+	 * }
+	 * // In first 2 layers, collides only with 2nd layer
+	 * // So it would collide with itself, but not bodies that aren't in layer 2
+	 * body.collisionFilter = {
+	 * 	layer: 0b0011,
+	 * 	mask:  0b0010,
+	 * }
+	 */
 	collisionFilter = {
 		layer: 0xFFFFFF,
-		mask: 0xFFFFFF,
+		mask:  0xFFFFFF,
 	}
 
 	/**
@@ -109,7 +178,7 @@ class RigidBody extends Node {
 	 * 	friction: 0.1,
 	 * 
 	 * 	round: 0,
-	 * 	roundQuality: 40,
+	 * 	roundQuality: 20,
 	 * 
 	 * 	isStatic: false,
 	 * 	isSensor: false,
@@ -222,7 +291,7 @@ class RigidBody extends Node {
 	 * @param {PIXI.Container} [container=this.Game.Render.app.stage] - Container polygon render is added to. Defaults to the main render container of the game the body is in.
 	 * @return {RigidBody} `this`
 	 * @example
-	 * body.addPolygonRender(Render.app.stage, {
+	 * body.addPolygonRender({
 	 * 	layer: 0, // Render layer, higher means it is rendered "closer" to the camera and above other objects
 	 * 	visible: true,
 	 * 	alpha: 1, // Opacity, between 0-1
@@ -339,6 +408,16 @@ class RigidBody extends Node {
 			}
 		}
 	}
+	
+	/**
+	 * Changes the body's mass to a new value
+	 * @param {number} mass
+	 */
+	setMass(mass) {
+		this.mass = mass;
+		this._inverseMass = 1 / this.mass;
+		this._updateInertia();
+	}
 
 	/**
 	 * Changes if the body can collide with other bodies
@@ -389,6 +468,7 @@ class RigidBody extends Node {
 	 * body.setPosition(new vec(100, 100)); // Sets body's position to (100, 100) 
 	 */
 	setPosition(position) {
+		if (!position instanceof vec) throw new Error("position must be a vec");
 		let delta = position.sub(this.position);
 		this.translate(delta);
 	}
@@ -398,9 +478,10 @@ class RigidBody extends Node {
 	 * @param {vec} velocity - Velocity the body should have
 	 */
 	setVelocity(velocity) {
+		if (!velocity instanceof vec) throw new Error("velocity must be a vec");
 		if (velocity.isNaN()) {
 			console.error(velocity);
-			throw new Error("Invalid velocity");
+			throw new Error("velocity is NaN");
 		}
 		if (this.isStatic) return;
 		this.velocity.set(velocity);
@@ -413,7 +494,7 @@ class RigidBody extends Node {
 	setAngularVelocity(velocity) {
 		if (isNaN(velocity)) {
 			console.error(velocity);
-			throw new Error("Invalid angular velocity");
+			throw new Error("angular velocity is NaN");
 		}
 		if (this.isStatic) return;
 		this.angularVelocity = velocity;
@@ -422,9 +503,10 @@ class RigidBody extends Node {
 	/**
 	 * Applies a force to the body, ignoring mass. The body's velocity changes by force * delta
 	 * @param {vec} force - Amount of force to be applied, in px / sec^2
-	 * @param {number} [delta=Engine.delta] - Amount of time that the force should be applied in seconds, set to 1 if only applying in one instant
+	 * @param {number} [delta=Engine.delta] - Amount of time that the force is applied, in seconds. Set to 1 if applying instantaneous force
 	 */
 	applyForce(force, delta = this.Engine.delta) { // set delta to 1 if you want to apply a force for only 1 frame
+		if (!force instanceof vec) throw new Error("force must be a vec");
 		if (force.isNaN()) return;
 		if (this.isStatic) return;
 		this.force.add2(force.mult(delta));
@@ -433,7 +515,7 @@ class RigidBody extends Node {
 	/**
 	 * Applies a rotational force (torque) to the body, ignoring mass. The body's angular velocity changes by force * delta
 	 * @param {number} force - Amount of torque to be applied, in radians / sec^2
-	 * @param {number} [delta=Engine.delta] - Amount of time the force should be applied in seconds, set to 1 if only applying instantaneous force
+	 * @param {number} [delta=Engine.delta] - Amount of time that the force is applied, in seconds. Set to 1 if applying instantaneous force
 	 */
 	applyTorque(force, delta = this.Engine.delta) { // set delta to 1 if you want to apply a force for only 1 frame
 		if (isNaN(force)) return;
@@ -468,10 +550,6 @@ class RigidBody extends Node {
 	_inverseInertia = 0.000015;	
 
 	#events = {
-		collisionStart: [],
-		collisionActive: [],
-		collisionEnd: [],
-
 		bodyEnter: [],
 		bodyInside: [],
 		bodyExit: [],

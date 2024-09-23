@@ -1,9 +1,23 @@
 "use strict";
 
+/*
+ TODO: Animation class creates an animation object that updates independently of other animation objects, allowing multiple games to have animations working correctly
+ Currently having multiple Game objects will break animations
+ 
+ -- Game.js --
+ this.animation = new Animation();
+
+ -- Ticker.js --
+ this.Game.animation.update();
+
+ -- User code --
+ let animation = game.animation.create({...});
+ await animation.run();
+*/
 class Animation {
 	/**
 	 * A variety of built in ease functions to use for animations<br>
-	 * See [easings.net](https://easings.net/) for animation types
+	 * See [easings.net](https://easings.net/) for animation types. All animation types except elastic and bounce are implemented.
 	 * @static
 	 * 
 	 * @property {function} ease.linear

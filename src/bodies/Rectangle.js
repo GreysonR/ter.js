@@ -4,7 +4,11 @@ const PolygonRender = require("../render/PolygonRender.js");
 const Sprite = require("../render/Sprite.js");
 
 /**
- * A rectangle RigidBody
+ * A Rectangle RigidBody from with and height
+ * 
+ * ## Events
+ * See [RigidBody](./RigidBody.html)
+ * 
  * @extends RigidBody
  */
 class Rectangle extends RigidBody {

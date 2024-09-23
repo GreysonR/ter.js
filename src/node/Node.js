@@ -5,6 +5,11 @@ const Common = require("../core/Common.js");
 
 /**
  * A generic node object
+ * ## Events
+ * | Name | Description | Arguments |
+ * | ---- | ----------- | --------- |
+ * | add | Node is added to the world | None |
+ * | delete | Node is removed from the world | None |
  */
 class Node {
 	static id = 0;
@@ -132,6 +137,7 @@ class Node {
 	 * @param {vec} position - Position the node should be set to
 	*/
 	setPosition(position) {
+		if (!position instanceof vec) throw new Error("position must be a vec");
 		let delta = position.sub(this.position);
 		this.translate(delta);
 	}
@@ -140,6 +146,7 @@ class Node {
 	 * @param {vec} positionDelta - Amount to shift the position
 	 */
 	translate(positionDelta) {
+		if (!positionDelta instanceof vec) throw new Error("positionDelta must be a vec");
 		this.position.add2(positionDelta);
 		for (let child of this.children) {
 			child.translate(positionDelta);

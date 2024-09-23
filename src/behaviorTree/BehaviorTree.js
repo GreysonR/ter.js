@@ -74,6 +74,7 @@ class BehaviorTree {
 	static FAILURE = 0;
 	static SUCCESS = 1;
 	// RUNNING state not necessary in this implementation
+	
 	static globalTrees = {};
 	static call(name, resolve, blackboard = {}) {
 		let tree = this.globalTrees[name];
@@ -112,8 +113,8 @@ class BehaviorTree {
 		let nodeObject = new nodeType(node, node?.blackboard);
 		return nodeObject;
 	}
-	static registerType(_class) {
-		this.nodes[_class] = _class;
+	static registerType(type) {
+		this.nodes[type.toString()] = type;
 	}
 	static registerTree(name, tree) {
 		this.globalTrees[name] = tree;

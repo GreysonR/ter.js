@@ -1,10 +1,12 @@
 const RigidBody = require("../physics/RigidBody.js");
 const vec = require("../geometry/vec.js");
-const PolygonRender = require("../render/PolygonRender.js");
-const Sprite = require("../render/Sprite.js");
 
 /**
- * A Polygon RigidBody
+ * A RigidBody from a set of vertices
+ * 
+ * ## Events
+ * See [RigidBody](./RigidBody.html)
+ * 
  * @extends RigidBody
  */
 class Polygon extends RigidBody {
@@ -20,7 +22,7 @@ class Polygon extends RigidBody {
 	
 	/**
 	 * 
-	 * @param {Game} Game - Game object the body should be simulated in; If you're creating a RigidBody from a [Game](./Game.html) object, like `game.Bodies.Rectangle(...)`, then you **must omit** this parameter.
+	 * @param {Game} Game - Game object the body should be simulated in; If you're creating a RigidBody from a [Game](./Game.html) object, like `game.Bodies.Polygon(...)`, then you **must omit** this parameter.
 	 * @param {Array<vec>} vertices - Vertices of polygon
 	 * @param {vec} position - Position of body
 	 * @param {object} options - [RigidBody](./RigidBody.html) options

@@ -4,16 +4,19 @@
 		"destination": "./docs/",
 		"recurse": true,
 		"template": "node_modules/clean-jsdoc-theme",
+		"readme": "README.md",
+		"tutorials": "./tutorials",
 		"encoding": "utf8",
 		"lenient": false,
 		"theme_opts": {
+			"title": "ter.js",
 			"default_theme": "dark",
 			"sort": false,
 			"includeFilesListInHomepage": true,
 			"displayModuleHeader": true,
-			"include_css": ["jsdoc-theme/table-fix.css"],
-			// "include_css": ["jsdoc-theme/jsdoc-theme.css"],
-			"include_js": ["jsdoc-theme/jsdoc-setup.js"]
+			"include_css": ["jsdoc-theme/table-fix.css", "jsdoc-theme/jsdoc-theme.css"],
+			"include_js": ["jsdoc-theme/jsdoc-setup.js"],
+			"sections": ["Tutorials", "Classes", "Namespaces"]
 		}
 	},
 	"source": {
@@ -24,5 +27,8 @@
 	},
 	"templates": {
 		"cleverLinks": true
+	},
+	"markdown": {
+		"idInHeadings": true
 	}
 }

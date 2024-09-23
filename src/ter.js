@@ -23,12 +23,8 @@ ter.Grid = require("./geometry/Grid");
 ter.Bezier = require("./geometry/Bezier");
 ter.Bounds = require("./geometry/Bounds");
 
-
 ter.BehaviorTree = require("./behaviorTree/BehaviorTree");
-ter.Functions = require("./other/GameFunctions");
+ter.GameFunctions = require("./other/GameFunctions");
 ter.Inputs = require("./other/Inputs");
 ter.Animation = require("./other/Animation");
 ter.DiscreteAnimation = require("./other/DiscreteAnimation");
-
-ter.simplexNoise = require("simplex-noise");
-ter.polyDecomp = require("poly-decomp");

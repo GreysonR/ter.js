@@ -7,6 +7,14 @@ const vec = require("../geometry/vec.js");
 
 /**
  * A sprite render object
+ * 
+ * ## Events
+ * | Name | Description | Arguments |
+ * | ---- | ----------- | --------- |
+ * | load | Sprite is fully loaded and ready to use | None |
+ * | add | Sprite is added to the renderer | None |
+ * | delete | Sprite is removed from the renderer | None |
+ * 
  * @extends Node
  */
 class Sprite extends Node {

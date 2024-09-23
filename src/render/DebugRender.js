@@ -3,6 +3,15 @@ const CollisionShape = require("../physics/CollisionShape");
 
 /**
  * Extra functions for debugging, such as showing all vertices, hitboxes, and collisions.
+ * 
+ * ## Events
+ * | Name | Description | Arguments |
+ * | ---- | ----------- | --------- |
+ * | beforeSave | Before the DebugRender's canvas context is saved | None |
+ * | beforeRender | Before all debug tools are rendered | None |
+ * | afterRender | After all debug tools are rendered | None |
+ * | afterRestor | After the DebugRender's canvas contex is restored | None |
+ * 
  */
 class DebugRender {
 	// - Debug rendering
@@ -19,11 +28,14 @@ class DebugRender {
 	 * @type {object}
 	 * @todo Add methods for setting these, possibly also in Game
 	 * @example
-	 * myGame.DebugRender.enabled.vertices = true; // Vertice rendering
-	 * myGame.DebugRender.enabled.collisions = true; // Collision rendering
-	 * myGame.DebugRender.enabled.boundingBox = true; // Bounding box rendering
-	 * myGame.DebugRender.enabled.centers = true; // Center rendering
-	 * myGame.DebugRender.enabled.broadphase = true; // Broadphase rendering
+	 * // All options:
+	 * game.DebugRender.enabled = {
+	 * 	vertices: true,
+	 * 	centers: true,
+	 * 	collisions: true,
+	 * 	broadphase: true,
+	 * 	boundingBox: true,
+	 * }
 	 */
 	enabled = {
 		vertices: false,

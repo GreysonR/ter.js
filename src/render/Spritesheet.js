@@ -4,6 +4,14 @@ const vec = require("../geometry/vec");
 
 /**
  * A spritesheet with animation support
+ * 
+ * ## Events
+ * | Name | Description | Arguments |
+ * | ---- | ----------- | --------- |
+ * | load | Spritesheet is fully loaded and ready to use | None |
+ * | add | Spritesheet is added to the renderer | None |
+ * | delete | Spritesheet is removed from the renderer | None |
+ * 
  * @extends Node
  */
 class Spritesheet extends Node {

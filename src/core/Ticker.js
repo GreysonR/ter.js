@@ -3,6 +3,12 @@ const Animation = require("../other/Animation.js");
 
 /**
  * A game ticker that handles updating the engine every frame.
+ * 
+ * ## Events
+ * | Name | Description | Arguments |
+ * | ---- | ----------- | --------- |
+ * | beforeTick | Triggered at the start of every frame | None |
+ * | afterTick | Triggered at the end of every frame | None |
  */
 class Ticker {
 	static defaultOptions = {

@@ -300,18 +300,12 @@ class Engine {
 			Common.merge(existingManifold, manifold, 1);
 			existingManifold.start = start;
 
-			bodyA.parentNode.trigger("collisionActive", existingManifold);
-			bodyB.parentNode.trigger("collisionActive", existingManifold);
-
-			bodyA.parentNode.trigger("bodyInside", bodyB.parentNode);
-			bodyB.parentNode.trigger("bodyInside", bodyA.parentNode);
+			bodyA.parentNode.trigger("bodyInside", bodyB.parentNode, existingManifold);
+			bodyB.parentNode.trigger("bodyInside", bodyA.parentNode, existingManifold);
 		}
 		else { // No collision between these bodies last frame, so collision just started
-			bodyA.parentNode.trigger("collisionStart", manifold);
-			bodyB.parentNode.trigger("collisionStart", manifold);
-
-			bodyA.parentNode.trigger("bodyEnter", bodyB.parentNode);
-			bodyB.parentNode.trigger("bodyEnter", bodyA.parentNode);
+			bodyA.parentNode.trigger("bodyEnter", bodyB.parentNode, manifold);
+			bodyB.parentNode.trigger("bodyEnter", bodyA.parentNode, manifold);
 			
 			bodyA.pairs.push(manifoldId);
 			bodyB.pairs.push(manifoldId);
@@ -376,12 +370,9 @@ class Engine {
 			bodyB.pairs.splice(bodyB.pairs.indexOf(pair.id), 1);
 			delete World.pairs[pair.id];
 
-			// Trigger collisionEnd event
-			bodyA.trigger("collisionEnd", pair);
-			bodyB.trigger("collisionEnd", pair);
-
-			bodyA.trigger("bodyExit", bodyB);
-			bodyB.trigger("bodyExit", bodyA);
+			// Trigger bodyExit event
+			bodyA.trigger("bodyExit", bodyB, pair);
+			bodyB.trigger("bodyExit", bodyA, pair);
 
 			return true;
 		}

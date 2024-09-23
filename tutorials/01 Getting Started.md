@@ -1,21 +1,4 @@
-# ter.js
-*A 2D physics engine built specifically for making web games*
-
-## Features
-- Rigid bodies
-- Concave bodies
-- Configurable mass, friction, restitution, collision filters
-- FPS independent
-- Matches your monitor's refresh rate and pixel ratio out of the box (no more blurry or choppy games)
-- Robust event system
-- PIXI.js rendering
-- Behavior trees
-- Animations
-- TGS soft collision solver
-- ...and more!
-
-## Getting started
-Download the ter.js bundle of your choosing from the [releases tab](https://github.com/GreysonR/ter.js/releases/) on GitHub. Then include it with PIXI.js in your HTML:
+Download the latest ter.js bundle from the [releases tab](https://github.com/GreysonR/ter.js/releases/) on GitHub. Then include it with PIXI.js in your HTML:
 ```HTML
 <script src="./path/to/ter.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.x/dist/pixi.min.js"></script>
@@ -75,6 +58,3 @@ let floor = Bodies.Rectangle(1000, 80, new vec(0, 500), {
 }).add();
 ```
 And voilà, you're ready to start using ter.js!
-
-## Next steps
-To learn more on how to use the engine, you can head on over to the [tutorials](./tutorial-01%20Getting%20Started.html)

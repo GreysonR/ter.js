@@ -1,7 +1,7 @@
 const PerformanceRender = require("../render/PerformanceRender");
 
 /**
- * Tracks performance stats of the game, like fps, delta time, and frame number
+ * Tracks performance stats of the game like fps, delta time, and frame number
  */
 class Performance {
 	getAvgs = true;
@@ -9,16 +9,19 @@ class Performance {
 	/**
 	 * The frames per second of the engine.
 	 * @type {number}
+	 * @readonly
 	 */
 	fps = 60;
 	/**
 	 * The amount of time between frames in seconds.
 	 * @type {number}
+	 * @readonly
 	 */
 	delta = 1;
 	/**
-	 * The engine frame number. Note that this will increase faster than the number of rendered frames when `Engine.substeps` is greater than 1.
+	 * How many frames the engine has simulated. Note that this will increase faster than the number of rendered frames when `Engine.substeps` is greater than 1.
 	 * @type {number}
+	 * @readonly
 	 */
 	frame = 0;
 
@@ -34,8 +37,14 @@ class Performance {
 	}
 
 	/**
+	 * PerformanceRender object for rendering performance stats such as the fps. Only created if Render is specified in the constructor. 
+	 * @type {PerformanceRender}
+	 */
+	render;
+
+	/**
 	 * Creates a Performance object
-	 * @param {Render} Render - [Render](./Render.html)
+	 * @param {Render} [Render] - [Render](./Render.html) object to render performance stats to
 	 */
 	constructor(Render = undefined) {
 		if (Render) this.render = new PerformanceRender(this, Render);
@@ -43,7 +52,7 @@ class Performance {
 	}
 
 	/**
-	 * Updates the performance stats. Should be called every frame.
+	 * Updates the performance stats. Should be called once per frame. Called automatically by a Ticker.
 	 */
 	update() {
 		let curTime = performance.now() / 1000;

@@ -1,10 +1,12 @@
 const RigidBody = require("../physics/RigidBody.js");
 const vec = require("../geometry/vec.js");
-const PolygonRender = require("../render/PolygonRender.js");
-const Sprite = require("../render/Sprite.js");
 
 /**
- * A Circle RigidBody
+ * A Circle RigidBody from a radius
+ * 
+ * ## Events
+ * See [RigidBody](./RigidBody.html)
+ * 
  * @extends RigidBody
  */
 class Circle extends RigidBody {
@@ -20,7 +22,7 @@ class Circle extends RigidBody {
 
 	/**
 	 * 
-	 * @param {Game} Game - Game object the body should be simulated in; If you're creating a RigidBody from a [Game](./Game.html) object, like `game.Bodies.Rectangle(...)`, then you **must omit** this parameter.
+	 * @param {Game} Game - Game object the body should be simulated in; If you're creating a RigidBody from a [Game](./Game.html) object, like `game.Bodies.Circle(...)`, then you **must omit** this parameter.
 	 * @param {number} radius - Radius of Circle
 	 * @param {vec} position - Position of body
 	 * @param {object} options - [RigidBody](./RigidBody.html) options
