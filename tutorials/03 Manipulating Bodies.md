@@ -20,9 +20,9 @@ body.setAngularVelocity(Math.PI / 4); // body will rotate 45deg/s clockwise
 This works much nicer with the physics system, but you still may not want to directly manipulate the velocity, but instead change it by a relative amount. In this case, use `applyForce` and `applyTorque`:
 ```JavaScript
 body.applyForce(new vec(100, 0), 1); // Changes velocity by 100px/s
-body.applyTorque(3, 1); // Changes angular velocity by 3 radians
+body.applyTorque(3, 1); // Changes angular velocity by 3 radians/s
 ```
-You may have noticed a second parameter in those functions. It represents the amount of time the force is applied for. If you want the velocity to instantly change by the amount you give it, use 1s as the time, like what's done in the previous example. However, if you are applying force every frame, you should use the amount of time between each frame. If you use a constant value instead, the amount of acceleration will depend on the framerate. Fortunately, the default value for the parameter does this for you:
+You may have noticed a second parameter in those functions. It represents the amount of time the force is applied for. If you want the velocity to instantly change by the amount you give it, use 1s as the time, like what's done in the previous example. However, if you are applying force every frame, you should use the amount of time between each frame. If you use a constant value instead, the amount of acceleration will depend on the framerate. Fortunately, the default for the parameter does this for you:
 ```JavaScript
 body.on("beforeUpdate", () => { // this function is called every frame
 	body.applyForce(new vec(50, 0)); // changes the velocity by 50px/s/s

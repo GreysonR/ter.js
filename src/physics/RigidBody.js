@@ -122,7 +122,7 @@ class RigidBody extends Node {
 	roundQuality = 20;
 
 	/**
-	 * If the body is static (unmoving). Change through body.setStatic()
+	 * If the body is static (unmoving). Change through `setStatic`
 	 * @type {Boolean}
 	 * @readonly
 	 */
@@ -133,7 +133,7 @@ class RigidBody extends Node {
 	 */
 	isSensor = false;
 	/**
-	 * If the body has any collisions. Change through body.setCollisions()
+	 * If the body has any collisions. Change through `setCollisions`
 	 * @type {Boolean}
 	 * @readonly
 	 */

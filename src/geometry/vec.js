@@ -4,7 +4,7 @@
 class vec {
 	/**
 	 * Creates a new vector
-	 * @param {number|Array|object} x - x coordinate
+	 * @param {number|Array|object} x - x coordinate, array `[x, y]`, or object `{ x: x, y: y }`
 	 * @param {number} [y=undefined]  - y coordinate
 	 */
 	constructor(x, y) {

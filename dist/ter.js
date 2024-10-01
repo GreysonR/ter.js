@@ -2573,7 +2573,7 @@ module.exports = Grid;
 class vec {
 	/**
 	 * Creates a new vector
-	 * @param {number|Array|object} x - x coordinate
+	 * @param {number|Array|object} x - x coordinate, array `[x, y]`, or object `{ x: x, y: y }`
 	 * @param {number} [y=undefined]  - y coordinate
 	 */
 	constructor(x, y) {
@@ -3207,7 +3207,7 @@ class Node {
 	angle = 0;
 	/**
 	 * Children of the node
-	 * To modify, use `addChild()` or `removeChild`.
+	 * To modify, use `addChild` or `removeChild`.
 	 * @readonly
 	 * @type {Set}
 	 */
@@ -5212,7 +5212,7 @@ class RigidBody extends Node {
 	roundQuality = 20;
 
 	/**
-	 * If the body is static (unmoving). Change through body.setStatic()
+	 * If the body is static (unmoving). Change through `setStatic`
 	 * @type {Boolean}
 	 * @readonly
 	 */
@@ -5223,7 +5223,7 @@ class RigidBody extends Node {
 	 */
 	isSensor = false;
 	/**
-	 * If the body has any collisions. Change through body.setCollisions()
+	 * If the body has any collisions. Change through `setCollisions`
 	 * @type {Boolean}
 	 * @readonly
 	 */

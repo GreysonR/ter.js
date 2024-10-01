@@ -1,18 +1,19 @@
-The best way to create bodies is using methods under `game.Bodies` from your game object. If you're following the tutorials in order, you've already seen this in the previous section. The benefit of this over creating a body directly with the class is that you don't have to specify what game it belongs to. 
+The best way to create bodies is using methods is through your game object. If you're following the tutorials in order, you've already seen this in the previous section. The benefit of this over creating a body directly with the class is that you don't have to specify what game it belongs to. 
 ```JavaScript
 let { Bodies } = game;
 let rect = Bodies.Rectangle(50, 50, new vec(0, 0));
 ```
 Now you have a rectangle, but nothing rendering it. To see the beautiful new rectangle you've created, call `body.addPolygonRender`. It takes an object of options:
 ```JavaScript
-// All addPolygonRender options
+// This includes all addPolygonRender options
 body.addPolygonRender({
 	layer: 0, // Render layer, higher means it is rendered "closer" to the camera and above other objects
 	visible: true,
 	alpha: 1, // Opacity, between 0-1
 	
-	// All colors can be a hex code, rgb, rgba, or "transparent"
-	background: "#ffffff80", // fill color
+	// Colors can be a hex code, rgb, rgba, or "transparent"
+	// ie "#808080", "rgb(128, 128, 128)", "rgba(128, 128, 128, 0.5)", and "transparent" all work
+	background: "#ffffff80", // fill color, in this case white with 50% opacity
 
 	border: "#ff0000", // border color
 	borderWidth: 3, // How thick border is, set to 0 to disable border
@@ -88,7 +89,7 @@ let bodyAllOptions = Bodies.Rectangle(100, 100, new vec(0, -400), {
 	friction: 0.1,
 
 	round: 0, // How much vertices are rounded
-	roundQuality: 20, // Quality of the rounding
+	roundQuality: 20, // Quality of the rounding: Higher means lower vertice density, or lower quality
 
 	isStatic: false, // If the body is moveable
 	isSensor: false, // If the body should act like a sensor; Sensors detect collisions, but don't actually hit other bodies
