@@ -41,7 +41,7 @@ class Render {
 		// Test if PIXI is loaded
 		try { PIXI.settings; }
 		catch(err) {
-			throw new Error("PIXI is not defined\nHelp: try loading pixi.js before creating a ter app");
+			throw new Error("PIXI is not defined\nHelp: try loading pixi.js before creating a ter app");j
 		}
 
 		// Load options

@@ -34,10 +34,10 @@
 			gridSize: 100,
 		},
 		Engine: {
-			substeps: 2,
+			substeps: 3,
 			velocityIterations: 2,
-			positionIterations: 0,
-			slop: 0,
+			positionIterations: 3,
+			// slop: 0,
 		},
 	});
 	game.createDebugRender();
@@ -90,10 +90,10 @@
 
 	function stack() {
 		let width = 50;
-		let stackHeight = 3;
+		let stackHeight = 8;
 		for (let i = stackHeight; --i >= 0;) {
 			window["body" + i] = Bodies.Rectangle(width, width, new vec(-100 + i * width * 0, 0 - i * width), {
-				restitution: 0,
+				restitution: 0.6,
 				friction: 0.5,
 				mass: 1 + i * 2,
 				// angle: Math.PI/4,
@@ -155,7 +155,7 @@
 			borderWidth: 2,
 		}).add();
 		let bodyB = Bodies.Rectangle(50, 50, new vec(-400, 0), {
-			restitution: 1,
+			restitution: 0.9,
 			friction: 0.2,
 			frictionAir: 0,
 		}).addPolygonRender({
@@ -166,7 +166,7 @@
 		
 		for (let i = 2; --i >= 0;) {
 			Bodies.Rectangle(50, 50, new vec(-100 + i * 50, 0), {
-				restitution: 1,
+				restitution: 0.9,
 				friction: 1,
 				frictionAir: 0,
 			}).addPolygonRender({
@@ -230,7 +230,7 @@
 	function friction() {
 		// game.DebugRender.enabled.vertices = true;
 		var bodyA = window.bodyA = Bodies.Polygon([new vec(0, 0), new vec(500, 500), new vec(0, 500)], new vec(-250, 180), {
-			friction: 0.2,
+			friction: 1,
 			isStatic: false,
 			mass: 10,
 			restitution: 0,
@@ -242,8 +242,8 @@
 		}).add();
 		bodyA.add();
 
-		var bodyB = window.bodyB = Bodies.Rectangle(100, 100, new vec(-300, -200), {
-			friction: 1,
+		var bodyB = window.bodyB = Bodies.Rectangle(100, 100, new vec(-300, -110), {
+			friction: 0,
 			angle: Math.PI / 4,
 			restitution: 0,
 		}).addPolygonRender({
@@ -319,7 +319,7 @@
 	});
 	
 	game.DebugRender.enabled.collisions = true;
-	game.DebugRender.enabled.vertices = false;
+	game.DebugRender.enabled.wireframes = false;
 	Engine.Performance.render.enabled = true;
 
 	let inputs = new ter.Inputs();
@@ -327,8 +327,8 @@
 	inputs.on("altV", keydown => {
 		if (keydown) {
 			let enabled = game.DebugRender.enabled;
-			enabled.vertices = !enabled.vertices;
-			enabled.collisions = enabled.vertices;
+			enabled.wireframes = !enabled.wireframes;
+			enabled.collisions = enabled.wireframes;
 		}
 	});
 	inputs.on("altB", keydown => {

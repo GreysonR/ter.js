@@ -2,7 +2,7 @@ const Game = require("../core/Game");
 const CollisionShape = require("../physics/CollisionShape");
 
 /**
- * Extra functions for debugging, such as showing all vertices, hitboxes, and collisions.
+ * Extra functions for debugging, such as showing all wireframes, hitboxes, and collisions.
  * 
  * ## Events
  * | Name | Description | Arguments |
@@ -10,7 +10,7 @@ const CollisionShape = require("../physics/CollisionShape");
  * | beforeSave | Before the DebugRender's canvas context is saved | None |
  * | beforeRender | Before all debug tools are rendered | None |
  * | afterRender | After all debug tools are rendered | None |
- * | afterRestor | After the DebugRender's canvas contex is restored | None |
+ * | afterRestore | After the DebugRender's canvas contex is restored | None |
  * 
  */
 class DebugRender {
@@ -20,7 +20,7 @@ class DebugRender {
 
 	/**
 	 * What is rendered
-	 * - **enabled.vertices** - Shows wireframes of all physics bodies
+	 * - **enabled.wireframes** - Shows wireframes of all physics bodies
 	 * - **enabled.collisions** - Shows collision points and normals
 	 * - **enabled.boundingBox** - Shows AABB bounding boxes for physics bodies
 	 * - **enabled.centers** - Shows center of mass of all physics bodies
@@ -30,7 +30,7 @@ class DebugRender {
 	 * @example
 	 * // All options:
 	 * game.DebugRender.enabled = {
-	 * 	vertices: true,
+	 * 	wireframes: true,
 	 * 	centers: true,
 	 * 	collisions: true,
 	 * 	broadphase: true,
@@ -38,7 +38,7 @@ class DebugRender {
 	 * }
 	 */
 	enabled = {
-		vertices: false,
+		wireframes: false,
 		centers: false,
 		collisions: false,
 		broadphase: false,
@@ -108,7 +108,7 @@ class DebugRender {
 	}
 
 	
-	vertices() {
+	wireframes() {
 		const { Game, ctx } = this;
 		const { camera, pixelRatio } = Game.Render;
 		const scale = camera.scale * pixelRatio;

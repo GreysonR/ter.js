@@ -89,12 +89,12 @@ class Engine {
 			for (let i = 0; i < pairs.length; i++) {
 				let [ bodyA, bodyB ] = pairs[i];
 				if (this.collides(bodyA, bodyB)) {
-					this.createManifold(bodyA, bodyB);
+					this.#createManifold(bodyA, bodyB);
 				}
 			}
 	
 			// Prepare contacts
-			let contactHertz = Math.min(30, 0.25 * this.inverseDelta);
+			let contactHertz = Math.min(30, 0.25 * this.inverseDelta ** 0.5);
 			// let jointHertz = Math.min(60, 0.125 * this.inverseDelta);
 			this.prepareContacts(delta, contactHertz);
 			
@@ -105,7 +105,7 @@ class Engine {
 
 			// Solve for velocities
 			for (let i = 0; i < this.velocityIterations; i++) {
-				this.solveVelocity(true);
+				// this.solveVelocity(true);
 				this.solveVelocity(false);
 			}
 
@@ -218,7 +218,7 @@ class Engine {
 	 * @param {CollisionShape} bodyB - 2nd body to pair
 	 * @todo Make collision pairs their own class
 	 */
-	createManifold(bodyA, bodyB) {
+	#createManifold(bodyA, bodyB) {
 		const { World, Performance } = this;
 		let depth = Infinity;
 		let normal, normalPoint;
@@ -465,7 +465,7 @@ class Engine {
 				const vn = vrB.sub(vrA).dot(normal);
 				const vt = vrB.sub(vrA).dot(tangent);
 
-				// if (normalVelocity < 0) continue;
+				// if (vn < 0) continue;
 
 				// Separation
 				const ds = bodyB.velocity.sub(bodyA.velocity).add(rB.sub(rA));
@@ -492,9 +492,11 @@ class Engine {
 					bias *= 2;
 				}
 				
-				let normalImpulse = contact.normalMass * massScale * (vn * restitution + bias);// - impulseScale * contact.normalImpulse;
+				// console.log(contact.normalMass);
+				let normalImpulse = contact.normalMass * contact.massCoefficient * (vn * restitution);// - impulseScale * contact.normalImpulse;
 				let tangentImpulse = -contact.tangentMass * vt;
 				
+				// Clamp normal impulse
 				if (false) { // Clamping current impulse rather than accumulated is more stable
 					// Clamp accumulated impulse
 					let newImpulse = Math.max(contact.normalImpulse + normalImpulse, 0);
@@ -506,15 +508,17 @@ class Engine {
 					normalImpulse = Math.max(normalImpulse, 0);
 					contact.normalImpulse += normalImpulse;
 				}
+
+				// Clamp friction impulse
 				if (false) {
-					// Clamp accumulated force
+					// Clamp accumulated impulse
 					const maxFriction = friction * contact.normalImpulse;
 					let newImpulse = Common.clamp(contact.tangentImpulse + tangentImpulse, -maxFriction, maxFriction);
 					tangentImpulse = newImpulse - contact.tangentImpulse;
 					contact.tangentImpulse = newImpulse;
 				}
 				else {
-					// Clamp current force
+					// Clamp current impulse
 					const maxFriction = friction * normalImpulse;
 					tangentImpulse = Common.clamp(tangentImpulse, -maxFriction, maxFriction);
 					contact.tangentImpulse += tangentImpulse;
@@ -572,7 +576,8 @@ class Engine {
 
 			let seperation = depth + normal.dot(bodyB.positionImpulse.sub(bodyA.positionImpulse));
 			if (seperation < 0) continue;
-			let impulse = seperation - slop;
+			
+			let impulse = Math.max(seperation - slop, 0);
 			if (bodyA.isStatic || bodyB.isStatic)
 				impulse *= 2;
 			
