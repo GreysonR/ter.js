@@ -38,11 +38,12 @@ class Engine {
 	 * 
 	 * @param {World} World - World the physics engine should run on
 	 * @param {Object} options - Physics options
-	 * @param {number} [options.substeps=6] - Number of substeps per tick
-	 * @param {number} [options.velocityIterations=1] - Number of velocity solver iterations per tick
-	 * @param {number} [options.positionIterations=0] - Number of position solver iterations per tick
+	 * @param {number} [options.substeps=3] - Number of substeps per tick
+	 * @param {number} [options.velocityIterations=2] - Number of velocity solver iterations per tick
+	 * @param {number} [options.positionIterations=3] - Number of position solver iterations per tick
 	 * @param {number} [options.constraintIterations=1] - Number of constraint solver iterations per tick
-	 * @param {number} [options.slop=0.5] - Amount of acceptable penetration
+	 * @param {number} [options.overlapMargin=0.01] - Amount of overlap required for a collision to register
+	 * @param {number} [options.slop=1] - Amount of acceptable penetration
 	 * @param {number} [options.positionDampen=0.9] - How much the position impulse is multiplied by. Decrease if unstable.
 	 */
 	constructor(World, options = {}) {
