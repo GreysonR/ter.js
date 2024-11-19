@@ -13,9 +13,9 @@ const decomp = require("poly-decomp");
  * ## Events
  * | Name | Description | Arguments |
  * | ---- | ----------- | --------- |
- * | bodyEnter | Body starts colliding with another | `(otherBody: Boolean, collision: Object)` |
- * | bodyInside | Body is currently colliding with another. Triggered every frame after the initial collision. In other words, it won't trigger the same frame as `bodyEnter` but will every subsequent frame the bodies are still colliding | `(otherBody: Boolean, collision: Object)` |
- * | bodyExit | Triggered the frame bodies stop colliding | `(otherBody: Boolean, collision: Object)` |
+ * | bodyEnter | Body starts colliding with another | `(otherBody: RigidBody, collision: Object)` |
+ * | bodyInside | Body is currently colliding with another. Triggered every frame after the initial collision. In other words, it won't trigger the same frame as `bodyEnter` but will every subsequent frame the bodies are still colliding | `(otherBody: RigidBody, collision: Object)` |
+ * | bodyExit | Triggered the frame bodies stop colliding | `(otherBody: RigidBody, collision: Object)` |
  * | beforeUpdate | Triggered right before forces are applied to the body's velocity and cleared every frame. Best used to apply forces to the body. It's only called when the body is in the world | None |
  * | duringUpdate | Triggered right before body's position is updated from its velocity every frame. Best used to clear forces from the body. It's only called when the body is in the world | None |
  * | add | Triggered right before the body is added to the world | None |

@@ -571,7 +571,7 @@ class vec {
 		return { x: this.x, y: this.y };
 	}
 	/**
-	 * Creates a array in the format `[x, y]`
+	 * Creates an array in the format `[x, y]`
 	 */
 	toArray() {
 		return [this.x, this.y];

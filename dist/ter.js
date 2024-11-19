@@ -3140,7 +3140,7 @@ class vec {
 		return { x: this.x, y: this.y };
 	}
 	/**
-	 * Creates a array in the format `[x, y]`
+	 * Creates an array in the format `[x, y]`
 	 */
 	toArray() {
 		return [this.x, this.y];
@@ -3923,6 +3923,7 @@ let GameFunctions = {
 		function addProperties(elem, properties) {
 			Object.keys(properties).forEach(property => {
 				if (typeof properties[property] === "object" && !Array.isArray(property) && !(properties[property] instanceof Element)) {
+					if (!elem[property]) elem[property] = {};
 					addProperties(elem[property], properties[property]);
 				}
 				else {
@@ -4568,12 +4569,12 @@ class Engine {
 			for (let i = 0; i < pairs.length; i++) {
 				let [ bodyA, bodyB ] = pairs[i];
 				if (this.collides(bodyA, bodyB)) {
-					this.createManifold(bodyA, bodyB);
+					this.#createManifold(bodyA, bodyB);
 				}
 			}
 	
 			// Prepare contacts
-			let contactHertz = Math.min(30, 0.25 * this.inverseDelta);
+			let contactHertz = Math.min(30, 0.25 * this.inverseDelta ** 0.5);
 			// let jointHertz = Math.min(60, 0.125 * this.inverseDelta);
 			this.prepareContacts(delta, contactHertz);
 			
@@ -4585,7 +4586,7 @@ class Engine {
 			// Solve for velocities
 			for (let i = 0; i < this.velocityIterations; i++) {
 				this.solveVelocity(true);
-				this.solveVelocity(false);
+				// this.solveVelocity(false);
 			}
 
 			// Solve positions
@@ -4697,7 +4698,7 @@ class Engine {
 	 * @param {CollisionShape} bodyB - 2nd body to pair
 	 * @todo Make collision pairs their own class
 	 */
-	createManifold(bodyA, bodyB) {
+	#createManifold(bodyA, bodyB) {
 		const { World, Performance } = this;
 		let depth = Infinity;
 		let normal, normalPoint;
@@ -4944,7 +4945,7 @@ class Engine {
 				const vn = vrB.sub(vrA).dot(normal);
 				const vt = vrB.sub(vrA).dot(tangent);
 
-				// if (normalVelocity < 0) continue;
+				// if (vn < 0) continue;
 
 				// Separation
 				const ds = bodyB.velocity.sub(bodyA.velocity).add(rB.sub(rA));
@@ -4971,18 +4972,22 @@ class Engine {
 					bias *= 2;
 				}
 				
-				let normalImpulse = contact.normalMass * massScale * (vn * restitution + bias);// - impulseScale * contact.normalImpulse;
+				// console.log(contact.normalMass);
+				let normalImpulse = contact.normalMass * contact.massCoefficient * (vn * restitution + bias);// - impulseScale * contact.normalImpulse;
 				let tangentImpulse = -contact.tangentMass * vt;
 				
+				// Clamp normal impulse
 				if (false) {}
 				else {
 					// Clamp current impulse
 					normalImpulse = Math.max(normalImpulse, 0);
 					contact.normalImpulse += normalImpulse;
 				}
+
+				// Clamp friction impulse
 				if (false) {}
 				else {
-					// Clamp current force
+					// Clamp current impulse
 					const maxFriction = friction * normalImpulse;
 					tangentImpulse = Common.clamp(tangentImpulse, -maxFriction, maxFriction);
 					contact.tangentImpulse += tangentImpulse;
@@ -5040,7 +5045,8 @@ class Engine {
 
 			let seperation = depth + normal.dot(bodyB.positionImpulse.sub(bodyA.positionImpulse));
 			if (seperation < 0) continue;
-			let impulse = seperation - slop;
+			
+			let impulse = Math.max(seperation - slop, 0);
 			if (bodyA.isStatic || bodyB.isStatic)
 				impulse *= 2;
 			
@@ -5103,9 +5109,9 @@ const decomp = __webpack_require__(371);
  * ## Events
  * | Name | Description | Arguments |
  * | ---- | ----------- | --------- |
- * | bodyEnter | Body starts colliding with another | `(otherBody: Boolean, collision: Object)` |
- * | bodyInside | Body is currently colliding with another. Triggered every frame after the initial collision. In other words, it won't trigger the same frame as `bodyEnter` but will every subsequent frame the bodies are still colliding | `(otherBody: Boolean, collision: Object)` |
- * | bodyExit | Triggered the frame bodies stop colliding | `(otherBody: Boolean, collision: Object)` |
+ * | bodyEnter | Body starts colliding with another | `(otherBody: RigidBody, collision: Object)` |
+ * | bodyInside | Body is currently colliding with another. Triggered every frame after the initial collision. In other words, it won't trigger the same frame as `bodyEnter` but will every subsequent frame the bodies are still colliding | `(otherBody: RigidBody, collision: Object)` |
+ * | bodyExit | Triggered the frame bodies stop colliding | `(otherBody: RigidBody, collision: Object)` |
  * | beforeUpdate | Triggered right before forces are applied to the body's velocity and cleared every frame. Best used to apply forces to the body. It's only called when the body is in the world | None |
  * | duringUpdate | Triggered right before body's position is updated from its velocity every frame. Best used to clear forces from the body. It's only called when the body is in the world | None |
  * | add | Triggered right before the body is added to the world | None |
@@ -6067,7 +6073,7 @@ const Game = __webpack_require__(830);
 const CollisionShape = __webpack_require__(769);
 
 /**
- * Extra functions for debugging, such as showing all vertices, hitboxes, and collisions.
+ * Extra functions for debugging, such as showing all wireframes, hitboxes, and collisions.
  * 
  * ## Events
  * | Name | Description | Arguments |
@@ -6075,7 +6081,7 @@ const CollisionShape = __webpack_require__(769);
  * | beforeSave | Before the DebugRender's canvas context is saved | None |
  * | beforeRender | Before all debug tools are rendered | None |
  * | afterRender | After all debug tools are rendered | None |
- * | afterRestor | After the DebugRender's canvas contex is restored | None |
+ * | afterRestore | After the DebugRender's canvas contex is restored | None |
  * 
  */
 class DebugRender {
@@ -6085,7 +6091,7 @@ class DebugRender {
 
 	/**
 	 * What is rendered
-	 * - **enabled.vertices** - Shows wireframes of all physics bodies
+	 * - **enabled.wireframes** - Shows wireframes of all physics bodies
 	 * - **enabled.collisions** - Shows collision points and normals
 	 * - **enabled.boundingBox** - Shows AABB bounding boxes for physics bodies
 	 * - **enabled.centers** - Shows center of mass of all physics bodies
@@ -6095,7 +6101,7 @@ class DebugRender {
 	 * @example
 	 * // All options:
 	 * game.DebugRender.enabled = {
-	 * 	vertices: true,
+	 * 	wireframes: true,
 	 * 	centers: true,
 	 * 	collisions: true,
 	 * 	broadphase: true,
@@ -6103,7 +6109,7 @@ class DebugRender {
 	 * }
 	 */
 	enabled = {
-		vertices: false,
+		wireframes: false,
 		centers: false,
 		collisions: false,
 		broadphase: false,
@@ -6173,7 +6179,7 @@ class DebugRender {
 	}
 
 	
-	vertices() {
+	wireframes() {
 		const { Game, ctx } = this;
 		const { camera, pixelRatio } = Game.Render;
 		const scale = camera.scale * pixelRatio;
@@ -7048,7 +7054,7 @@ class Render {
 		antialias: true,
 		scaleMode: PIXI.SCALE_MODES.LINEAR,
 		getBoundSize: function(width, height) {
-			return Math.sqrt(width ** 2 + height ** 2) || 1;
+			return Math.sqrt(width * height) || 1;
 		}
 	}
 	app = null;
@@ -7069,7 +7075,7 @@ class Render {
 		// Test if PIXI is loaded
 		try { PIXI.settings; }
 		catch(err) {
-			throw new Error("PIXI is not defined\nHelp: try loading pixi.js before creating a ter app");
+			throw new Error("PIXI is not defined\nHelp: try loading pixi.js before creating a ter app");j
 		}
 
 		// Load options
@@ -7146,7 +7152,8 @@ class Render {
 		let { position: cameraPosition, translation, fov, boundSize } = camera;
 		
 		let screenSize = new vec(app.screen.width, app.screen.height);
-		translation.set({ x: -cameraPosition.x * boundSize/fov + screenSize.x/2, y: -cameraPosition.y * boundSize/fov + screenSize.y/2 });
+		let fovScale = boundSize / fov;
+		translation.set({ x: -cameraPosition.x * fovScale + screenSize.x/2, y: -cameraPosition.y * fovScale + screenSize.y/2 });
 		camera.scale = boundSize / fov;
 		
 		// update camera position

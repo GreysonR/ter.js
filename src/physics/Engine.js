@@ -13,7 +13,7 @@ class Engine {
 		positionIterations: 0,
 		constraintIterations: 1,
 		
-		slop: 0.5,
+		slop: 1,
 		overlapMargin: 0.01,
 		positionWarming: 0.8,
 		positionDampen: 0.9,
@@ -105,8 +105,8 @@ class Engine {
 
 			// Solve for velocities
 			for (let i = 0; i < this.velocityIterations; i++) {
-				// this.solveVelocity(true);
-				this.solveVelocity(false);
+				this.solveVelocity(true);
+				// this.solveVelocity(false);
 			}
 
 			// Solve positions
@@ -493,7 +493,7 @@ class Engine {
 				}
 				
 				// console.log(contact.normalMass);
-				let normalImpulse = contact.normalMass * contact.massCoefficient * (vn * restitution);// - impulseScale * contact.normalImpulse;
+				let normalImpulse = contact.normalMass * contact.massCoefficient * (vn * restitution + bias);// - impulseScale * contact.normalImpulse;
 				let tangentImpulse = -contact.tangentMass * vt;
 				
 				// Clamp normal impulse

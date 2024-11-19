@@ -26,6 +26,7 @@ let GameFunctions = {
 		function addProperties(elem, properties) {
 			Object.keys(properties).forEach(property => {
 				if (typeof properties[property] === "object" && !Array.isArray(property) && !(properties[property] instanceof Element)) {
+					if (!elem[property]) elem[property] = {};
 					addProperties(elem[property], properties[property]);
 				}
 				else {

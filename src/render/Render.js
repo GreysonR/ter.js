@@ -20,7 +20,7 @@ class Render {
 		antialias: true,
 		scaleMode: PIXI.SCALE_MODES.LINEAR,
 		getBoundSize: function(width, height) {
-			return Math.sqrt(width ** 2 + height ** 2) || 1;
+			return Math.sqrt(width * height) || 1;
 		}
 	}
 	app = null;
@@ -118,7 +118,8 @@ class Render {
 		let { position: cameraPosition, translation, fov, boundSize } = camera;
 		
 		let screenSize = new vec(app.screen.width, app.screen.height);
-		translation.set({ x: -cameraPosition.x * boundSize/fov + screenSize.x/2, y: -cameraPosition.y * boundSize/fov + screenSize.y/2 });
+		let fovScale = boundSize / fov;
+		translation.set({ x: -cameraPosition.x * fovScale + screenSize.x/2, y: -cameraPosition.y * fovScale + screenSize.y/2 });
 		camera.scale = boundSize / fov;
 		
 		// update camera position
