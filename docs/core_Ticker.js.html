@@ -14,14 +14,18 @@ const Animation = require("../other/Animation.js");
  */
 class Ticker {
 	static defaultOptions = {
+		enabled: true,
 		pauseOnFreeze: true,
 		freezeThreshold: 0.3,
 	}
+
+	#enabled = true;
 
 	/**
 	 * Creates a ticker that updates [Game](./Game.html) every frame.
 	 * @param {Game} Game - Game ticker should be run on
 	 * @param {Object} options - Options object
+	 * @param {boolean} [options.enabled=true] - If the ticker runs. To start the ticker again, use `ticker.run()`
 	 * @param {boolean} [options.pauseOnFreeze=true] - If the ticker should pause when the game freezes. Helps prevent jumping when user switches tabs.
 	 * @param {number} [options.freezeThreshold=0.3] - The threshold before the game pauses **between 0 and 1**. Higher values means the fps doesn't have to dip as low for the ticker to pause.
 	 */
@@ -31,13 +35,33 @@ class Ticker {
 		options = defaults;
 		
 		this.Game = Game;
+		this.#enabled = options.enabled;
 		this.pauseOnFreeze   = options.pauseOnFreeze;
 		this.freezeThreshold = options.freezeThreshold;
 
 		this.tick = this.tick.bind(this);
-		window.addEventListener("load", this.tick);
+		if (this.#enabled) {
+			window.addEventListener("load", this.tick);
+		}
+	}
+	/**
+	 * Starts a stopped ticker
+	 */
+	start() {
+		if (this.#enabled) return;
+		this.#enabled = true;
+		this.tick();
+	}
+	/**
+	 * Stops a running ticker. This will stop physics, performance, and animation updates, but will not stop the renderer.
+	 */
+	stop() {
+		if (!this.#enabled) return;
+		this.#enabled = false;
 	}
 	tick() {
+		if (!this.#enabled) return;
+
 		this.trigger("beforeTick");
 
 		const { Engine } = this.Game;

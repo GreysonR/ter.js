@@ -1625,31 +1625,27 @@ let Common = {
 	 * Deep copies `objB` onto `objA` in place.
 	 * @param {Object} objA - First object
 	 * @param {Object} objB - 2nd object, copied onto `objA`
-	 * @param {number} maxDepth - Maximum depth it can copy
+	 * @param {number} maxDepth - Maximum depth it can copy. If set to 1 it is a shallow copy only
 	 */
 	merge: function(objA, objB, maxDepth = Infinity, hash = new WeakSet()) {
 		hash.add(objB);
 
 		Object.keys(objB).forEach(option => {
 			let value = objB[option];
+			let isElement = value instanceof Element || value instanceof Document || value === window;
 			
-			if (Array.isArray(value)) {
-				objA[option] = [ ...value ];
+			if (Array.isArray(value) && maxDepth > 1) {
+				objA[option] = [ ...value ]; // todo: deep clone values within an array
 			}
-			else if (typeof value === "object" && value !== null) {
-				if (maxDepth > 1) {
-					if (hash.has(value)) { // Cyclic reference
-						objA[option] = value;
-						return;
-					}
-					if (typeof objA[option] !== "object") {
-						objA[option] = {};
-					}
-					Common.merge(objA[option], value, maxDepth - 1, hash);
-				}
-				else {
+			else if (typeof value === "object" && value !== null && !isElement && maxDepth > 1) {
+				if (hash.has(value)) { // Cyclic reference
 					objA[option] = value;
+					return;
 				}
+				if (typeof objA[option] !== "object") {
+					objA[option] = {};
+				}
+				Common.merge(objA[option], value, maxDepth - 1, hash);
 			}
 			else {
 				objA[option] = value;
@@ -1931,6 +1927,23 @@ class Game {
 	 * See documentation for [World](./World.html), [Render](./Render.html), [Engine](./Engine.html), and [Ticker](./Ticker.html) for options
 	 * 
 	 * @param {Object} options - Options object
+	 * @param {Object} [options.World] - [World options](./World.html)
+	 * @param {Object} [options.Render] - [Render options](./World.html)
+	 * @param {Object} [options.Engine] - [Engine options](./World.html)
+	 * @param {Object} [options.Ticker] - [Ticker options](./World.html)
+	 * 
+	 * @example 
+	 * let game = new Game({
+	 * 	World: {
+	 * 		gravity: new vec(0, 0),
+	 * 	},
+	 * 	Render: {
+	 * 		background: "#ffffff",
+	 * 		ySort: true,
+	 * 		antialias: false,
+	 * 	},
+	 * 	// Engine and Ticker omitted
+	 * });
 	 */
 	constructor(options = {}) {
 		let defaults = { ...Game.defaultOptions };
@@ -1944,7 +1957,14 @@ class Game {
 		this.Bodies = new Bodies(this);
 	}
 	/**
-	 * Creates a debug rendering context as `this.DebugRender`. See [DebugRender](./DebugRender.html) for more information.
+	 * Creates a debug rendering context as `this.DebugRender`. See [DebugRender](./DebugRender.html) and the [tutorial](./tutorial-05%20Debugging.html) for more information.
+	 * @example
+	 * // creates game.DebugRender
+	 * game.createDebugRender(); 
+	 * 
+	 * // which we can now use here
+	 * game.DebugRender.enabled.wireframes = true;
+	 * game.Engine.Performance.render.enabled = true; // fps graph
 	 */
 	createDebugRender() {
 		this.DebugRender = new DebugRender(this);
@@ -2075,14 +2095,18 @@ const Animation = __webpack_require__(847);
  */
 class Ticker {
 	static defaultOptions = {
+		enabled: true,
 		pauseOnFreeze: true,
 		freezeThreshold: 0.3,
 	}
+
+	#enabled = true;
 
 	/**
 	 * Creates a ticker that updates [Game](./Game.html) every frame.
 	 * @param {Game} Game - Game ticker should be run on
 	 * @param {Object} options - Options object
+	 * @param {boolean} [options.enabled=true] - If the ticker runs. To start the ticker again, use `ticker.run()`
 	 * @param {boolean} [options.pauseOnFreeze=true] - If the ticker should pause when the game freezes. Helps prevent jumping when user switches tabs.
 	 * @param {number} [options.freezeThreshold=0.3] - The threshold before the game pauses **between 0 and 1**. Higher values means the fps doesn't have to dip as low for the ticker to pause.
 	 */
@@ -2092,13 +2116,33 @@ class Ticker {
 		options = defaults;
 		
 		this.Game = Game;
+		this.#enabled = options.enabled;
 		this.pauseOnFreeze   = options.pauseOnFreeze;
 		this.freezeThreshold = options.freezeThreshold;
 
 		this.tick = this.tick.bind(this);
-		window.addEventListener("load", this.tick);
+		if (this.#enabled) {
+			window.addEventListener("load", this.tick);
+		}
+	}
+	/**
+	 * Starts a stopped ticker
+	 */
+	start() {
+		if (this.#enabled) return;
+		this.#enabled = true;
+		this.tick();
+	}
+	/**
+	 * Stops a running ticker. This will stop physics, performance, and animation updates, but will not stop the renderer.
+	 */
+	stop() {
+		if (!this.#enabled) return;
+		this.#enabled = false;
 	}
 	tick() {
+		if (!this.#enabled) return;
+
 		this.trigger("beforeTick");
 
 		const { Engine } = this.Game;
@@ -3610,8 +3654,8 @@ module.exports = World;
 
 
 /*
- TODO: Animation class creates an animation object that updates independently of other animation objects, allowing multiple games to have animations working correctly
- Currently having multiple Game objects will break animations
+ TODO: Animation class that creates an animation object that updates independently of other animation objects, allowing multiple games to have animations working correctly
+ Currently having multiple Game objects will break animations, as their tickers will call Animation.update() multiple times each frame
  
  -- Game.js --
  this.animation = new Animation();
@@ -5944,7 +5988,7 @@ const Animation = __webpack_require__(847);
 const { angleDiff } = __webpack_require__(929);
 
 /**
- * Handles the game's camera
+ * Handles the game's camera. Accessed through `game.Render.camera`
  */
 class Camera {
 	/**
@@ -5962,11 +6006,14 @@ class Camera {
 	translation = new vec(0, 0);
 	scale = 1;
 	boundSize = 1000;
+	Render = null;
 
 	/**
 	 * Creates a new camera object used by [Render](./Render.html)
+	 * @param {Render} Render - Render object the camera for
 	 */
-	constructor() {
+	constructor(Render) {
+		this.Render = Render;
 	}
 
 	/**
@@ -5987,11 +6034,16 @@ class Camera {
 
 	// ~ Point transformations
 	screenPtToGame(point) {
-		const scale =  this.scale;
-		return new vec((point.x - this.translation.x) / scale, (point.y - this.translation.y) / scale);
+		let { scale, translation } = this;
+		let parentBounds = this.Render._parentBoundingBox;
+		let parent = new vec(parentBounds.left - window.scrollX, parentBounds.top - window.scrollY);
+		return new vec((point.x - translation.x - parent.x) / scale, (point.y - translation.y - parent.y) / scale);
 	}
 	gamePtToScreen(point) {
-		return new vec((point.x * this.scale + this.translation.x), (point.y * this.scale + this.translation.y));
+		let { scale, translation } =  this;
+		let parentBounds = this.Render._parentBoundingBox;
+		let parent = new vec(parentBounds.left - window.scrollX, parentBounds.top - window.scrollY);
+		return new vec((point.x * scale + translation.x + parent.x), (point.y * scale + translation.y + parent.y));
 	}
 
 	/**
@@ -6071,6 +6123,7 @@ module.exports = Camera;
 
 const Game = __webpack_require__(830);
 const CollisionShape = __webpack_require__(769);
+const { createElement } = __webpack_require__(794);
 
 /**
  * Extra functions for debugging, such as showing all wireframes, hitboxes, and collisions.
@@ -6124,23 +6177,28 @@ class DebugRender {
 		this.Game = Game;
 
 		let baseCanvas = Game.Render.app.view;
-		let scale = devicePixelRatio ?? 1;
-		let canvas = this.canvas = document.createElement("canvas");
+		let scale = Game.Render.pixelRatio ?? 1;
+		let canvas = this.canvas = createElement("canvas", {
+			parent: baseCanvas.parentNode,
+			width: baseCanvas.width,
+			height: baseCanvas.height,
+			style: {
+				position: "absolute",
+				zIndex: 1,
+				top: "0px",
+				left: "0px",
+				// width: baseCanvas.style.width,
+				// height: baseCanvas.style.height,
+				background: "transparent",
+				pointerEvents: "none",
+				transformOrigin: "top left",
+				transform: `scale(${1 / scale}, ${1 / scale})`,
+			}
+		})
 		this.ctx = canvas.getContext("2d");
-		canvas.style.position = "absolute";
-		canvas.style.zIndex = 1;
-		canvas.style.top =  "0px";
-		canvas.style.left = "0px";
-		canvas.width  = baseCanvas.width;
-		canvas.height = baseCanvas.height;
-		canvas.style.background = "transparent";
-		canvas.style.pointerEvents = "none";
-		canvas.style.transformOrigin = "top left";
-		canvas.style.transform = `scale(${1 / scale}, ${1 / scale})`;
-		baseCanvas.parentNode.appendChild(canvas);
 
 		Game.Render.app.renderer.on("resize", (width, height) => {
-			let scale = devicePixelRatio ?? 1;
+			let scale = Game.Render.pixelRatio ?? 1;
 			canvas.width  = width  * scale;
 			canvas.height = height * scale;
 			canvas.style.transform = `scale(${1 / scale}, ${1 / scale})`;
@@ -7050,7 +7108,7 @@ class Render {
 		background: "transparent",
 		pixelRatio: window.devicePixelRatio ?? 1,
 		ySort: false,
-		resizeTo: window,
+		parentElement: window,
 		antialias: true,
 		scaleMode: PIXI.SCALE_MODES.LINEAR,
 		getBoundSize: function(width, height) {
@@ -7060,6 +7118,8 @@ class Render {
 	app = null;
 	camera = null;
 	pixelRatio = 1;
+	parentElement = null;
+	_parentBoundingBox;
 
 	/**
 	 * 
@@ -7067,34 +7127,37 @@ class Render {
 	 * @param {string} [options.background="transparent"] - Background color, such as `"#FFFFFF00"`, `"rgb(0, 0, 0)"`, or `"transparent"`
 	 * @param {number} [options.pixelRatio=devicePixelRatio] - Render resolution percent, use default unless you have a reason to change it
 	 * @param {boolean} [options.ySort=false] - Whether to sort the render layer of bodies by their y coordinate
-	 * @param {*} [options.resizeTo=window] - What the canvas should resize to, see PIXI.js `resizeTo` for options
+	 * @param {*} [options.parentElement=window] - What the canvas element will be appended to. The canvas resizes to fit this element. Only set to window if the body has `overflow: hidden`, otherwise create a wrapper element.
 	 * @param {boolean} [options.antialias=true] - If the render should have antialiasing
+	 * @param {boolean} [options.scaleMode=PIXI.SCALE_MODES.LINEAR] - See [PIXI.js scale modes](https://api.pixijs.io/@pixi/constants/PIXI/SCALE_MODES.html)
 	 * @param {function} [options.getBoundSize=function(width, height)] - Function that determines the bound size, which is how big the view should be based on the canvas width and height
 	 */
 	constructor(options = {}) {
 		// Test if PIXI is loaded
 		try { PIXI.settings; }
 		catch(err) {
-			throw new Error("PIXI is not defined\nHelp: try loading pixi.js before creating a ter app");j
+			throw new Error("PIXI is not defined\nHelp: try loading pixi.js before creating a ter app");
 		}
 
 		// Load options
 		let defaults = { ...Render.defaultOptions };
-		let resizeTo = options.resizeTo ?? defaults.resizeTo;
-		delete options.resizeTo;
+		let parentElement = options.parentElement ?? defaults.parentElement;
+		if (parentElement === window) parentElement = document.body;
+		this.parentElement = parentElement;
+		delete options.parentElement;
 		Common.merge(defaults, options, 1);
 		options = defaults;
 		let { background, ySort, pixelRatio, antialias, getBoundSize, scaleMode } = options;
 
 		// Create camera
-		this.camera = new Camera();
+		this.camera = new Camera(this);
 
 		// Setup bound size
 		this.getBoundSize = getBoundSize;
 
 		// Set basic settings
 		PIXI.settings.SCALE_MODE = scaleMode;
-		let scale = PIXI.settings.RESOLUTION = this.pixelRatio = pixelRatio;
+		PIXI.settings.RESOLUTION = this.pixelRatio = pixelRatio;
 		PIXI.Filter.defaultResolution = 0;
 		PIXI.Container.defaultSortableChildren = true
 
@@ -7105,22 +7168,17 @@ class Render {
 		let app = this.app = new PIXI.Application({
 			background: background[0],
 			backgroundAlpha: background[1],
-			resizeTo: resizeTo ?? window,
+			resizeTo: parentElement ?? window,
 			antialias: antialias ?? true,
 		});
-		document.body.appendChild(app.view);
+		parentElement.appendChild(app.view);
 		app.ticker.add(this.update.bind(this)); // Start render
 		app.stage.filters = []; // Makes working with pixi filters easier
 		app.stage.sortableChildren = true; // Important so render layers work
 
-		// Set up pixel ratio scaling
-		let view = app.view;
-		view.style.transformOrigin = "top left";
-		view.style.transform = `scale(${1 / scale}, ${1 / scale})`;
-
 		// Make sure canvas stays correct size
-		this.setSize(app.screen.width, app.screen.height);
-		app.renderer.on("resize", this.setSize.bind(this));
+		this.#setSize(app.screen.width, app.screen.height);
+		app.renderer.on("resize", this.#setSize.bind(this));
 
 		// Set up y sorting if enabled
 		if (ySort) {
@@ -7129,14 +7187,30 @@ class Render {
 			});
 		}
 	}
-	setSize(width, height) {
-		let pixelRatio = this.pixelRatio;
+	#getElementSize(element) {
+		if (element == window) {
+			return { width: window.innerWidth, height: window.innerHeight };
+		}
+		let boundingRect = this._parentBoundingBox = {
+			top: element.offsetTop,
+			left: element.offsetLeft,
+			width: element.offsetWidth,
+			height: element.offsetHeight,
+		};
+		return { width: boundingRect.width, height: boundingRect.height };
+	}
+	#setSize(width, height) {
 		this.camera.boundSize = this.getBoundSize(width, height);
+
+		let view = this.app.view;
+		let { width: elemWidth, height: elemHeight } = this.#getElementSize(this.parentElement);
+		view.style.width = elemWidth + "px";
+		view.style.height = elemHeight + "px";
 	}
 	setPixelRatio(pixelRatio) {
 		this.pixelRatio = pixelRatio;
 		PIXI.settings.RESOLUTION = pixelRatio;
-		this.setSize(this.app.screen.width, this.app.screen.height); // update bounds with new pixel ratio
+		this.#setSize(this.app.screen.width, this.app.screen.height); // update bounds with new pixel ratio
 	}
 
 	/**

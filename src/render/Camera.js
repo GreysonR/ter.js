@@ -3,7 +3,7 @@ const Animation = require("../other/Animation");
 const { angleDiff } = require("../core/Common.js");
 
 /**
- * Handles the game's camera
+ * Handles the game's camera. Accessed through `game.Render.camera`
  */
 class Camera {
 	/**
@@ -21,11 +21,14 @@ class Camera {
 	translation = new vec(0, 0);
 	scale = 1;
 	boundSize = 1000;
+	Render = null;
 
 	/**
 	 * Creates a new camera object used by [Render](./Render.html)
+	 * @param {Render} Render - Render object the camera for
 	 */
-	constructor() {
+	constructor(Render) {
+		this.Render = Render;
 	}
 
 	/**
@@ -46,11 +49,16 @@ class Camera {
 
 	// ~ Point transformations
 	screenPtToGame(point) {
-		const scale =  this.scale;
-		return new vec((point.x - this.translation.x) / scale, (point.y - this.translation.y) / scale);
+		let { scale, translation } = this;
+		let parentBounds = this.Render._parentBoundingBox;
+		let parent = new vec(parentBounds.left - window.scrollX, parentBounds.top - window.scrollY);
+		return new vec((point.x - translation.x - parent.x) / scale, (point.y - translation.y - parent.y) / scale);
 	}
 	gamePtToScreen(point) {
-		return new vec((point.x * this.scale + this.translation.x), (point.y * this.scale + this.translation.y));
+		let { scale, translation } =  this;
+		let parentBounds = this.Render._parentBoundingBox;
+		let parent = new vec(parentBounds.left - window.scrollX, parentBounds.top - window.scrollY);
+		return new vec((point.x * scale + translation.x + parent.x), (point.y * scale + translation.y + parent.y));
 	}
 
 	/**

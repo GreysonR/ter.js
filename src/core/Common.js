@@ -117,31 +117,27 @@ let Common = {
 	 * Deep copies `objB` onto `objA` in place.
 	 * @param {Object} objA - First object
 	 * @param {Object} objB - 2nd object, copied onto `objA`
-	 * @param {number} maxDepth - Maximum depth it can copy
+	 * @param {number} maxDepth - Maximum depth it can copy. If set to 1 it is a shallow copy only
 	 */
 	merge: function(objA, objB, maxDepth = Infinity, hash = new WeakSet()) {
 		hash.add(objB);
 
 		Object.keys(objB).forEach(option => {
 			let value = objB[option];
+			let isElement = value instanceof Element || value instanceof Document || value === window;
 			
-			if (Array.isArray(value)) {
-				objA[option] = [ ...value ];
+			if (Array.isArray(value) && maxDepth > 1) {
+				objA[option] = [ ...value ]; // todo: deep clone values within an array
 			}
-			else if (typeof value === "object" && value !== null) {
-				if (maxDepth > 1) {
-					if (hash.has(value)) { // Cyclic reference
-						objA[option] = value;
-						return;
-					}
-					if (typeof objA[option] !== "object") {
-						objA[option] = {};
-					}
-					Common.merge(objA[option], value, maxDepth - 1, hash);
-				}
-				else {
+			else if (typeof value === "object" && value !== null && !isElement && maxDepth > 1) {
+				if (hash.has(value)) { // Cyclic reference
 					objA[option] = value;
+					return;
 				}
+				if (typeof objA[option] !== "object") {
+					objA[option] = {};
+				}
+				Common.merge(objA[option], value, maxDepth - 1, hash);
 			}
 			else {
 				objA[option] = value;

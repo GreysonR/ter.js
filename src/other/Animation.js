@@ -1,8 +1,8 @@
 "use strict";
 
 /*
- TODO: Animation class creates an animation object that updates independently of other animation objects, allowing multiple games to have animations working correctly
- Currently having multiple Game objects will break animations
+ TODO: Animation class that creates an animation object that updates independently of other animation objects, allowing multiple games to have animations working correctly
+ Currently having multiple Game objects will break animations, as their tickers will call Animation.update() multiple times each frame
  
  -- Game.js --
  this.animation = new Animation();

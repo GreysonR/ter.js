@@ -1,5 +1,6 @@
 const Game = require("../core/Game");
 const CollisionShape = require("../physics/CollisionShape");
+const { createElement } = require("../other/GameFunctions");
 
 /**
  * Extra functions for debugging, such as showing all wireframes, hitboxes, and collisions.
@@ -53,23 +54,28 @@ class DebugRender {
 		this.Game = Game;
 
 		let baseCanvas = Game.Render.app.view;
-		let scale = devicePixelRatio ?? 1;
-		let canvas = this.canvas = document.createElement("canvas");
+		let scale = Game.Render.pixelRatio ?? 1;
+		let canvas = this.canvas = createElement("canvas", {
+			parent: baseCanvas.parentNode,
+			width: baseCanvas.width,
+			height: baseCanvas.height,
+			style: {
+				position: "absolute",
+				zIndex: 1,
+				top: "0px",
+				left: "0px",
+				// width: baseCanvas.style.width,
+				// height: baseCanvas.style.height,
+				background: "transparent",
+				pointerEvents: "none",
+				transformOrigin: "top left",
+				transform: `scale(${1 / scale}, ${1 / scale})`,
+			}
+		})
 		this.ctx = canvas.getContext("2d");
-		canvas.style.position = "absolute";
-		canvas.style.zIndex = 1;
-		canvas.style.top =  "0px";
-		canvas.style.left = "0px";
-		canvas.width  = baseCanvas.width;
-		canvas.height = baseCanvas.height;
-		canvas.style.background = "transparent";
-		canvas.style.pointerEvents = "none";
-		canvas.style.transformOrigin = "top left";
-		canvas.style.transform = `scale(${1 / scale}, ${1 / scale})`;
-		baseCanvas.parentNode.appendChild(canvas);
 
 		Game.Render.app.renderer.on("resize", (width, height) => {
-			let scale = devicePixelRatio ?? 1;
+			let scale = Game.Render.pixelRatio ?? 1;
 			canvas.width  = width  * scale;
 			canvas.height = height * scale;
 			canvas.style.transform = `scale(${1 / scale}, ${1 / scale})`;

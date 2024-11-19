@@ -1,13 +1,12 @@
 {
   "name": "ter",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "",
   "scripts": {
-    "build": "webpack",
+    "build": "npm i & npm run build-prod & npm run build-docs",
     "start": "webpack serve",
     "build-prod": "webpack --config webpack-prod.config.js & webpack --config webpack-prod.config.js --env minify noclean",
-    "build-docs": "jsdoc -c jsdoc.json",
-    "build-release": "npm i & npm run build-prod & npm run build-docs"
+    "build-docs": "jsdoc -c jsdoc.json"
   },
   "keywords": [],
   "author": "GreysonR",

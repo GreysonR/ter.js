@@ -9,7 +9,22 @@
 		body {
 			margin: 0;
 			padding: 0;
-			overflow: hidden;
+		}
+
+		h1 {
+			font-family: "Arial", sans-serif;
+			color: #222;
+		}
+
+		#reference {
+			width: 50px;
+			height: 50px;
+			background: red;
+		}
+		#container {
+			width: 90vw;
+			height: 900px;
+			margin: 0 auto;
 		}
 	</style>
 
@@ -17,16 +32,20 @@
 	<script src="https://cdn.jsdelivr.net/npm/pixi-filters@latest/dist/browser/pixi-filters.min.js"></script>
 </head>
 <body>
-	
+	<h1>Hello world!</h1>
+	<p>Quasi error deleniti ex. Est odit deleniti voluptatibus ipsa sequi repellat quis repellendus. In quisquam sit tenetur sunt architecto eaque facilis. Quisquam explicabo minima cumque eveniet vel veniam et magnam.</p>
+	<div id="reference"></div>
+	<div id="container"></div>
 </body>
 <script>
 	const { vec } = ter;
 	const game = new ter.Game({
 		Render: {
-			resizeTo: window,
+			parentElement: document.getElementById("container"),
 			background: "#1C1C25",
 			getBoundSize: function(width, height) {
-				return Math.min(width, height);
+				// return Math.min(width, height);
+				return 1;
 			}
 		},
 		World: {
@@ -40,15 +59,16 @@
 			// slop: 0,
 		},
 	});
-	game.createDebugRender();
+	// game.createDebugRender();
 
 	const { Engine, Render, Bodies } = game;
 	const { camera } = Render;
 	const { World } = Engine;
 
 	camera.setPosition(new vec(0, 0));
-	camera.fov = 1500;
-
+	// camera.fov = 1500;
+	camera.fov = 1;
+	
 	var floor = Bodies.Rectangle(1400, 100, new vec(0, 400), {
 		isStatic: true,
 		friction: 0.01,

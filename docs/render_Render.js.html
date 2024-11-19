@@ -18,7 +18,7 @@ class Render {
 		background: "transparent",
 		pixelRatio: window.devicePixelRatio ?? 1,
 		ySort: false,
-		resizeTo: window,
+		parentElement: window,
 		antialias: true,
 		scaleMode: PIXI.SCALE_MODES.LINEAR,
 		getBoundSize: function(width, height) {
@@ -28,6 +28,8 @@ class Render {
 	app = null;
 	camera = null;
 	pixelRatio = 1;
+	parentElement = null;
+	_parentBoundingBox;
 
 	/**
 	 * 
@@ -35,34 +37,37 @@ class Render {
 	 * @param {string} [options.background="transparent"] - Background color, such as `"#FFFFFF00"`, `"rgb(0, 0, 0)"`, or `"transparent"`
 	 * @param {number} [options.pixelRatio=devicePixelRatio] - Render resolution percent, use default unless you have a reason to change it
 	 * @param {boolean} [options.ySort=false] - Whether to sort the render layer of bodies by their y coordinate
-	 * @param {*} [options.resizeTo=window] - What the canvas should resize to, see PIXI.js `resizeTo` for options
+	 * @param {*} [options.parentElement=window] - What the canvas element will be appended to. The canvas resizes to fit this element. Only set to window if the body has `overflow: hidden`, otherwise create a wrapper element.
 	 * @param {boolean} [options.antialias=true] - If the render should have antialiasing
+	 * @param {boolean} [options.scaleMode=PIXI.SCALE_MODES.LINEAR] - See [PIXI.js scale modes](https://api.pixijs.io/@pixi/constants/PIXI/SCALE_MODES.html)
 	 * @param {function} [options.getBoundSize=function(width, height)] - Function that determines the bound size, which is how big the view should be based on the canvas width and height
 	 */
 	constructor(options = {}) {
 		// Test if PIXI is loaded
 		try { PIXI.settings; }
 		catch(err) {
-			throw new Error("PIXI is not defined\nHelp: try loading pixi.js before creating a ter app");j
+			throw new Error("PIXI is not defined\nHelp: try loading pixi.js before creating a ter app");
 		}
 
 		// Load options
 		let defaults = { ...Render.defaultOptions };
-		let resizeTo = options.resizeTo ?? defaults.resizeTo;
-		delete options.resizeTo;
+		let parentElement = options.parentElement ?? defaults.parentElement;
+		if (parentElement === window) parentElement = document.body;
+		this.parentElement = parentElement;
+		delete options.parentElement;
 		Common.merge(defaults, options, 1);
 		options = defaults;
 		let { background, ySort, pixelRatio, antialias, getBoundSize, scaleMode } = options;
 
 		// Create camera
-		this.camera = new Camera();
+		this.camera = new Camera(this);
 
 		// Setup bound size
 		this.getBoundSize = getBoundSize;
 
 		// Set basic settings
 		PIXI.settings.SCALE_MODE = scaleMode;
-		let scale = PIXI.settings.RESOLUTION = this.pixelRatio = pixelRatio;
+		PIXI.settings.RESOLUTION = this.pixelRatio = pixelRatio;
 		PIXI.Filter.defaultResolution = 0;
 		PIXI.Container.defaultSortableChildren = true
 
@@ -73,22 +78,17 @@ class Render {
 		let app = this.app = new PIXI.Application({
 			background: background[0],
 			backgroundAlpha: background[1],
-			resizeTo: resizeTo ?? window,
+			resizeTo: parentElement ?? window,
 			antialias: antialias ?? true,
 		});
-		document.body.appendChild(app.view);
+		parentElement.appendChild(app.view);
 		app.ticker.add(this.update.bind(this)); // Start render
 		app.stage.filters = []; // Makes working with pixi filters easier
 		app.stage.sortableChildren = true; // Important so render layers work
 
-		// Set up pixel ratio scaling
-		let view = app.view;
-		view.style.transformOrigin = "top left";
-		view.style.transform = `scale(${1 / scale}, ${1 / scale})`;
-
 		// Make sure canvas stays correct size
-		this.setSize(app.screen.width, app.screen.height);
-		app.renderer.on("resize", this.setSize.bind(this));
+		this.#setSize(app.screen.width, app.screen.height);
+		app.renderer.on("resize", this.#setSize.bind(this));
 
 		// Set up y sorting if enabled
 		if (ySort) {
@@ -97,14 +97,30 @@ class Render {
 			});
 		}
 	}
-	setSize(width, height) {
-		let pixelRatio = this.pixelRatio;
+	#getElementSize(element) {
+		if (element == window) {
+			return { width: window.innerWidth, height: window.innerHeight };
+		}
+		let boundingRect = this._parentBoundingBox = {
+			top: element.offsetTop,
+			left: element.offsetLeft,
+			width: element.offsetWidth,
+			height: element.offsetHeight,
+		};
+		return { width: boundingRect.width, height: boundingRect.height };
+	}
+	#setSize(width, height) {
 		this.camera.boundSize = this.getBoundSize(width, height);
+
+		let view = this.app.view;
+		let { width: elemWidth, height: elemHeight } = this.#getElementSize(this.parentElement);
+		view.style.width = elemWidth + "px";
+		view.style.height = elemHeight + "px";
 	}
 	setPixelRatio(pixelRatio) {
 		this.pixelRatio = pixelRatio;
 		PIXI.settings.RESOLUTION = pixelRatio;
-		this.setSize(this.app.screen.width, this.app.screen.height); // update bounds with new pixel ratio
+		this.#setSize(this.app.screen.width, this.app.screen.height); // update bounds with new pixel ratio
 	}
 
 	/**
