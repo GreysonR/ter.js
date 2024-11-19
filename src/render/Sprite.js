@@ -18,7 +18,7 @@ const vec = require("../geometry/vec.js");
  * @extends Node
  */
 class Sprite extends Node {
-	static imageDir = "./img/";
+	static imageDir = "";
 	static defaultOptions = {
 		container: undefined, // {PIXI Container}
 		layer: 0, // number

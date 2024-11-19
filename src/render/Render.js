@@ -96,16 +96,17 @@ class Render {
 		}
 	}
 	#getElementSize(element) {
-		if (element == window) {
-			return { width: window.innerWidth, height: window.innerHeight };
-		}
-		let boundingRect = this._parentBoundingBox = {
+		let boundingRect = {
 			top: element.offsetTop,
 			left: element.offsetLeft,
 			width: element.offsetWidth,
 			height: element.offsetHeight,
 		};
-		return { width: boundingRect.width, height: boundingRect.height };
+		if (element === window || element === document.body) {
+			boundingRect = { width: window.innerWidth, height: window.innerHeight, top: 0, left: 0, };
+		}
+		this._parentBoundingBox = boundingRect;
+		return  boundingRect;
 	}
 	#setSize(width, height) {
 		this.camera.boundSize = this.getBoundSize(width, height);

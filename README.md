@@ -7,7 +7,7 @@
 - Configurable mass, friction, restitution, collision filters
 - Matches your monitor's refresh rate and pixel ratio out of the box (no more blurry or choppy games)
 - Robust event system
-- PIXI.js rendering
+- WebGL rendering
 - Behavior trees
 - Animations
 - TGS soft collision solver

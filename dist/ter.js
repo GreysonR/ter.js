@@ -4538,7 +4538,7 @@ class Engine {
 		constraintIterations: 1,
 		
 		slop: 1,
-		overlapMargin: 0.01,
+		overlapMargin: 0,
 		positionWarming: 0.8,
 		positionDampen: 0.9,
 	}
@@ -4546,25 +4546,26 @@ class Engine {
 	delta = 1;
 	inverseDelta = 1;
 	
-	substeps = 3;
-	velocityIterations = 2;
-	positionIterations = 0;
-	constraintIterations = 1;
+	substeps;
+	velocityIterations;
+	positionIterations;
+	constraintIterations;
 	
-	slop = 0.2;
-	overlapMargin = 0.01;
+	slop;
+	overlapMargin;
 	positionWarming = 0.8;
-	positionDampen = 0.9;
+	positionDampen;
 
 	/**
 	 * 
 	 * @param {World} World - World the physics engine should run on
 	 * @param {Object} options - Physics options
-	 * @param {number} [options.substeps=6] - Number of substeps per tick
-	 * @param {number} [options.velocityIterations=1] - Number of velocity solver iterations per tick
-	 * @param {number} [options.positionIterations=0] - Number of position solver iterations per tick
+	 * @param {number} [options.substeps=3] - Number of substeps per tick
+	 * @param {number} [options.velocityIterations=2] - Number of velocity solver iterations per tick
+	 * @param {number} [options.positionIterations=3] - Number of position solver iterations per tick
 	 * @param {number} [options.constraintIterations=1] - Number of constraint solver iterations per tick
-	 * @param {number} [options.slop=0.5] - Amount of acceptable penetration
+	 * @param {number} [options.overlapMargin=0.01] - Amount of overlap required for a collision to register
+	 * @param {number} [options.slop=1] - Amount of acceptable penetration
 	 * @param {number} [options.positionDampen=0.9] - How much the position impulse is multiplied by. Decrease if unstable.
 	 */
 	constructor(World, options = {}) {
@@ -4630,7 +4631,7 @@ class Engine {
 			// Solve for velocities
 			for (let i = 0; i < this.velocityIterations; i++) {
 				this.solveVelocity(true);
-				// this.solveVelocity(false);
+				this.solveVelocity(false);
 			}
 
 			// Solve positions
@@ -4786,6 +4787,8 @@ class Engine {
 		}
 
 		normal.mult2(-1);
+
+		// TODO: add check to see if pushing to globalVectors is necessary
 		World.globalVectors.push({ position: normalPoint, vector: new vec(normal) });
 		World.globalPoints.push(...contacts.map(v => v.vertice));
 
@@ -4820,9 +4823,14 @@ class Engine {
 
 		if (World.pairs[manifoldId]) { // Collision happened last frame, so it's active
 			let existingManifold = World.pairs[manifoldId];
-			let { start } = existingManifold;
-			Common.merge(existingManifold, manifold, 1);
-			existingManifold.start = start;
+			existingManifold.anchorA = manifold.anchorA;
+			existingManifold.anchorB = manifold.anchorB;
+			existingManifold.depth = manifold.depth;
+			existingManifold.penetration = manifold.penetration;
+			existingManifold.contacts = manifold.contacts;
+			existingManifold.normal = manifold.normal;
+			existingManifold.tangent = manifold.tangent;
+			existingManifold.frame = manifold.frame;
 
 			bodyA.parentNode.trigger("bodyInside", bodyB.parentNode, existingManifold);
 			bodyB.parentNode.trigger("bodyInside", bodyA.parentNode, existingManifold);
@@ -4905,8 +4913,9 @@ class Engine {
 
 	prepareContacts(delta, hertz) {
 		let { pairs } = this.World;
-		for (let i in pairs) {
-			let pair = pairs[i];
+		let pairsArr = Object.keys(pairs);
+		for (let i = pairsArr.length; i--;) {
+			let pair = pairs[pairsArr[i]];
 			const { bodyA: collisionShapeA, bodyB: collisionShapeB, normal, tangent, contacts, depth: rawDepth } = pair;
 			const depth = rawDepth;
 			const bodyA = collisionShapeA.parentNode;
@@ -4956,11 +4965,14 @@ class Engine {
 	 */
 	solveVelocity(useBias) {
 		let { pairs } = this.World;
+		let pairsArr = Object.keys(pairs);
 		const inv_h = this.inverseDelta;
 		const slop = this.slop;
+
+		let mA, mB, iA, iB, wA, wB, vA, vB, angleA, angleB, anchorA, anchorB;
 		
-		for (let i in pairs) {
-			let pair = pairs[i];
+		for (let i = pairsArr.length; i--;) {
+			let pair = pairs[pairsArr[i]];
 			if (!pair || this.cleansePair(pair)) continue;
 
 			const { bodyA: collisionShapeA, bodyB: collisionShapeB, normal, tangent, contacts, friction, restitution } = pair;
@@ -4970,15 +4982,22 @@ class Engine {
 			if (contacts.length === 0) continue;
 			if (bodyA.isSensor || bodyB.isSensor) continue;
 
+			mA = bodyA._inverseMass;
+			iA = bodyA._inverseInertia;
+			wA = bodyA.angularVelocity;
+			vA = new vec(bodyA.velocity);
+			angleA = bodyA.angle;
+			
+			mB = bodyB._inverseMass;
+			iB = bodyB._inverseInertia;
+			wB = bodyB.angularVelocity;
+			vB = new vec(bodyB.velocity);
+			angleB = bodyB.angle;
 
-			let { _inverseMass: mA, _inverseInertia : iA, angularVelocity: wA, velocity: vA, position: positionA, angle: angleA } = bodyA;
-			let { _inverseMass: mB, _inverseInertia : iB, angularVelocity: wB, velocity: vB, position: positionB, angle: angleB } = bodyB;
-
-			vA = new vec(vA);
-			vB = new vec(vB);
-
-			for (let contact of contacts) {
-				const { vertice: cp, anchorA, anchorB } = contact;
+			for (let i = contacts.length; i--;) {
+				let contact = contacts[i];
+				anchorA = contact.anchorA;
+				anchorB = contact.anchorB;
 
 				const rA = anchorA.rotate(angleA); // radius vector A
 				const rB = anchorB.rotate(angleB); // radius vector B
@@ -5064,8 +5083,9 @@ class Engine {
 	preSolvePosition() {
 		const { World } = this;
 		let { pairs } = World;
-		for (let i in pairs) {
-			let pair = pairs[i];
+		let pairsArr = Object.keys(pairs);
+		for (let i = pairsArr.length; i--;) {
+			let pair = pairs[pairsArr[i]];
 			let contacts = pair.contacts.length;
 			pair.bodyA.parentNode.totalContacts += contacts;
 			pair.bodyB.parentNode.totalContacts += contacts;
@@ -5077,9 +5097,10 @@ class Engine {
 	solvePosition() {
 		const { World, slop, positionDampen } = this;
 		let { pairs } = World;
+		let pairsArr = Object.keys(pairs);
 
-		for (let i in pairs) {
-			let pair = pairs[i];
+		for (let i = pairsArr.length; i--;) {
+			let pair = pairs[pairsArr[i]];
 			let { bodyA: collisionShapeA, bodyB: collisionShapeB, normal, anchorA, anchorB } = pair;
 			let depth = pair.depth = anchorB.sub(anchorA).dot(normal);
 			if (depth < 0) continue;
@@ -7187,16 +7208,17 @@ class Render {
 		}
 	}
 	#getElementSize(element) {
-		if (element == window) {
-			return { width: window.innerWidth, height: window.innerHeight };
-		}
-		let boundingRect = this._parentBoundingBox = {
+		let boundingRect = {
 			top: element.offsetTop,
 			left: element.offsetLeft,
 			width: element.offsetWidth,
 			height: element.offsetHeight,
 		};
-		return { width: boundingRect.width, height: boundingRect.height };
+		if (element === window || element === document.body) {
+			boundingRect = { width: window.innerWidth, height: window.innerHeight, top: 0, left: 0, };
+		}
+		this._parentBoundingBox = boundingRect;
+		return  boundingRect;
 	}
 	#setSize(width, height) {
 		this.camera.boundSize = this.getBoundSize(width, height);
@@ -7421,7 +7443,7 @@ const vec = __webpack_require__(811);
  * @extends Node
  */
 class Sprite extends Node {
-	static imageDir = "./img/";
+	static imageDir = "";
 	static defaultOptions = {
 		container: undefined, // {PIXI Container}
 		layer: 0, // number
