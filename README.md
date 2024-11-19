@@ -5,7 +5,6 @@
 - Rigid bodies
 - Concave bodies
 - Configurable mass, friction, restitution, collision filters
-- FPS independent
 - Matches your monitor's refresh rate and pixel ratio out of the box (no more blurry or choppy games)
 - Robust event system
 - PIXI.js rendering
