@@ -25,6 +25,7 @@
 			width: 90vw;
 			height: 900px;
 			margin: 0 auto;
+			position: relative;
 		}
 	</style>
 
@@ -53,13 +54,13 @@
 			gridSize: 100,
 		},
 		Engine: {
-			substeps: 3,
-			velocityIterations: 2,
-			positionIterations: 3,
+			// substeps: 3,
+			// velocityIterations: 2,
+			// positionIterations: 3,
 			// slop: 0,
 		},
 	});
-	// game.createDebugRender();
+	game.createDebugRender();
 
 	const { Engine, Render, Bodies } = game;
 	const { camera } = Render;

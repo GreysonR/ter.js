@@ -64,23 +64,22 @@ class DebugRender {
 			style: {
 				position: "absolute",
 				zIndex: 1,
-				top: "0px",
+				top:  "0px",
 				left: "0px",
-				// width: baseCanvas.style.width,
-				// height: baseCanvas.style.height,
+				width: baseCanvas.style.width,
+				height: baseCanvas.style.height,
 				background: "transparent",
 				pointerEvents: "none",
-				transformOrigin: "top left",
-				transform: `scale(${1 / scale}, ${1 / scale})`,
 			}
 		})
 		this.ctx = canvas.getContext("2d");
 
 		Game.Render.app.renderer.on("resize", (width, height) => {
-			let scale = Game.Render.pixelRatio ?? 1;
-			canvas.width  = width  * scale;
-			canvas.height = height * scale;
-			canvas.style.transform = `scale(${1 / scale}, ${1 / scale})`;
+			let view = Game.Render.app.view;
+			canvas.width  = view.width;
+			canvas.height = view.height;
+			canvas.style.width = view.style.width;
+			canvas.style.height = view.style.height;
 		});
 
 		this.update = this.update.bind(this);
