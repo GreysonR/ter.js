@@ -14,7 +14,7 @@
 - ...and more!
 
 ## Getting started
-Download the ter.js bundle of your choosing from the [releases tab](https://github.com/GreysonR/ter.js/releases/) on GitHub. Then include it with PIXI.js in your HTML:
+Download the ter.js bundle of your choosing from the [releases tab](https://github.com/GreysonR/ter.js/releases/latest) on GitHub. Then include it with PIXI.js in your HTML:
 ```HTML
 <script src="./path/to/ter.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.x/dist/pixi.min.js"></script>
