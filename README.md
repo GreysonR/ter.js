@@ -28,7 +28,7 @@ body {
 ```
 Next, create a `Game` object, which will handle much of the setup for you:
 ```JavaScript
-// There are numerous options (these are just a few, check the docs for all of them!):
+// There are numerous options (these are just a few, check the docs for all of them!)
 let game = new ter.Game({
 	Render: {
 		parentElement: window, // Can be any element or window
