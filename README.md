@@ -28,22 +28,15 @@ body {
 ```
 Next, create a `Game` object, which will handle much of the setup for you:
 ```JavaScript
-// There are numerous options (this is just a few, check the docs for all of them!):
+// There are numerous options (these are just a few, check the docs for all of them!):
 let game = new ter.Game({
 	Render: {
-		resizeTo: window, // See pixijs.download/release/docs/app.Application.html#resizeTo
+		parentElement: window, // Can be any element or window
 		background: "#1C1C25", // Can be a hex code, rgb, rgba, or "transparent"
 	},
 	World: {
 		gravity: new ter.vec(0, 500) // Means that objects accelerate at 500px/s^2 down
 	},
-	Engine: {
-		substeps: 3,
-		velocityIterations: 2,
-	},
-	Ticker: {
-		pauseOnFreeze: true, // Recommended to leave default (true)
-	}
 });
 ```
 Or create a `Game` with all default options:
