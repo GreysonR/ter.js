@@ -6,22 +6,15 @@
 	margin: 0;
 	overflow: hidden;
 }
-</code></pre><p>Next, create a <code>Game</code> object, which will handle much of the setup for you:</p><pre class="prettyprint source lang-JavaScript"><code>// There are numerous options (this is just a few, check the docs for all of them!):
+</code></pre><p>Next, create a <code>Game</code> object, which will handle much of the setup for you:</p><pre class="prettyprint source lang-JavaScript"><code>// There are numerous options (these are just a few, check the docs for all of them!)
 let game = new ter.Game({
 	Render: {
-		resizeTo: window, // See pixijs.download/release/docs/app.Application.html#resizeTo
+		parentElement: window, // Can be any element or window
 		background: &quot;#1C1C25&quot;, // Can be a hex code, rgb, rgba, or &quot;transparent&quot;
 	},
 	World: {
 		gravity: new ter.vec(0, 500) // Means that objects accelerate at 500px/s^2 down
 	},
-	Engine: {
-		substeps: 3,
-		velocityIterations: 2,
-	},
-	Ticker: {
-		pauseOnFreeze: true, // Recommended to leave default (true)
-	}
 });
 </code></pre><p>Or create a <code>Game</code> with all default options:</p><pre class="prettyprint source lang-JavaScript"><code>// Can be simple as this!
 let game = new ter.Game();
