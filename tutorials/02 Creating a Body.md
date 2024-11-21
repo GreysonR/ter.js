@@ -116,4 +116,3 @@ let body = Bodies.RegularPolygon(80, 5, new vec(0, -100), {
 	lineJoin: "round",
 }).add();
 ```
-

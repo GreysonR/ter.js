@@ -141,7 +141,13 @@ class RigidBody extends Node {
 	/**
 	 * What bodies it can collide with.
 	 * The layer is like what collision group the body belongs to and the mask is what layers the body will collide with. 
-	 * They are compared using their bits to indicate what layer it is in/collides with. 
+	 * They are compared using their bits to indicate what layer it is in/collides with. <br>
+	 * Another way to visualize it looking at the bits:<br>
+	 * 	Layer:&nbsp;&nbsp; 0 1 0 1<br>
+	 * 	Mask 1: 0 0 0 1 <-- collides <br>
+	 * 	Mask 2: 0 0 1 0 <-- doesn't collide<br>
+	 * 	Mask 3: 1 1 1 0 <-- collides<br>
+	 * In other words, if `layer & mask != 0` (bitwise and) for *either* of the bodies in the collision, the bodies can collide
 	 * @type {Object}
 	 * @example
 	 * // In every layer, collides with everything (the default)
@@ -155,6 +161,7 @@ class RigidBody extends Node {
 	 * 	layer: 0b0011,
 	 * 	mask:  0b0010,
 	 * }
+	 * 
 	 */
 	collisionFilter = {
 		layer: 0xFFFFFF,
