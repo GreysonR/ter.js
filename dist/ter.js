@@ -6198,7 +6198,6 @@ class DebugRender {
 		this.Game = Game;
 
 		let baseCanvas = Game.Render.app.view;
-		let scale = Game.Render.pixelRatio ?? 1;
 		let canvas = this.canvas = createElement("canvas", {
 			parent: baseCanvas.parentNode,
 			width: baseCanvas.width,
@@ -6206,22 +6205,25 @@ class DebugRender {
 			style: {
 				position: "absolute",
 				zIndex: 1,
-				top:  "0px",
-				left: "0px",
+				top:  baseCanvas.offsetTop + "px",
+				left: baseCanvas.offsetLeft + "px",
 				width: baseCanvas.style.width,
 				height: baseCanvas.style.height,
 				background: "transparent",
 				pointerEvents: "none",
+				margin: 0,
 			}
 		})
 		this.ctx = canvas.getContext("2d");
 
-		Game.Render.app.renderer.on("resize", (width, height) => {
+		Game.Render.app.renderer.on("resize", () => {
 			let view = Game.Render.app.view;
 			canvas.width  = view.width;
 			canvas.height = view.height;
 			canvas.style.width = view.style.width;
 			canvas.style.height = view.style.height;
+			canvas.style.top = baseCanvas.offsetTop + "px";
+			canvas.style.left = baseCanvas.offsetLeft + "px";
 		});
 
 		this.update = this.update.bind(this);
@@ -7188,7 +7190,7 @@ class Render {
 		let app = this.app = new PIXI.Application({
 			background: background[0],
 			backgroundAlpha: background[1],
-			resizeTo: parentElement ?? window,
+			resizeTo: parentElement == document.body ? window : parentElement,
 			antialias: antialias ?? true,
 		});
 		parentElement.appendChild(app.view);
@@ -7208,14 +7210,18 @@ class Render {
 		}
 	}
 	#getElementSize(element) {
-		let boundingRect = {
-			top: element.offsetTop,
-			left: element.offsetLeft,
-			width: element.offsetWidth,
-			height: element.offsetHeight,
-		};
+		let boundingRect;
 		if (element === window || element === document.body) {
-			boundingRect = { width: window.innerWidth, height: window.innerHeight, top: 0, left: 0, };
+			let view = this.app.view;
+			boundingRect = { width: window.innerWidth, height: window.innerHeight, top: view.offsetTop, left: view.offsetLeft, };
+		}
+		else {
+			boundingRect = {
+				top: element.offsetTop,
+				left: element.offsetLeft,
+				width: element.offsetWidth,
+				height: element.offsetHeight,
+			}
 		}
 		this._parentBoundingBox = boundingRect;
 		return  boundingRect;

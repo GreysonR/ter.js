@@ -76,7 +76,7 @@ class Render {
 		let app = this.app = new PIXI.Application({
 			background: background[0],
 			backgroundAlpha: background[1],
-			resizeTo: parentElement ?? window,
+			resizeTo: parentElement == document.body ? window : parentElement,
 			antialias: antialias ?? true,
 		});
 		parentElement.appendChild(app.view);
@@ -96,14 +96,18 @@ class Render {
 		}
 	}
 	#getElementSize(element) {
-		let boundingRect = {
-			top: element.offsetTop,
-			left: element.offsetLeft,
-			width: element.offsetWidth,
-			height: element.offsetHeight,
-		};
+		let boundingRect;
 		if (element === window || element === document.body) {
-			boundingRect = { width: window.innerWidth, height: window.innerHeight, top: 0, left: 0, };
+			let view = this.app.view;
+			boundingRect = { width: window.innerWidth, height: window.innerHeight, top: view.offsetTop, left: view.offsetLeft, };
+		}
+		else {
+			boundingRect = {
+				top: element.offsetTop,
+				left: element.offsetLeft,
+				width: element.offsetWidth,
+				height: element.offsetHeight,
+			}
 		}
 		this._parentBoundingBox = boundingRect;
 		return  boundingRect;

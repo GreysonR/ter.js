@@ -36,13 +36,13 @@
 	<h1>Hello world!</h1>
 	<p>Quasi error deleniti ex. Est odit deleniti voluptatibus ipsa sequi repellat quis repellendus. In quisquam sit tenetur sunt architecto eaque facilis. Quisquam explicabo minima cumque eveniet vel veniam et magnam.</p>
 	<div id="reference"></div>
-	<div id="container"></div>
+	<!-- <div id="container"></div> -->
 </body>
 <script>
 	const { vec } = ter;
 	const game = new ter.Game({
 		Render: {
-			parentElement: document.getElementById("container"),
+			parentElement: window,
 			background: "#1C1C25",
 			getBoundSize: function(width, height) {
 				// return Math.min(width, height);
@@ -67,7 +67,6 @@
 	const { World } = Engine;
 
 	camera.setPosition(new vec(0, 0));
-	// camera.fov = 1500;
 	camera.fov = 1;
 	
 	var floor = Bodies.Rectangle(1400, 100, new vec(0, 400), {
@@ -105,8 +104,7 @@
 			friction: 0.4,
 			restitution: 0.5,
 		}).addSprite({
-			src: "test.png",
-			scale: new vec(1.5, 1),
+			src: "img/test.png",
 		}).add();
 	}
 
@@ -118,6 +116,23 @@
 				restitution: 0.6,
 				friction: 0.5,
 				mass: 1 + i * 2,
+				// angle: Math.PI/4,
+			}).addPolygonRender({
+				// background: "#4B8F8C"
+				border: "#4B8F8C",
+				borderWidth: 2,
+			}).add();
+		}
+	}
+	function largeStack() {
+		let width = 10;
+		let stackHeight = 600;
+		for (let i = stackHeight; --i >= 0;) {
+			window["body" + i] = Bodies.Rectangle(width, width, new vec(-300 + i * width * 0.1, 0 - i * width), {
+				restitution: 0.6,
+				friction: 0.5,
+				mass: 0.05,
+				// mass: 1 + i * 2,
 				// angle: Math.PI/4,
 			}).addPolygonRender({
 				// background: "#4B8F8C"
