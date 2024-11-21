@@ -6,8 +6,8 @@ camera.fov = 1200; // sets the camera's fov to 1200
 ```
 Translating from screen space to world space can be done easily using methods in the camera object:
 ```JavaScript
-let worldPosition = camera.screenPtToGame(new vec(100, 100)); // translates (100, 100) to where it would be in the world
-let screenPosition = camera.gamePtToScreen(new vec(0, 0)); // translate (0, 0) to where it would be in the window
+let worldPosition = camera.screenPtToGame(new vec(100, 100)); // translates (100, 100) to where it would be in the engine's world
+let screenPosition = camera.gamePtToScreen(new vec(0, 0)); // translate (0, 0) to where it would be in the HTML body
 ```
 
 By default, the camera scales based on the canvas's width and height to maintain total area. You can change how it scales by specifying `Render.getBoundSize` when creating the game.
@@ -15,7 +15,7 @@ This function exists to provide a way to have consistent scaling of a game's con
 ```JavaScript
 new ter.Game({
 	Render: {
-		getBoundSize: function(width, height) { // this function is called when the game is created and when the canvas is resized
+		getBoundSize: function(width, height) { // this function is called when the game is created and when the window is resized
 			return Math.min(width, height); // this will scale to keep the smallest dimension in view
 		}
 	}
@@ -30,5 +30,5 @@ let game = new ter.Game({
 		}
 	}
 });
-game.Render.camera.fov = 1; // the game will be 1:1 with the window, so 100px in game will be 100px in the HTML
+game.Render.camera.fov = 1; // the world will be rendered 1:1 with the window, so 100px in the world will be 100px in the HTML
 ```

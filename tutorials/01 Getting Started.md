@@ -3,13 +3,7 @@ Download the latest ter.js bundle from the [releases tab](https://github.com/Gre
 <script src="./path/to/ter.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.x/dist/pixi.min.js"></script>
 ```
-The render canvas often overflows in distracting ways, so it's good to add some CSS (but this is completely optional):
-```CSS
-body {
-	margin: 0;
-	overflow: hidden;
-}
-```
+
 Next, create a `Game` object, which will handle much of the setup for you:
 ```JavaScript
 // There are numerous options (these are just a few, check the docs for all of them!)
@@ -23,11 +17,13 @@ let game = new ter.Game({
 	},
 });
 ```
+
 Or create a `Game` with all default options:
 ```JavaScript
 // Can be simple as this!
 let game = new ter.Game();
 ```
+
 At this point, ter.js is running. However, you won't see anything yet because no bodies have been added. Let's fix that:
 ```JavaScript
 let vec = ter.vec;
@@ -51,3 +47,13 @@ let floor = Bodies.Rectangle(1000, 80, new vec(0, 500), {
 }).add();
 ```
 And voilà, you're ready to start using ter.js!
+
+## Architecture
+ter.js is divided into several different modules that work together. These are:
+- Engine: Calculates physics interactions of bodies and constraints
+- World: Contains the bodies and manages the gravity, timescale, and other world constants
+- Render: Manages how the world is rendered using PIXI.js
+- Ticker: Main game loop that runs the engine every frame
+- Game: Wrapper for other modules to set up the engine quickly
+
+It also has the concept of [Nodes](./Node.html), which are objects that can have child nodes. This allows for grouping of bodies and other nodes. All rigid bodies are nodes, and even the world is a node since it contains bodies. Nodes also have a position and angle, and changing either propogates to child nodes. This means that you can group bodies together with a node and move them all at the same time by moving the parent node. The engine uses this to create render nodes that are children of bodies, so any translation or angle changes on the body also affect the render node. When you call `body.addPolygonRender` or `body.addSprite`, the engine creates the render node based on the options provided and adds it as a child to the body.

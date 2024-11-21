@@ -69,4 +69,4 @@ let floor = Bodies.Rectangle(1000, 80, new vec(0, 500), {
 And voilà, you're ready to start using ter.js!
 
 ## Next steps
-To learn more on how to use the engine, you can head on over to the [tutorials](https://greysonr.github.io/ter.js/tutorial-02%20Creating%20a%20Body.html)
+To learn more on how to use the engine, you can head on over to the [tutorials](https://greysonr.github.io/ter.js/tutorial-01%20Getting%20Started.html)
