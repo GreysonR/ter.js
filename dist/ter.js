@@ -1600,13 +1600,27 @@ let Common = {
 		let color;
 		let alpha = 1;
 
-		if (originalColor[0] === "#" && originalColor.length === 9) { // is a hex code with alpha
-			color = originalColor.slice(0, 7);
-			alpha = parseInt(originalColor.slice(7), 16) / 256; // convert to decimel
-		}
-		else if (originalColor[0] === "#" && originalColor.length === 7) { // is a hex code w/0 alpha
-			color = originalColor;
-			alpha = 1;
+		if (originalColor[0] === "#") { // is a hex code
+			if (originalColor.length === 9) { // with alpha
+				color = originalColor.slice(0, 7);
+				alpha = parseInt(originalColor.slice(7), 16) / 256; // convert to decimel
+			}
+			else if (originalColor.length === 7) { // no alpha
+				color = originalColor;
+				alpha = 1;
+			}
+			else if (originalColor.length === 4) { // shorthand
+				let r = originalColor[1];
+				let g = originalColor[2];
+				let b = originalColor[3];
+				color = "#" + r+r + g+g + b+b;
+				alpha = 1;
+			}
+			else if (originalColor.length === 3) { // very shorthand (nonstandard)
+				let value = originalColor[1] + originalColor[2];
+				color = "#" + value + value + value;
+				alpha = 1;
+			}
 		}
 		else if (originalColor.slice(0, 4) === "rgb(") { // rgb
 			color = originalColor.slice(originalColor.indexOf("(") + 1, originalColor.indexOf(")")).split(",");
@@ -5317,7 +5331,7 @@ class RigidBody extends Node {
 	 * 	mask:  0xFFFFFF,
 	 * }
 	 * // In first 2 layers, collides only with 2nd layer
-	 * // So it would collide with itself, but not bodies that aren't in layer 2
+	 * // So it would collide with itself and any body that has a mask in layers 1 or 2
 	 * body.collisionFilter = {
 	 * 	layer: 0b0011,
 	 * 	mask:  0b0010,

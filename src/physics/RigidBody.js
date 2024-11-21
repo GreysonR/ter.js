@@ -156,7 +156,7 @@ class RigidBody extends Node {
 	 * 	mask:  0xFFFFFF,
 	 * }
 	 * // In first 2 layers, collides only with 2nd layer
-	 * // So it would collide with itself, but not bodies that aren't in layer 2
+	 * // So it would collide with itself and any body that has a mask in layers 1 or 2
 	 * body.collisionFilter = {
 	 * 	layer: 0b0011,
 	 * 	mask:  0b0010,
