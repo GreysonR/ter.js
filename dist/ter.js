@@ -1607,19 +1607,16 @@ let Common = {
 			}
 			else if (originalColor.length === 7) { // no alpha
 				color = originalColor;
-				alpha = 1;
 			}
 			else if (originalColor.length === 4) { // shorthand
 				let r = originalColor[1];
 				let g = originalColor[2];
 				let b = originalColor[3];
 				color = "#" + r+r + g+g + b+b;
-				alpha = 1;
 			}
 			else if (originalColor.length === 3) { // very shorthand (nonstandard)
 				let value = originalColor[1] + originalColor[2];
 				color = "#" + value + value + value;
-				alpha = 1;
 			}
 		}
 		else if (originalColor.slice(0, 4) === "rgb(") { // rgb
@@ -1632,6 +1629,7 @@ let Common = {
 			alpha = parseInt(color.pop()) / 255;
 			color = "#" + color.map(value => parseInt(value).toString(16).padStart(2, "0")).join("");
 		}
+		if (!color) color = "#000000"; // color format not detected, default to black
 		return [color, alpha];
 	},
 
@@ -5191,10 +5189,10 @@ const decomp = __webpack_require__(371);
  * | bodyEnter | Body starts colliding with another | `(otherBody: RigidBody, collision: Object)` |
  * | bodyInside | Body is currently colliding with another. Triggered every frame after the initial collision. In other words, it won't trigger the same frame as `bodyEnter` but will every subsequent frame the bodies are still colliding | `(otherBody: RigidBody, collision: Object)` |
  * | bodyExit | Triggered the frame bodies stop colliding | `(otherBody: RigidBody, collision: Object)` |
- * | beforeUpdate | Triggered right before forces are applied to the body's velocity and cleared every frame. Best used to apply forces to the body. It's only called when the body is in the world | None |
- * | duringUpdate | Triggered right before body's position is updated from its velocity every frame. Best used to clear forces from the body. It's only called when the body is in the world | None |
- * | add | Triggered right before the body is added to the world | None |
- * | delete | Triggered right before the body is removed from the world | None |
+ * | beforeUpdate | Triggered every frame before forces are applied to the body's velocity and then cleared. Best used to apply forces to the body. It's only called when the body is in the world | None |
+ * | duringUpdate | Triggered every frame before the body's position is updated using its velocity. Best used to clear forces from the body. It's only called when the body is in the world | None |
+ * | add | Triggered before the body is added to the world | None |
+ * | delete | Triggered before the body is removed from the world | None |
  * 
  * @extends Node
  */
@@ -5442,7 +5440,7 @@ class RigidBody extends Node {
 	// Public user methods
 	//
 	/**
-	 * Adds the collision shape to its world
+	 * Adds the body to its world
 	 * @return {RigidBody} `this`
 	 */
 	add() {
@@ -5455,7 +5453,7 @@ class RigidBody extends Node {
 	}
 
 	/**
-	 * Removes the collision shape from its world
+	 * Removes the body from its world
 	 * @return {RigidBody} `this`
 	 */
 	delete() {
@@ -5474,7 +5472,7 @@ class RigidBody extends Node {
 	 * @return {RigidBody} `this`
 	 * @example
 	 * body.addPolygonRender({
-	 * 	layer: 0, // Render layer, higher means it is rendered "closer" to the camera and above other objects
+	 * 	layer: 0, // Render layer, higher means it is rendered "closer" to the camera and above other objects, like CSS z-index
 	 * 	visible: true,
 	 * 	alpha: 1, // Opacity, between 0-1
 	 * 	
@@ -5520,8 +5518,8 @@ class RigidBody extends Node {
 	 * 	src: "path/to/sprite.png",
 	 * 	
 	 * 	scale: new vec(1, 1),
-	 * 	width:  undefined, // number
-	 * 	height: undefined, // number
+	 * 	width:  undefined, // number, defaults to fit body if a Rectangle or Circle, or width of image if not
+	 * 	height: undefined, // number, defaults to fit body if a Rectangle or Circle, or height of image if not
 	 * });
 	 */
 	addSprite(options, container = this.Game.Render.app.stage) {

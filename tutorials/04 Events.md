@@ -12,18 +12,9 @@ Alternatively, you can bind the event to the player body's updates, which does a
 playerBody.on("beforeUpdate", updatePlayer);
 ```
 
-`beforeTick`:
-- only called once per frame
-- called at the start of the game loop, before any bodies are updated
+In both of these examples, the event is called every frame, but many events don't operate this way. They may also be called only when certain things happen, such as a collision. With collision events, additional information is passed to the callback.<br>
 
-`beforeUpdate`:
-- called every engine tick: if there multiple substeps, it's called on every one
-- called right before forces are applied to the body
-- only called if the body is in the world
-
-<br>In both of these examples, the event is called every frame, but many events don't operate this way. They can also be called only when certain things happen, such as a collision. With collision events, additional information is passed to the callbacks.<br>
-
-Collision events include `bodyEnter`, `bodyInside`, and `bodyExit`. `bodyEnter` is triggered when bodies first start colliding. Then, `bodyInside` is triggered every subsequent frame the bodies are still colliding. Finally, `bodyExit` is triggered on the frame the bodies stop colliding. If a body has multiple collisions happening at the same time, each collision event is called separately. These events can tell you all about the collision, such as the other body was involved.
+Collision events include `bodyEnter`, `bodyInside`, and `bodyExit`. `bodyEnter` is triggered when bodies first start colliding. Then, `bodyInside` is triggered every subsequent frame the bodies are still colliding. Finally, `bodyExit` is triggered on the frame the bodies stop colliding. If a body has multiple collisions happening at the same time, each collision event is called separately. These events tell the callback everything about the collision, such as the other body involved.
 ```JavaScript
 playerBody.on("bodyEnter", otherBody => {
 	if (otherBody == spikeBody) {
@@ -33,7 +24,6 @@ playerBody.on("bodyEnter", otherBody => {
 ```
 If you want additional information about the collision, you can use the second parameter, which contains all the information about the collision the engine has:
 ```JavaScript
-// You probably want to use bodyEnter for this, but this is for illustration
 playerBody.on("bodyInside", (otherBody, collision) => {
 	if (otherBody == spikeBody && collision.normal.dot(new vec(0, -1)) > 0.5) {
 		killPlayer();

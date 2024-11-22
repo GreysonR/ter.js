@@ -99,19 +99,16 @@ let Common = {
 			}
 			else if (originalColor.length === 7) { // no alpha
 				color = originalColor;
-				alpha = 1;
 			}
 			else if (originalColor.length === 4) { // shorthand
 				let r = originalColor[1];
 				let g = originalColor[2];
 				let b = originalColor[3];
 				color = "#" + r+r + g+g + b+b;
-				alpha = 1;
 			}
 			else if (originalColor.length === 3) { // very shorthand (nonstandard)
 				let value = originalColor[1] + originalColor[2];
 				color = "#" + value + value + value;
-				alpha = 1;
 			}
 		}
 		else if (originalColor.slice(0, 4) === "rgb(") { // rgb
@@ -124,6 +121,7 @@ let Common = {
 			alpha = parseInt(color.pop()) / 255;
 			color = "#" + color.map(value => parseInt(value).toString(16).padStart(2, "0")).join("");
 		}
+		if (!color) color = "#000000"; // color format not detected, default to black
 		return [color, alpha];
 	},
 
