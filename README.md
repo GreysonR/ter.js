@@ -5,13 +5,9 @@
 - Rigid bodies
 - Concave bodies
 - Configurable mass, friction, restitution, collision filters
-- Matches your monitor's refresh rate and pixel ratio out of the box (no more blurry or choppy games)
+- Matches your monitor's refresh rate and pixel ratio out of the box
 - Robust event system
-- WebGL rendering
-- Behavior trees
-- Animations
-- TGS soft collision solver
-- ...and more!
+- Fast WebGL rendering
 
 ## Getting started
 Download the ter.js bundle of your choosing from the [releases tab](https://github.com/GreysonR/ter.js/releases/latest) on GitHub. Then include it with PIXI.js in your HTML:
@@ -19,19 +15,13 @@ Download the ter.js bundle of your choosing from the [releases tab](https://gith
 <script src="./path/to/ter.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.x/dist/pixi.min.js"></script>
 ```
-The render canvas often overflows in distracting ways, so it's good to add some CSS (but this is completely optional):
-```CSS
-body {
-	margin: 0;
-	overflow: hidden;
-}
-```
+
 Next, create a `Game` object, which will handle much of the setup for you:
 ```JavaScript
 // There are numerous options (these are just a few, check the docs for all of them!)
 let game = new ter.Game({
 	Render: {
-		parentElement: window, // Can be any element or window
+		parentElement: window, // Can also be any element
 		background: "#1C1C25", // Can be a hex code, rgb, rgba, or "transparent"
 	},
 	World: {
@@ -50,14 +40,14 @@ let vec = ter.vec;
 let Bodies = game.Bodies;
 
 // Create a rectangle with a width of 100, height of 90, and initial position of (0, -200)
-let body = Bodies.Rectangle(100, 90, new vec(0, -200), { // Creates the physics body
-	// All options: greysonr.github.io/ter.js/RigidBody.html#constructor
+let body = Bodies.Rectangle(100, 90, new vec(0, -200), { // Create the physics body
+	// All body options: greysonr.github.io/ter.js/RigidBody.html#constructor
 	friction: 0.05,
 	restitution: 0.1,
-}).addPolygonRender({ // Creates the renderer so we can see the body
-	// All options: greysonr.github.io/ter.js/RigidBody.html#addPolygonRender
+}).addPolygonRender({ // Create the renderer so we can see the body
+	// All render options: greysonr.github.io/ter.js/RigidBody.html#addPolygonRender
 	background: "#C8553D",
-}).add(); // Adds the body to the world
+}).add(); // Add the body to the world
 
 // Create a static body with a width of 1000, height of 80, and position of (0, 500)
 let floor = Bodies.Rectangle(1000, 80, new vec(0, 500), {

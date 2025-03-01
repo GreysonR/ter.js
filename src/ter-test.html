@@ -10,6 +10,7 @@
 			margin: 0;
 			padding: 0;
 			overflow-x: hidden;
+			overflow-y: hidden;
 		}
 
 		h1 {
@@ -34,9 +35,9 @@
 	<script src="https://cdn.jsdelivr.net/npm/pixi-filters@latest/dist/browser/pixi-filters.min.js"></script>
 </head>
 <body>
-	<h1>Hello world!</h1>
-	<p>Quasi error deleniti ex. Est odit deleniti voluptatibus ipsa sequi repellat quis repellendus. In quisquam sit tenetur sunt architecto eaque facilis. Quisquam explicabo minima cumque eveniet vel veniam et magnam.</p>
-	<div id="reference"></div>
+	<!-- <h1>Hello world!</h1> -->
+	<!-- <p>Quasi error deleniti ex. Est odit deleniti voluptatibus ipsa sequi repellat quis repellendus. In quisquam sit tenetur sunt architecto eaque facilis. Quisquam explicabo minima cumque eveniet vel veniam et magnam.</p>
+	<div id="reference"></div> -->
 	<!-- <div id="container"></div> -->
 </body>
 <script>
@@ -55,9 +56,9 @@
 			gridSize: 100,
 		},
 		Engine: {
-			// substeps: 3,
-			// velocityIterations: 2,
-			// positionIterations: 3,
+			// substeps: 4,
+			// velocityIterations: 1,
+			// positionIterations: 1,
 			// slop: 0,
 		},
 	});
@@ -111,10 +112,10 @@
 
 	function stack() {
 		let width = 50;
-		let stackHeight = 8;
+		let stackHeight = 5;
 		for (let i = stackHeight; --i >= 0;) {
 			window["body" + i] = Bodies.Rectangle(width, width, new vec(-100 + i * width * 0, 0 - i * width), {
-				restitution: 0.6,
+				restitution: 0.1,
 				friction: 0.5,
 				mass: 1 + i * 2,
 				// angle: Math.PI/4,
@@ -125,6 +126,7 @@
 			}).add();
 		}
 	}
+
 	function largeStack() {
 		let width = 10;
 		let stackHeight = 600;
@@ -221,8 +223,8 @@
 	}
 
 	function multistack() {
-		let width =  25; // 25x18
-		let height = 18;
+		let width =  10; // 25x18
+		let height = 10;
 		let blockWidth = 40;
 
 		for (let y = 0; y < height; ++y) {

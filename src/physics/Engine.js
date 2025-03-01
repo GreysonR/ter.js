@@ -95,7 +95,7 @@ class Engine {
 			}
 	
 			// Prepare contacts
-			let contactHertz = Math.min(30, 0.25 * this.inverseDelta ** 0.5);
+			let contactHertz = Math.min(30, 0.5 * this.inverseDelta);
 			// let jointHertz = Math.min(60, 0.125 * this.inverseDelta);
 			this.prepareContacts(delta, contactHertz);
 			
@@ -235,14 +235,14 @@ class Engine {
 			normal = normalA;
 			incidentBody = bodyA;
 			referenceBody = bodyB;
-			normalPoint = bodyA.vertices[anchorA].avg(bodyA.vertices[(anchorA - 1 + bodyA.vertices.length) % bodyA.vertices.length]);
+			normalPoint = bodyA.vertices[anchorA];
 		}
 		else {
 			depth = depthB;
 			normal = normalB;
 			incidentBody = bodyB;
 			referenceBody = bodyA;
-			normalPoint = bodyB.vertices[anchorB].avg(bodyB.vertices[(anchorB - 1 + bodyB.vertices.length) % bodyB.vertices.length]);
+			normalPoint = bodyB.vertices[anchorB];
 		}
 		contacts.push(...contactsA, ...contactsB);
 
@@ -442,10 +442,11 @@ class Engine {
 	solveVelocity(useBias) {
 		let { pairs } = this.World;
 		let pairsArr = Object.keys(pairs);
-		const inv_h = this.inverseDelta;
+		const inv_delta = this.inverseDelta;
+		const delta = this.delta;
 		const slop = this.slop;
 
-		let mA, mB, iA, iB, wA, wB, vA, vB, angleA, angleB, anchorA, anchorB;
+		let mA, mB, iA, iB, wA, wB, vA, vB, vFA, vFB, wFA, wFB, angleA, angleB, anchorA, anchorB;
 		
 		for (let i = pairsArr.length; i--;) {
 			let pair = pairs[pairsArr[i]];
@@ -461,13 +462,17 @@ class Engine {
 			mA = bodyA._inverseMass;
 			iA = bodyA._inverseInertia;
 			wA = bodyA.angularVelocity;
-			vA = new vec(bodyA.velocity);
+			vA = bodyA.velocity;
+			wFA = wA;
+			vFA = new vec(vA);
 			angleA = bodyA.angle;
 			
 			mB = bodyB._inverseMass;
 			iB = bodyB._inverseInertia;
 			wB = bodyB.angularVelocity;
-			vB = new vec(bodyB.velocity);
+			vB = bodyB.velocity;
+			wFB = wB;
+			vFB = new vec(vB);
 			angleB = bodyB.angle;
 
 			for (let i = contacts.length; i--;) {
@@ -479,16 +484,16 @@ class Engine {
 				const rB = anchorB.rotate(angleB); // radius vector B
 
 				// Relative velocity
-				const vrA = bodyA.velocity.add(rA.cross(bodyA.angularVelocity));
-				const vrB = bodyB.velocity.add(rB.cross(bodyB.angularVelocity));
+				const vrA = vA.add(rA.cross(wA));
+				const vrB = vB.add(rB.cross(wB));
 				const vn = vrB.sub(vrA).dot(normal);
 				const vt = vrB.sub(vrA).dot(tangent);
 
-				// if (vn < 0) continue;
+				if (vn < 0) continue;
 
 				// Separation
-				const ds = bodyB.velocity.sub(bodyA.velocity).add(rB.sub(rA));
-				let s = ds.dot(normal) * this.delta + contact.adjustedSeparation; // separation scalar
+				const ds = vB.sub(vA).add(rB.sub(rA));
+				let s = ds.dot(normal) * delta + contact.adjustedSeparation; // separation scalar
 				s = (Math.abs(s) - slop) * Math.sign(s); // maintain a little separation
 				if (s < 0) continue;
 				
@@ -499,7 +504,7 @@ class Engine {
 				let impulseScale = 0;
 				const maxBaumgarteVelocity = 100;
 				if (s < 0) {
-					bias = s * inv_h; // Speculative
+					bias = s * inv_delta; // Speculative
 				}
 				else if (useBias) {
 					bias = Math.min(contact.biasCoefficient * s, maxBaumgarteVelocity);
@@ -512,11 +517,11 @@ class Engine {
 				}
 				
 				// console.log(contact.normalMass);
-				let normalImpulse = contact.normalMass * contact.massCoefficient * (vn * restitution + bias);// - impulseScale * contact.normalImpulse;
+				let normalImpulse = contact.normalMass * massScale * (vn * restitution + bias) - impulseScale * contact.normalImpulse;
 				let tangentImpulse = -contact.tangentMass * vt;
 				
 				// Clamp normal impulse
-				if (false) { // Clamping current impulse rather than accumulated is more stable
+				if (true) { // Clamping current impulse rather than accumulated is more stable
 					// Clamp accumulated impulse
 					let newImpulse = Math.max(contact.normalImpulse + normalImpulse, 0);
 					normalImpulse = newImpulse - contact.normalImpulse;
@@ -529,7 +534,7 @@ class Engine {
 				}
 
 				// Clamp friction impulse
-				if (false) {
+				if (true) {
 					// Clamp accumulated impulse
 					const maxFriction = friction * contact.normalImpulse;
 					let newImpulse = Common.clamp(contact.tangentImpulse + tangentImpulse, -maxFriction, maxFriction);
@@ -546,20 +551,20 @@ class Engine {
 				// Apply contact impulse
 				let P = normal.mult(normalImpulse).sub2(tangent.mult(tangentImpulse));
 
-				vA.add2(P.mult(mA));
-				wA += iA * rA.cross(P);
+				vFA.add2(P.mult(mA));
+				wFA += iA * rA.cross(P);
 
-				vB.sub2(P.mult(mB));
-				wB -= iB * rB.cross(P);
+				vFB.sub2(P.mult(mB));
+				wFB -= iB * rB.cross(P);
 			}
 
 			if (!bodyA.isStatic) {
-				bodyA.velocity.set(vA);
-				bodyA.angularVelocity = wA;
+				vA.set(vFA);
+				bodyA.angularVelocity = wFA;
 			}
 			if (!bodyB.isStatic) {
-				bodyB.velocity.set(vB);
-				bodyB.angularVelocity = wB;
+				vB.set(vFB);
+				bodyB.angularVelocity = wFB;
 			}
 		}
 	}
